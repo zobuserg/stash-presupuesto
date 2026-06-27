@@ -598,7 +598,7 @@ function tjPickerH(g,i,j,r){
     const av=avail(c);
     const info= hasInfo(c)
       ? '<span class="tjav'+(av<monto?' bad':'')+'">disponible '+pe(av)+(av<monto?' · no alcanza':'')+'</span>'
-      : '<span class="tjav warn">añade su línea en el banco</span>';
+      : '<span class="tjav warn" data-addline="'+debts.indexOf(c)+'">añade su línea ✎</span>';
     return '<button class="tjpick'+(r.tjCard===c.n?' sel':'')+'" data-tjpick="'+esc(c.n)+'" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>'+
       '<span class="tjnm">'+esc(c.n)+(c.n===rec?' <span class="rec">recomendada</span>':'')+'</span>'+
       '<span class="tjright">'+info+'</span></button>';
@@ -876,6 +876,8 @@ app.addEventListener('input',e=>{const t=e.target;
 app.addEventListener('click',e=>{
   const hdr=e.target.closest('.sec-h[data-collapse]'); // header acordeón: todo el encabezado pliega
   if(hdr){collapsed[hdr.dataset.collapse]=!collapsed[hdr.dataset.collapse];render();return;}
+  const al=e.target.closest('[data-addline]');
+  if(al){const i=+al.dataset.addline;tjOpen=null;view='inicio';collapsed.aho=false;pickerOpen='card';debtForm={kind:'card',idx:i};render();const s=document.getElementById('sec-aho');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.subadd){
     snapshot();
