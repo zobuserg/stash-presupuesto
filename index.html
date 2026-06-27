@@ -379,6 +379,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .pchk-plan.on{background:var(--accent); border-color:var(--accent)}
 .pchk-paid.on{background:var(--ok); border-color:var(--ok)}
 .row.sub.is-paid .dc-n{text-decoration:line-through}
+.row.is-paid input.l{text-decoration:line-through; opacity:.6}
 .dlegend{font-size:11px; color:var(--tx3); line-height:1.45; margin:.15rem 0 .5rem}
 .dlegend b{color:var(--tx2)}
 /* Copia de seguridad (exportar / importar datos) */
@@ -554,10 +555,12 @@ const hasSubs=r=>r.sub&&r.sub.length>0;
 
 const TJ_SVG='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>';
 function subRowH(g,i,j,s){const canTj=(g==='nec'||g==='luj');
-  let h='<div class="row sub'+(s.tj?' tjon':'')+'">'+
+  const paid=!!(d.itemPaid&&d.itemPaid[g+'-'+i+'-'+j]);
+  let h='<div class="row sub'+(s.tj?' tjon':'')+(paid?' is-paid':'')+'">'+
   '<input class="l" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" data-f="l" value="'+esc(s.l)+'" placeholder="Subcategoría">'+
   '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" data-f="a" value="'+s.a+'" placeholder="0">'+
   (canTj?'<button class="tjt'+(s.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" title="'+(s.tj?'En tarjeta: '+esc(s.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
+  (canTj?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'-'+j+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>':'')+
   '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" aria-label="Eliminar">&times;</button></div>';
   if(canTj && tjOpen===(g+'-'+i+'-'+j)) h+=tjPickerH(g,i,j,s);
   return h;}
@@ -593,12 +596,14 @@ function rowH(g,i,r){
   const sub=hasSubs(r);
   const amt=sub?sum(r.sub):r.a;
   const canTj=(g==='nec'||g==='luj');
-  let h='<div class="row'+(r.tj?' tjon':'')+'">'+
+  const paid=!!(d.itemPaid&&d.itemPaid[g+'-'+i]);
+  let h='<div class="row'+(r.tj?' tjon':'')+(paid?' is-paid':'')+'">'+
     '<input class="l" data-grp="'+g+'" data-idx="'+i+'" data-f="l" value="'+esc(r.l)+'" placeholder="Categoría">'+
     '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-f="a" value="'+amt+'" placeholder="0"'+(sub?' readonly':'')+'>'+
-    (canTj&&!sub?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
+    (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
+    (canTj?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>':'')+
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button></div>';
-  if(canTj && !sub && tjOpen===(g+'-'+i)) h+=tjPickerH(g,i,null,r);
+  if(canTj && tjOpen===(g+'-'+i)) h+=tjPickerH(g,i,null,r);
   if(g!=='inc'){
     h+='<div class="subwrap">';
     if(sub) h+=r.sub.map((s,j)=>subRowH(g,i,j,s)).join('');
@@ -926,6 +931,7 @@ app.addEventListener('click',e=>{
   else if(b.dataset.debtsel!==undefined){const n=b.dataset.debtsel;if(!d.debtPay)d.debtPay={};if(d.debtPay[n])delete d.debtPay[n];else d.debtPay[n]='min';save();render();}
   else if(b.dataset.debtmode!==undefined){if(!d.debtPay)d.debtPay={};d.debtPay[b.dataset.debtmode]=b.dataset.m;save();render();}
   else if(b.dataset.debtpaid!==undefined){const n=b.dataset.debtpaid;if(!d.paid)d.paid={};if(d.paid[n])delete d.paid[n];else d.paid[n]=true;save();render();}
+  else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;save();render();}
   else if(b.classList.contains('rm')){
     snapshot();
     const g=b.dataset.grp,i=+b.dataset.idx;
