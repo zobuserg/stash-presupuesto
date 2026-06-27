@@ -589,16 +589,16 @@ function tjPickerH(g,i,j,r){
   const cards=(typeof debts!=='undefined'?debts:[]).filter(x=>!x.auto&&!/pr[eé]stamo|colegio/i.test(x.n||''));
   if(!cards.length) return '<div class="tjpicker"><div class="tjpicker-h">Agrega tus tarjetas en el módulo de Deudas (abajo) para elegir una.</div></div>';
   const monto=hasSubs(r)?sum(r.sub):(parseFloat(r.a)||0);
-  const avail=c=>Math.max((parseFloat(c.limite)||0)-(parseFloat(c.total)||0),0);
-  const hasLim=c=>(parseFloat(c.limite)||0)>0;
+  const avail=c=>cardAvail(c);
+  const hasInfo=c=>(c.disp!=null&&c.disp!=='')||(parseFloat(c.limite)||0)>0;
   // Recomendada: la de mayor línea libre que aguante el monto; si ninguna aguanta, la de mayor línea libre.
   const byAvail=cards.slice().sort((a,b)=>avail(b)-avail(a));
-  const rec=((byAvail.find(c=>hasLim(c)&&avail(c)>=monto))||byAvail[0]).n;
+  const rec=((byAvail.find(c=>hasInfo(c)&&avail(c)>=monto))||byAvail[0]).n;
   const opts=cards.map(c=>{
-    const lim=parseFloat(c.limite)||0, av=avail(c);
-    const info= lim>0
-      ? '<span class="tjav'+(av<monto?' bad':'')+'">queda '+pe(av)+' de '+pe(lim)+(av<monto?' · no alcanza':'')+'</span>'
-      : '<span class="tjav warn">sin línea registrada</span>';
+    const av=avail(c);
+    const info= hasInfo(c)
+      ? '<span class="tjav'+(av<monto?' bad':'')+'">disponible '+pe(av)+(av<monto?' · no alcanza':'')+'</span>'
+      : '<span class="tjav warn">añade su línea en el banco</span>';
     return '<button class="tjpick'+(r.tjCard===c.n?' sel':'')+'" data-tjpick="'+esc(c.n)+'" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>'+
       '<span class="tjnm">'+esc(c.n)+(c.n===rec?' <span class="rec">recomendada</span>':'')+'</span>'+
       '<span class="tjright">'+info+'</span></button>';
