@@ -386,6 +386,25 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .backup{display:flex; gap:.6rem; justify-content:center; margin-top:1.6rem; flex-wrap:wrap}
 .bk-btn{font:inherit; font-size:12px; color:var(--tx2); background:transparent; border:1px solid var(--line); border-radius:20px; padding:.45rem .9rem; cursor:pointer; transition:.15s}
 .bk-btn:hover{border-color:var(--accent); color:var(--accent)}
+/* Banco / selector de deudas a pagar esta quincena */
+.debtpicker{background:var(--line2); border-radius:var(--rad-sm); padding:.8rem; margin:.3rem 0 .7rem}
+.pk-h{font-size:12px; color:var(--tx2); margin-bottom:.7rem; line-height:1.4}
+.pkrow{background:var(--card); border-radius:9px; padding:.6rem .7rem; margin-bottom:.5rem}
+.pk-top{display:flex; justify-content:space-between; align-items:center; gap:.5rem}
+.pk-n{font-size:13.5px; font-weight:600; color:var(--tx)}
+.pk-act{display:flex; gap:.15rem; flex:none}
+.pk-edit,.pk-del{border:none; background:transparent; color:var(--tx3); cursor:pointer; font-size:14px; padding:.2rem .35rem; border-radius:6px; line-height:1}
+.pk-edit:hover,.pk-del:hover{background:var(--line2); color:var(--accent)}
+.pk-info{font-size:11.5px; color:var(--tx3); margin:.15rem 0 .5rem}
+.pk-modes{display:flex; gap:.4rem; flex-wrap:wrap}
+.pk-m{font:inherit; font-size:11.5px; border:1px solid var(--line); background:transparent; color:var(--tx2); border-radius:14px; padding:.35rem .6rem; cursor:pointer; transition:.15s; font-variant-numeric:tabular-nums}
+.pk-m:hover{background:var(--accent); border-color:var(--accent); color:#fff}
+.pk-empty{font-size:12.5px; color:var(--tx3); text-align:center; padding:.5rem}
+.pk-new{display:block; width:100%; margin:.3rem 0; font:inherit; font-size:12.5px; color:var(--accent); background:transparent; border:1px dashed var(--line); border-radius:9px; padding:.55rem; cursor:pointer}
+.pk-new:hover{border-color:var(--accent)}
+.pk-done{display:block; width:100%; margin-top:.4rem; font:inherit; font-size:13px; font-weight:600; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.55rem; cursor:pointer}
+.dd-ic{display:inline-flex; align-items:center; color:var(--accent); margin-right:.15rem}
+.dd-n{flex:1; font-size:13.5px}
 </style>
 </head>
 <body>
@@ -916,19 +935,22 @@ app.addEventListener('click',e=>{
   else if(b.dataset.export){exportData();}
   else if(b.dataset.import){const fi=document.getElementById('importfile');if(fi)fi.click();}
   else if(b.dataset.reset){if(confirm('¿Reiniciar esta quincena? Se borran los montos actuales.')){snapshot();d=def();save();render();}}
-  else if(b.dataset.addloan){debts.push({n:'Préstamo',total:0,min:0,vence:'',kind:'loan'});saveDebts();render();renderDebts();}
-  else if(b.dataset.addcard){cardForm='new';render();}
-  else if(b.dataset.editcard!==undefined){cardForm=+b.dataset.editcard;render();}
-  else if(b.dataset.cardcancel){cardForm=null;render();}
-  else if(b.dataset.cardsave){
+  else if(b.dataset.openpicker){pickerOpen=b.dataset.openpicker;debtForm=null;render();}
+  else if(b.dataset.pickerclose){pickerOpen=null;debtForm=null;render();}
+  else if(b.dataset.pickdebt!==undefined){if(!d.debtPay)d.debtPay={};d.debtPay[b.dataset.pickdebt]=b.dataset.m;save();render();}
+  else if(b.dataset.unpick!==undefined){if(d.debtPay)delete d.debtPay[b.dataset.unpick];save();render();}
+  else if(b.dataset.newdebt){debtForm={kind:b.dataset.newdebt,idx:'new'};render();}
+  else if(b.dataset.editdebt!==undefined){debtForm={kind:b.dataset.kind,idx:+b.dataset.editdebt};render();}
+  else if(b.dataset.debtformcancel){debtForm=null;render();}
+  else if(b.dataset.debtformsave){
     const form=b.closest('.cardform');const get=k=>{const el=form&&form.querySelector('[data-cf="'+k+'"]');return el?el.value:'';};
-    const obj={n:get('n')||'Tarjeta',limite:get('limite'),total:get('total'),disp:get('disp'),mes:get('mes'),min:get('min'),vence:get('vence'),kind:'card'};
-    if(cardForm==='new')debts.push(obj);else if(debts[cardForm])Object.assign(debts[cardForm],obj);
-    cardForm=null;saveDebts();render();renderDebts();
+    const isCard=debtForm&&debtForm.kind==='card';
+    const obj={n:get('n')||(isCard?'Tarjeta':'Préstamo'),total:get('total'),mes:get('mes'),min:get('min'),vence:get('vence'),kind:isCard?'card':'loan'};
+    if(isCard){obj.limite=get('limite');obj.disp=get('disp');}
+    if(debtForm&&debtForm.idx==='new')debts.push(obj);else if(debtForm&&debts[debtForm.idx])Object.assign(debts[debtForm.idx],obj);
+    debtForm=null;saveDebts();render();renderDebts();
   }
-  else if(b.dataset.delcard!==undefined){debts.splice(+b.dataset.delcard,1);saveDebts();render();renderDebts();}
-  else if(b.dataset.delloan!==undefined){debts.splice(+b.dataset.delloan,1);saveDebts();render();renderDebts();}
-  else if(b.dataset.debtsel!==undefined){const n=b.dataset.debtsel;if(!d.debtPay)d.debtPay={};if(d.debtPay[n])delete d.debtPay[n];else d.debtPay[n]='min';save();render();}
+  else if(b.dataset.deldebt!==undefined){const i=+b.dataset.deldebt;const nm=debts[i]&&debts[i].n;debts.splice(i,1);if(nm&&d.debtPay)delete d.debtPay[nm];saveDebts();save();render();renderDebts();}
   else if(b.dataset.debtmode!==undefined){if(!d.debtPay)d.debtPay={};d.debtPay[b.dataset.debtmode]=b.dataset.m;save();render();}
   else if(b.dataset.debtpaid!==undefined){const n=b.dataset.debtpaid;if(!d.paid)d.paid={};if(d.paid[n])delete d.paid[n];else d.paid[n]=true;save();render();}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;save();render();}
@@ -1123,24 +1145,23 @@ function ahoDebtSubsH(){
 function isCardDebt(x){return !x.auto && (x.kind==='card' || (x.kind!=='loan' && !/pr[eé]stamo|colegio/i.test(x.n||'')));}
 function isLoanDebt(x){return !x.auto && !isCardDebt(x);}
 function cardAvail(x){if(x.disp!=null&&x.disp!=='')return Math.max(parseFloat(x.disp)||0,0);const l=parseFloat(x.limite)||0,u=parseFloat(x.total)||0;return Math.max(l-u,0);}
-let cardForm=null; // índice de tarjeta en edición, 'new', o null
-function cardFormH(){
-  if(cardForm===null) return '';
-  const isNew=cardForm==='new';
-  const c=isNew?{}:(debts[cardForm]||{});
+let debtForm=null;   // {kind:'loan'|'card', idx:<i>|'new'} | null — registrar/editar una deuda en el banco
+let pickerOpen=null; // 'loan' | 'card' | null — caja para elegir qué pagar esta quincena
+function cardAvailSafe(x){return cardAvail(x);}
+function debtFormH(){
+  if(!debtForm) return '';
+  const isNew=debtForm.idx==='new', isCard=debtForm.kind==='card';
+  const c=isNew?{}:(debts[debtForm.idx]||{});
   const v=k=>esc(c[k]!=null?c[k]:'');
   const f=(lbl,key,ph)=>'<label class="cf-l">'+lbl+'<input class="cf-i" data-cf="'+key+'" type="number" min="0" step="1" value="'+v(key)+'" placeholder="'+ph+'"></label>';
-  return '<div class="cardform">'+
-    '<div class="cf-h">'+(isNew?'Nueva tarjeta':'Editar tarjeta')+'</div>'+
-    '<label class="cf-l">Nombre<input class="cf-i" data-cf="n" type="text" value="'+v('n')+'" placeholder="Ej. Visa BCP"></label>'+
-    f('Línea de crédito','limite','3000')+
-    f('Monto usado (lo que debes)','total','1200')+
-    f('Monto disponible (lo que el banco te deja usar)','disp','1800')+
-    f('Pago mensual','mes','300')+
-    f('Pago mínimo','min','150')+
+  let h='<div class="cardform"><div class="cf-h">'+(isNew?(isCard?'Nueva tarjeta':'Nuevo préstamo'):'Editar')+'</div>'+
+    '<label class="cf-l">Nombre<input class="cf-i" data-cf="n" type="text" value="'+v('n')+'" placeholder="'+(isCard?'Ej. Visa BCP':'Ej. Préstamo auto')+'"></label>';
+  if(isCard) h+=f('Línea de crédito','limite','3000')+f('Monto usado (lo que debes)','total','1200')+f('Monto disponible (lo que el banco te deja usar)','disp','1800');
+  else h+=f('Monto total de la deuda','total','5000');
+  h+=f('Pago mensual','mes','300')+f('Pago mínimo','min','150')+
     '<label class="cf-l">Fecha de pago<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>'+
-    '<div class="cf-btns"><button class="cf-cancel" data-cardcancel="1">Cancelar</button><button class="cf-save" data-cardsave="1">Guardar tarjeta</button></div>'+
-  '</div>';
+    '<div class="cf-btns"><button class="cf-cancel" data-debtformcancel="1">Cancelar</button><button class="cf-save" data-debtformsave="1">Guardar en el banco</button></div></div>';
+  return h;
 }
 function debtAmt(x,mode){
   if(mode==='total')return parseFloat(x.total)||parseFloat(x.min)||0;
@@ -1154,39 +1175,53 @@ function modeToggleH(x){
   const opt=(mode,lbl)=>'<button class="dmode'+(m===mode?' on':'')+'" data-debtmode="'+esc(x.n)+'" data-m="'+mode+'">'+lbl+' '+pe(debtAmt(x,mode))+'</button>';
   return '<div class="dmodes">'+opt('min','Mín')+opt('mes','Mes')+opt('total','Total')+'</div>';
 }
-function debtRow2H(x,kind){
-  const i=debts.indexOf(x);
-  const sel=!!(d.debtPay&&d.debtPay[x.n]);
+function debtPickerH(kind){
+  if(pickerOpen!==kind) return '';
+  const isCard=kind==='card';
+  const list=debts.filter(x=>!x.auto && (isCard?isCardDebt(x):isLoanDebt(x)) && !(d.debtPay&&d.debtPay[x.n]));
+  let rows=list.map(x=>{
+    const i=debts.indexOf(x);
+    const mb=(m,lbl)=>'<button class="pk-m" data-pickdebt="'+esc(x.n)+'" data-m="'+m+'">'+lbl+' '+pe(debtAmt(x,m))+'</button>';
+    const star=(x.n===recommendedDebt())?' <span class="drec">⭐</span>':'';
+    return '<div class="pkrow"><div class="pk-top"><span class="pk-n">'+esc(x.n)+star+'</span>'+
+      '<span class="pk-act"><button class="pk-edit" data-editdebt="'+i+'" data-kind="'+kind+'" title="Editar">&#9998;</button>'+
+      '<button class="pk-del" data-deldebt="'+i+'" title="Quitar del banco">&times;</button></span></div>'+
+      '<div class="pk-info">'+(x.vence?'vence '+dueLabel(x.vence):'sin fecha')+(isCard?' · disp '+pe(cardAvail(x)):' · debes '+pe(parseFloat(x.total)||0))+'</div>'+
+      '<div class="pk-modes">'+mb('min','Mín')+mb('mes','Mes')+mb('total','Total')+'</div></div>';
+  }).join('');
+  if(!list.length) rows='<div class="pk-empty">No te queda '+(isCard?'ninguna tarjeta':'ningún préstamo')+' por elegir. Agrega '+(isCard?'una':'uno')+' al banco abajo.</div>';
+  return '<div class="debtpicker"><div class="pk-h">¿Cuál pagas esta quincena? Toca el monto (Mín / Mes / Total).</div>'+rows+
+    '<button class="pk-new" data-newdebt="'+kind+'"><span class="p">+</span> Agregar '+(isCard?'tarjeta':'préstamo')+' al banco</button>'+
+    debtFormH()+
+    '<button class="pk-done" data-pickerclose="1">Listo</button></div>';
+}
+function selectedDebtRowH(x,kind){
   const paid=!!(d.paid&&d.paid[x.n]);
-  const star=(x.n===recommendedDebt())?' <span class="drec" title="Paga primero — vence pronto">⭐</span>':'';
-  const chk='<button class="pcheck pchk-plan'+(sel?' on':'')+'" data-debtsel="'+esc(x.n)+'" title="Ponerla en el presupuesto de este ciclo">'+(sel?'✓':'')+'</button>';
-  const paidChk=sel?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya hice este pago">'+(paid?'✓':'')+'</button>':'';
-  let mid;
-  if(kind==='loan'){
-    mid='<input class="l" data-loan="'+i+'" data-lf="n" value="'+esc(x.n||'')+'" placeholder="Préstamo"><input class="a" type="number" min="0" step="1" data-loan="'+i+'" data-lf="min" value="'+(x.min!=null?x.min:'')+'" placeholder="0">'+star;
-  }else{
-    mid='<button class="dcard" data-editcard="'+i+'"><span class="dc-n">'+esc(x.n||'(tarjeta)')+star+'</span><span class="dc-d">disp '+pe(cardAvail(x))+'</span></button>';
-  }
-  const del='<button class="rm" data-del'+(kind==='loan'?'loan':'card')+'="'+i+'" aria-label="Eliminar">&times;</button>';
-  return '<div class="row sub'+(paid?' is-paid':'')+'">'+chk+mid+paidChk+del+'</div>'+(sel?modeToggleH(x):'');
+  const icon=kind==='card'?'<span class="dd-ic">'+TJ_SVG+'</span>':'';
+  return '<div class="row sub'+(paid?' is-paid':'')+'">'+icon+
+    '<span class="dd-n">'+esc(x.n)+'</span>'+
+    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>'+
+    '<button class="rm" data-unpick="'+esc(x.n)+'" title="Quitar de esta quincena">&times;</button></div>'+
+    modeToggleH(x);
 }
 function ahoDebtBlockH(){
-  const loans=debts.filter(isLoanDebt), cards=debts.filter(isCardDebt);
-  const loanRows=loans.map(x=>debtRow2H(x,'loan')).join('');
-  const cardRows=cards.map(x=>debtRow2H(x,'card')).join('');
+  const sel=d.debtPay||{};
+  const loans=debts.filter(x=>isLoanDebt(x)&&sel[x.n]);
+  const cards=debts.filter(x=>isCardDebt(x)&&sel[x.n]);
   const planned=debtPaySum();
-  const paidS=(d.debtPay&&d.paid)?debts.filter(x=>!x.auto&&d.debtPay[x.n]&&d.paid[x.n]).reduce((t,x)=>t+debtAmt(x,d.debtPay[x.n]),0):0;
+  const paidS=(d.paid)?debts.filter(x=>!x.auto&&sel[x.n]&&d.paid[x.n]).reduce((t,x)=>t+debtAmt(x,sel[x.n]),0):0;
   return '<div class="dgroup">'+
     '<div class="dg-t">Deuda</div>'+
-    '<div class="dlegend">Marca <b>izquierda</b> para ponerla en tu presupuesto · marca <b>derecha (verde)</b> cuando ya la pagaste.</div>'+
+    '<div class="dlegend">Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>verde</b> cuando ya lo pagaste.</div>'+
     '<div class="subwrap">'+
       '<div class="dsub-t">Préstamo</div>'+
-      loanRows+
-      '<button class="add sub-add" data-addloan="1"><span class="p">+</span> Préstamo</button>'+
+      loans.map(x=>selectedDebtRowH(x,'loan')).join('')+
+      '<button class="add sub-add" data-openpicker="loan"><span class="p">+</span> Préstamo</button>'+
+      debtPickerH('loan')+
       '<div class="dsub-t" style="margin-top:.7rem">Tarjeta de crédito</div>'+
-      cardRows+
-      '<button class="add sub-add" data-addcard="1"><span class="p">+</span> Tarjeta de crédito</button>'+
-      cardFormH()+
+      cards.map(x=>selectedDebtRowH(x,'card')).join('')+
+      '<button class="add sub-add" data-openpicker="card"><span class="p">+</span> Tarjeta de crédito</button>'+
+      debtPickerH('card')+
       (planned>0?'<div class="dtotal">Pagas este ciclo: <b>'+pe(planned)+'</b>'+(paidS>0?' · ya pagaste <b>'+pe(paidS)+'</b> · falta <b>'+pe(planned-paidS)+'</b>':'')+' <span style="color:var(--tx3)">— sale de tu ahorro</span></div>':'')+
     '</div>'+
   '</div>';
