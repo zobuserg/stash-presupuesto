@@ -1338,6 +1338,17 @@ function saludH(){
   const prio=ranked.length?'<div class="sa-prio"><b>Paga primero:</b> '+ranked.slice(0,3).map((c,k)=>(k+1)+') '+esc(c.n)+(util(c)>1?' (¡sobre el tope!)':' ('+Math.round(util(c)*100)+'%)')).join('  ·  ')+'</div>':'';
   return '<div class="salud"><div class="sa-h">💳 Salud de tus tarjetas · usado vs línea (sano &lt;30%)</div>'+rows+'<div class="sa-verdict">'+verdict+'</div>'+prio+'</div>';
 }
+function allToCash(){
+  if(!confirm('¿Pasar TODOS tus gastos a efectivo (quitar el tarjeteo en todas las quincenas)? Las cuotas futuras de esos gastos desaparecen.'))return;
+  cycles.forEach(c=>{const x=(c.id===activeQ)?d:load(c.id);
+    ['nec','luj'].forEach(g=>{(x[g]||[]).forEach(cat=>{
+      if(cat.tj){cat.tj=false;delete cat.tjCard;delete cat.tjCuotas;}
+      if(cat.sub)cat.sub.forEach(s=>{if(s.tj){s.tj=false;delete s.tjCard;delete s.tjCuotas;}});
+    });});
+    if(c.id===activeQ){save();}else{localStorage.setItem(keyFor(c.id),JSON.stringify(x));}});
+  if(typeof reconcileTjDebts==='function')reconcileTjDebts();
+  render();renderDebts();
+}
 function renderDebts(){
   const el=document.getElementById('debts');if(!el)return;
   el.innerHTML=
@@ -1349,6 +1360,7 @@ function renderDebts(){
       debts.map((x,i)=>x.auto?'':debtRowH(x,i)).join('')+
       '<button class="add" data-dadd="1"><span class="p">+</span> Agregar deuda</button>'+
       '<button class="cuotas-toggle" data-cuotas="1">📅 Cuotas futuras de tarjeta'+cuotasCountH()+'</button>'+
+      '<button class="cuotas-toggle" data-allcash="1">💵 Pasar todo a efectivo (quitar tarjeteo)</button>'+
       '<div id="autodebts" style="display:none">'+autoDebtsH()+'</div>'+
       '<div class="plan" id="tjbox">'+tjInner()+'</div>'+
     '</div>'+
@@ -1363,6 +1375,7 @@ debtsEl.addEventListener('input',e=>{const t=e.target;if(!t.dataset)return;
 debtsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.dadd){debts.push({n:'Nueva deuda',total:0,min:0,vence:''});saveDebts();renderDebts();}
   else if(b.dataset.cuotas){const el=document.getElementById('autodebts');if(el){el.innerHTML=autoDebtsH();el.style.display=el.style.display==='none'?'':'none';}}
+  else if(b.dataset.allcash){allToCash();}
   else if(b.dataset.paid!==undefined){const n=b.dataset.paid;if(!d.paid)d.paid={};if(d.paid[n])delete d.paid[n];else d.paid[n]=true;save();refreshPlan();recompute();}
   else if(b.dataset.drm!==undefined){debts.splice(+b.dataset.drm,1);saveDebts();renderDebts();}});
 
