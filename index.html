@@ -442,16 +442,31 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .fondo-note b{color:var(--tx); font-variant-numeric:tabular-nums}
 .fondo-close{display:block; width:100%; margin-top:.85rem; font:inherit; font-size:13px; font-weight:600; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.6rem; cursor:pointer}
 .fondo-close:hover{filter:brightness(1.08)}
+.hero-fondo{text-align:center; font-size:12.5px; color:var(--tx2); margin:.2rem 0 .5rem}
+.hero-fondo input{width:88px; font:inherit; font-size:14px; font-weight:600; text-align:right; color:var(--tx); background:transparent; border:none; border-bottom:1px dashed var(--line); padding:1px 3px}
+.hero-fondo input:focus{outline:none; border-bottom-color:var(--accent)}
+.hf-hint{color:var(--tx3); font-size:11px}
+.wel-fondo{margin:.5rem 0 1rem; font-size:18px; color:var(--tx2); text-align:center}
+.wel-fondo input{width:140px; font:inherit; font-size:20px; font-weight:700; text-align:center; color:var(--tx); background:var(--card); border:1.5px solid var(--line); border-radius:var(--rad-sm); padding:.5rem}
+.wel-fondo input:focus{outline:none; border-color:var(--accent)}
 </style>
 </head>
 <body>
 <div id="welcome" class="welcome" hidden>
   <div class="wel-card">
     <div class="wel-logo">Stash</div>
-    <div class="wel-h">¿Cómo te pagan?</div>
-    <div class="wel-sub">Con eso organizamos tu dinero. Lo puedes cambiar después.</div>
-    <button class="wel-opt" data-cyc-type="q"><span class="wo-t">Por quincena</span><span class="wo-s">Me pagan dos veces al mes</span></button>
-    <button class="wel-opt" data-cyc-type="m"><span class="wo-t">Por mes</span><span class="wo-s">Me pagan una vez al mes</span></button>
+    <div id="wel-step1">
+      <div class="wel-h">¿Cómo te pagan?</div>
+      <div class="wel-sub">Con eso organizamos tu dinero. Lo puedes cambiar después.</div>
+      <button class="wel-opt" data-cyc-type="q"><span class="wo-t">Por quincena</span><span class="wo-s">Me pagan dos veces al mes</span></button>
+      <button class="wel-opt" data-cyc-type="m"><span class="wo-t">Por mes</span><span class="wo-s">Me pagan una vez al mes</span></button>
+    </div>
+    <div id="wel-step2" hidden>
+      <div class="wel-h">¿Tienes algo ahorrado?</div>
+      <div class="wel-sub">Tu reserva / colchón. Si un mes te falta, sale de aquí — no se vuelve deuda. Déjalo en 0 si empiezas de cero.</div>
+      <div class="wel-fondo">S/ <input id="wel-fondo" type="number" min="0" step="1" placeholder="0"></div>
+      <button class="wel-opt" data-finishonb="1"><span class="wo-t">Empezar →</span></button>
+    </div>
     <div class="wel-foot">Stash reparte tu dinero con la regla <b>50/30/20</b> — el método de Elizabeth Warren (Harvard) para ahorrar primero y gastar tranquilo.</div>
   </div>
 </div>
@@ -746,6 +761,7 @@ function render(){
         '<div class="hi-phrase">Págate primero — ahorra antes de gastar</div>'+
         '<button class="hi-edit" data-incedit="1">'+(incEdit?'▲ cerrar':'✎ editar ingreso')+'</button>'+
       '</div>'+
+      '<div class="hero-fondo">💰 Reserva: S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"><span class="hf-hint"> — tu colchón</span></div>'+
       '<div id="inc-detail"'+(incEdit?'':' style="display:none"')+'>'+
         '<div class="sec-note" style="margin-top:.6rem">Agrega el pago que cubrirá este plazo.</div>'+
         '<div class="sec-note" style="margin-top:-.45rem">Me pagan el: <input id="payday" data-payday="1" type="date" min="2024-01-01" max="2100-12-31" value="'+(d.payday||'')+'" style="font:inherit;font-size:13px;color:var(--accent);background:transparent;border:none;border-bottom:1.5px dashed var(--line);padding:1px 2px"></div>'+
@@ -773,7 +789,6 @@ function render(){
         '</div>'+
         '<div id="assign-wrap"></div>'+
         '<div class="fondo-box">'+
-          '<div class="fondo-row"><span class="fondo-lbl">Fondo / Reserva<span class="fondo-hint">tus ahorros ya existentes</span></span><span class="fondo-val">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
           '<div class="fondo-note" id="fondo-note"></div>'+
           '<button class="fondo-close" data-cerrar="1">Cerrar quincena y pasar a la siguiente →</button>'+
         '</div>'+
@@ -1429,12 +1444,21 @@ function isFirstRun(){
   return true;
 }
 function showWelcome(show){const w=document.getElementById('welcome');if(w)w.hidden=!show;document.body.classList.toggle('welcoming',show);}
-function chooseCycle(type){ // 'q' quincenal | 'm' mensual
+let pendingCycleType=null;
+function chooseCycle(type){ // paso 1: guarda el tipo y muestra el paso 2 (reserva)
+  pendingCycleType=type;
+  const s1=document.getElementById('wel-step1'),s2=document.getElementById('wel-step2');
+  if(s1)s1.hidden=true; if(s2)s2.hidden=false;
+  const fi=document.getElementById('wel-fondo');if(fi)fi.focus();
+}
+function finishOnboarding(){
+  const type=pendingCycleType||'q';
+  const fi=document.getElementById('wel-fondo'); fondo=parseFloat(fi&&fi.value)||0; saveFondo();
   cycles=[{id:'c1',type:type,label:type==='m'?'Mes 1':'Quincena 1'}];saveCycles();
   activeQ='c1';localStorage.setItem('midas_active_cycle',activeQ);localStorage.setItem('midas_onboarded','1');
   d=def();save();showWelcome(false);view='inicio';incEdit=true;render();renderDebts();window.scrollTo({top:0});
 }
-document.getElementById('welcome').addEventListener('click',e=>{const b=e.target.closest('[data-cyc-type]');if(b)chooseCycle(b.dataset.cycType);});
+document.getElementById('welcome').addEventListener('click',e=>{const b=e.target.closest('[data-cyc-type]');if(b){chooseCycle(b.dataset.cycType);return;}if(e.target.closest('[data-finishonb]'))finishOnboarding();});
 
 if(isFirstRun()){showWelcome(true);}
 else{render();renderDebts();}
