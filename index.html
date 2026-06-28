@@ -597,7 +597,7 @@ function templatesH(){
 }
 
 let history=[];
-function snapshot(){history.push(JSON.stringify(d));if(history.length>50)history.shift();updateUndo();}
+function snapshot(){history.push(JSON.stringify({d:d,debts:(typeof debts!=='undefined'?debts:[])}));if(history.length>50)history.shift();updateUndo();}
 function updateUndo(){const u=document.getElementById('undo');if(u)u.hidden=history.length===0;}
 const pe=n=>'S/ '+Math.round(n).toLocaleString('es-PE');
 const sum=a=>a.reduce((t,r)=>t+(parseFloat(r.a)||0),0);
@@ -992,7 +992,7 @@ app.addEventListener('click',e=>{
     if(debtForm&&debtForm.idx==='new')debts.push(obj);else if(debtForm&&debts[debtForm.idx])Object.assign(debts[debtForm.idx],obj);
     debtForm=null;saveDebts();render();renderDebts();
   }
-  else if(b.dataset.deldebt!==undefined){const i=+b.dataset.deldebt;const nm=debts[i]&&debts[i].n;debts.splice(i,1);if(nm&&d.debtPay)delete d.debtPay[nm];saveDebts();save();render();renderDebts();}
+  else if(b.dataset.deldebt!==undefined){snapshot();const i=+b.dataset.deldebt;const nm=debts[i]&&debts[i].n;debts.splice(i,1);if(nm&&d.debtPay)delete d.debtPay[nm];saveDebts();save();render();renderDebts();}
   else if(b.dataset.debtmode!==undefined){if(!d.debtPay)d.debtPay={};d.debtPay[b.dataset.debtmode]=b.dataset.m;save();render();}
   else if(b.dataset.debtpaid!==undefined){const n=b.dataset.debtpaid;if(!d.paid)d.paid={};if(d.paid[n])delete d.paid[n];else d.paid[n]=true;save();render();}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;save();render();}
@@ -1019,7 +1019,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'){const t=e.target;
   else if(t.tagName!=='INPUT'&&t.tagName!=='TEXTAREA'&&t.tagName!=='BUTTON'){e.preventDefault();if(focusMode)focusGo(1);else wizGo(wizStep+1);/* 2do Enter: avanza escena */}
 }});
 document.addEventListener('focusout',e=>{const t=e.target;if(t.tagName==='INPUT'&&t.type==='number'){t.classList.add('saved');setTimeout(()=>t.classList.remove('saved'),550);}});
-function doUndo(){if(history.length){d=JSON.parse(history.pop());save();render();updateUndo();}}
+function doUndo(){if(history.length){const s=JSON.parse(history.pop());if(s&&s.d){d=s.d;if(s.debts){debts=s.debts;saveDebts();}}else{d=s;}save();render();if(typeof renderDebts==='function')renderDebts();updateUndo();}}
 document.getElementById('undo').addEventListener('click',doUndo);
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();doUndo();}});
 
