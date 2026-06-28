@@ -453,9 +453,8 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 <div id="debts" class="debts"></div>
 <nav class="tabbar">
   <button class="tabbtn active" data-view="inicio"><span class="ti">🏠</span><span>Inicio</span></button>
-  <button class="tabbtn" data-view="plan"><span class="ti">📋</span><span>Plan</span></button>
   <button class="tabbtn" data-view="deudas"><span class="ti">💳</span><span>Deudas</span></button>
-  <button class="tabbtn" data-view="informe"><span class="ti">📊</span><span>Informe</span></button>
+  <button class="tabbtn" data-view="resumen"><span class="ti">📊</span><span>Resumen</span></button>
 </nav>
 <script>
 // ===== Ciclos (quincenal o mensual). Cada ciclo tiene su propio presupuesto. =====
@@ -533,11 +532,11 @@ function applyView(){
   setD('heart', inicio);
   const tog=document.getElementById('focus-toggle');if(tog)tog.style.display=inicio?'':'none';
   const reset=document.querySelector('.reset');if(reset)reset.style.display=inicio?'':'none';
-  setD('sec-informe', view==='informe');
-  const showDebts=(view==='plan'||view==='deudas');
+  setD('sec-informe', view==='resumen');
+  const showDebts=(view==='resumen'||view==='deudas');
   setD('debts', showDebts);
   setD('debts-mgmt', view==='deudas');
-  setD('planbox', view==='plan');
+  setD('planbox', view==='resumen');
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
 }
 function focusGo(delta){const scenes=focusScenes();
