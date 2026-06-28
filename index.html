@@ -405,6 +405,16 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .pk-done{display:block; width:100%; margin-top:.4rem; font:inherit; font-size:13px; font-weight:600; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.55rem; cursor:pointer}
 .dd-ic{display:inline-flex; align-items:center; color:var(--accent); margin-right:.15rem}
 .dd-n{flex:1; font-size:13.5px}
+/* Plantillas */
+.tpl{margin-top:1.6rem; text-align:center}
+.tpl-h{font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--tx2); margin-bottom:.7rem}
+.tpl-list{display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; margin-bottom:.8rem}
+.tpl-item{display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:20px; overflow:hidden}
+.tpl-load{font:inherit; font-size:12.5px; color:var(--tx); background:transparent; border:none; padding:.45rem .35rem .45rem .9rem; cursor:pointer}
+.tpl-load:hover{color:var(--accent)}
+.tpl-del{font:inherit; font-size:15px; color:var(--tx3); background:transparent; border:none; padding:.3rem .6rem .3rem .2rem; cursor:pointer; line-height:1}
+.tpl-del:hover{color:var(--bad)}
+.tpl-empty{font-size:12px; color:var(--tx3); line-height:1.45; margin:0 auto .8rem; max-width:340px}
 </style>
 </head>
 <body>
@@ -559,6 +569,32 @@ function importData(file){
   r.onload=e=>{try{const data=JSON.parse(e.target.result);Object.keys(data).forEach(k=>{if(k.indexOf('midas_')===0)localStorage.setItem(k,typeof data[k]==='string'?data[k]:JSON.stringify(data[k]));});localStorage.setItem('midas_onboarded','1');location.reload();}catch(err){alert('No pude leer el archivo. ¿Es tu copia de Stash (stash-backup.json)?');}};
   r.readAsText(file);
 }
+// Plantillas: guardar la estructura de gasto de una quincena y reusarla en otra.
+function loadTemplates(){try{const x=JSON.parse(localStorage.getItem('midas_templates'));return Array.isArray(x)?x:[];}catch(e){return [];}}
+function saveTpls(t){localStorage.setItem('midas_templates',JSON.stringify(t));}
+function saveAsTemplate(){
+  const name=(prompt('Nombre de la plantilla (ej. "Quincena 1-15", "Mensual"):')||'').trim();
+  if(!name)return;
+  const t=loadTemplates();
+  const snap={nec:JSON.parse(JSON.stringify(d.nec||[])),luj:JSON.parse(JSON.stringify(d.luj||[])),aho:JSON.parse(JSON.stringify(d.aho||[]))};
+  const ex=t.find(x=>x.name===name);
+  if(ex)ex.data=snap;else t.push({name,data:snap});
+  saveTpls(t);render();
+}
+function applyTemplate(name){
+  const t=loadTemplates().find(x=>x.name===name);if(!t||!t.data)return;
+  ['nec','luj','aho'].forEach(g=>{if(t.data[g])d[g]=JSON.parse(JSON.stringify(t.data[g]));});
+  d.itemPaid={};
+  save();render();renderDebts();
+}
+function templatesH(){
+  const t=loadTemplates();
+  let h='<div class="tpl"><div class="tpl-h">📋 Plantillas</div>';
+  if(t.length) h+='<div class="tpl-list">'+t.map(x=>'<span class="tpl-item"><button class="tpl-load" data-loadtpl="'+esc(x.name)+'">'+esc(x.name)+'</button><button class="tpl-del" data-deltpl="'+esc(x.name)+'" aria-label="Borrar">&times;</button></span>').join('')+'</div>';
+  else h+='<div class="tpl-empty">Arma una quincena y guárdala como plantilla para reusar su estructura en las siguientes.</div>';
+  h+='<button class="bk-btn" data-savetpl="1">💾 Guardar esta quincena como plantilla</button></div>';
+  return h;
+}
 
 let history=[];
 function snapshot(){history.push(JSON.stringify(d));if(history.length>50)history.shift();updateUndo();}
@@ -699,6 +735,7 @@ function render(){
     '</div>'+
     '<div class="sec" id="sec-informe"><div class="sec-h"><span class="t">Informe</span></div><div id="informe-body"></div></div>'+
     '<button class="reset" data-reset="1">Reiniciar esta quincena</button>'+
+    templatesH()+
     '<div class="backup"><button class="bk-btn" data-export="1">⬇ Exportar copia</button><button class="bk-btn" data-import="1">⬆ Importar copia</button><input type="file" id="importfile" accept="application/json,.json" hidden></div>'+
     '<div id="focusnav" class="focusnav">'+
       '<button id="focus-back" class="fn-btn" data-focus="-1">← Atrás</button>'+
@@ -935,6 +972,9 @@ app.addEventListener('click',e=>{
   else if(b.dataset.collapse!==undefined){collapsed[b.dataset.collapse]=!collapsed[b.dataset.collapse];render();}
   else if(b.dataset.collapseall){const anyOpen=Object.values(collapsed).some(v=>!v);['aho','nec','luj'].forEach(g=>collapsed[g]=anyOpen);render();}
   else if(b.dataset.export){exportData();}
+  else if(b.dataset.savetpl){saveAsTemplate();}
+  else if(b.dataset.loadtpl!==undefined){const n=b.dataset.loadtpl;const tiene=(d.nec&&d.nec.some(r=>(parseFloat(r.a)||0)>0||(r.sub&&r.sub.length)))||(d.inc&&sum(d.inc)>0);if(!tiene||confirm('¿Cargar la plantilla "'+n+'"? Reemplaza las categorías de esta quincena.'))applyTemplate(n);}
+  else if(b.dataset.deltpl!==undefined){const n=b.dataset.deltpl;if(confirm('¿Borrar la plantilla "'+n+'"?')){saveTpls(loadTemplates().filter(x=>x.name!==n));render();}}
   else if(b.dataset.import){const fi=document.getElementById('importfile');if(fi)fi.click();}
   else if(b.dataset.reset){if(confirm('¿Reiniciar esta quincena? Se borran los montos actuales.')){snapshot();d=def();save();render();}}
   else if(b.dataset.openpicker){pickerOpen=b.dataset.openpicker;debtForm=null;render();}
