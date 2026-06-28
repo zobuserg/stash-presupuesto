@@ -449,6 +449,49 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .wel-fondo{margin:.5rem 0 1rem; font-size:18px; color:var(--tx2); text-align:center}
 .wel-fondo input{width:140px; font:inherit; font-size:20px; font-weight:700; text-align:center; color:var(--tx); background:var(--card); border:1.5px solid var(--line); border-radius:var(--rad-sm); padding:.5rem}
 .wel-fondo input:focus{outline:none; border-color:var(--accent)}
+/* Advisor */
+.advisor{background:var(--card); border:1px solid var(--line); border-radius:var(--rad-sm); padding:1rem 1.1rem; margin-bottom:1rem}
+.adv-h{font-size:15px; font-weight:700; color:var(--tx); margin-bottom:.7rem}
+.adv-empty{font-size:13px; color:var(--tx3); line-height:1.5}
+.adv-steps{margin:0 0 .9rem; padding-left:1.3rem; display:flex; flex-direction:column; gap:.5rem}
+.adv-steps li{font-size:13px; color:var(--tx2); line-height:1.5}
+.adv-steps b{color:var(--tx)}
+.adv-comp{background:var(--line2); border-radius:var(--rad-sm); padding:.7rem .8rem; margin-bottom:.9rem}
+.ac-h{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--tx3); margin-bottom:.5rem}
+.ac-row{display:grid; grid-template-columns:1.1fr 1fr 1.3fr; gap:.4rem; font-size:12.5px; padding:.3rem 0; align-items:center}
+.ac-head{font-size:11px; color:var(--tx3); border-bottom:1px solid var(--line); padding-bottom:.35rem}
+.ac-k{color:var(--tx2)}
+.ac-you{color:var(--tx2)}
+.ac-rec{color:var(--tx); font-weight:600}
+.ac-diff .ac-rec{color:var(--accent)}
+.adv-apply{display:block; width:100%; font:inherit; font-size:14px; font-weight:700; color:#fff; background:var(--accent); border:none; border-radius:10px; padding:.7rem; cursor:pointer}
+.adv-apply:hover{filter:brightness(1.08)}
+.adv-or{text-align:center; font-size:11.5px; color:var(--tx3); margin-top:.5rem}
+/* Invertir */
+.inv-body{padding:.2rem 0}
+.inv-lock{background:var(--line2); border-radius:var(--rad-sm); padding:1rem}
+.il-h{font-size:15px; font-weight:700; color:var(--tx); margin-bottom:.5rem}
+.il-txt{font-size:13px; color:var(--tx2); line-height:1.55; margin-bottom:.8rem}
+.il-txt b{color:var(--tx)}
+.il-list{display:flex; flex-direction:column; gap:.4rem; margin-bottom:.8rem}
+.il-row{display:flex; justify-content:space-between; align-items:center; gap:.5rem; background:var(--card); border-radius:8px; padding:.5rem .7rem; font-size:12.5px}
+.il-row span:first-child{font-weight:600; color:var(--tx)}
+.il-r{color:var(--bad); font-weight:600; white-space:nowrap}
+.il-d{color:var(--tx3); font-size:11.5px; white-space:nowrap}
+.il-foot{font-size:11.5px; color:var(--tx3); line-height:1.5}
+.io-meta{font-size:14px; color:var(--tx2); margin-bottom:1rem}
+.io-meta b{color:var(--tx); font-size:16px}
+.io-sub{color:var(--tx3); font-size:12px}
+.io-h{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--tx3); margin-bottom:.5rem}
+.io-steps{margin:0 0 1rem; padding-left:1.3rem; display:flex; flex-direction:column; gap:.7rem}
+.io-steps li{font-size:13px; color:var(--tx2); line-height:1.55}
+.io-steps b{color:var(--tx)}
+.io-div{display:flex; flex-direction:column; gap:.5rem; margin:.6rem 0}
+.iod{background:var(--line2); border-radius:8px; padding:.6rem .7rem}
+.iod-t{display:block; font-weight:700; color:var(--tx); font-size:12.5px; margin-bottom:.2rem}
+.iod-d{font-size:12px; color:var(--tx2); line-height:1.45}
+.io-mix{font-size:12px; color:var(--tx3); font-style:italic}
+.io-disc{font-size:11.5px; color:var(--tx3); line-height:1.5; border-top:1px solid var(--line); padding-top:.7rem}
 </style>
 </head>
 <body>
@@ -478,10 +521,12 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 </div>
 <div id="app"></div>
 <div id="debts" class="debts"></div>
+<div id="sec-invertir" class="sec" style="display:none"></div>
 <nav class="tabbar">
   <button class="tabbtn active" data-view="inicio"><span class="ti">🏠</span><span>Inicio</span></button>
   <button class="tabbtn" data-view="deudas"><span class="ti">💳</span><span>Deudas</span></button>
   <button class="tabbtn" data-view="resumen"><span class="ti">📊</span><span>Resumen</span></button>
+  <button class="tabbtn" data-view="invertir"><span class="ti">📈</span><span>Invertir</span></button>
 </nav>
 <script>
 // ===== Ciclos (quincenal o mensual). Cada ciclo tiene su propio presupuesto. =====
@@ -564,6 +609,8 @@ function applyView(){
   setD('debts', showDebts);
   setD('debts-mgmt', view==='deudas');
   setD('planbox', view==='resumen');
+  setD('advisorbox', view==='resumen');
+  setD('sec-invertir', view==='invertir');
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
 }
 function focusGo(delta){const scenes=focusScenes();
@@ -909,6 +956,7 @@ function recompute(){
   refreshPlan();
   if(typeof refreshAutoDebts==='function')refreshAutoDebts();
   if(typeof refreshInforme==='function')refreshInforme();
+  if(typeof refreshInvertir==='function')refreshInvertir();
   // Split-preview en la escena de Sueldo: el 50/30/20 al instante + el aval.
   const sp=document.getElementById('split-preview');
   if(sp)sp.innerHTML = ti>0
@@ -1399,6 +1447,95 @@ function allToCash(){
   if(typeof reconcileTjDebts==='function')reconcileTjDebts();
   render();renderDebts();
 }
+/* ===== Advisor — recomienda la jugada, la compara con lo que tienes, y la aplica de un toque ===== */
+function advisorRank(){ // tarjetas por urgencia: sobre-tope, utilización, tasa, vencimiento
+  const cards=debts.filter(isCardDebt);
+  const util=c=>{const l=parseFloat(c.limite)||0,s=parseFloat(c.total)||0;return l>0?s/l:null;};
+  return cards.filter(c=>(parseFloat(c.total)||0)>0).sort((a,b)=>{
+    const ua=util(a),ub=util(b),oa=(ua!=null&&ua>1)?1:0,ob=(ub!=null&&ub>1)?1:0;
+    if(oa!==ob)return ob-oa;
+    if(ua!=null&&ub!=null&&Math.abs(ub-ua)>0.05)return ub-ua;
+    const ta=parseFloat(a.tcea)||0,tb=parseFloat(b.tcea)||0;if(ta!==tb)return tb-ta;
+    const sa=parseFloat(a.total)||0,sb=parseFloat(b.total)||0;if(sa!==sb)return sb-sa;
+    return dateVal(a.vence)-dateVal(b.vence);
+  });
+}
+function advisorPlan(){
+  const cards=debts.filter(isCardDebt);
+  const allDebts=debts.filter(x=>!x.auto);
+  const totL=cards.reduce((t,c)=>t+(parseFloat(c.limite)||0),0);
+  const totS=cards.reduce((t,c)=>t+(parseFloat(c.total)||0),0);
+  const totU=totL>0?totS/totL:0;
+  const tjActual=sumTj(d.nec)+sumTj(d.luj);
+  const stressed = totU>0.3 || cards.some(c=>{const l=parseFloat(c.limite)||0,s=parseFloat(c.total)||0;return l>0&&s/l>1;}) || cards.some(c=>(parseFloat(c.tcea)||0)>30) || cards.some(c=>esDeudaCara(c)&&(parseFloat(c.total)||0)>0);
+  const sel=d.debtPay||{};
+  return {cards,allDebts,totU,tjActual,recEfectivo:tjActual>0&&stressed,faltanMin:allDebts.filter(x=>!sel[x.n]),prio:advisorRank()[0]||null,saldo:lastSaldo||0,selCount:Object.keys(sel).length};
+}
+function advisorH(){
+  const p=advisorPlan();
+  if(!p.allDebts.length && p.tjActual<=0 && p.saldo<=0)
+    return '<div class="advisor"><div class="adv-h">🧠 Tu jugada</div><div class="adv-empty">Pon tu ingreso, gastos y deudas, y aquí te armo el plan de la quincena — con la opción de aplicarlo de un toque.</div></div>';
+  const pasos=[];
+  if(p.recEfectivo) pasos.push('Paga en <b>efectivo</b> lo que estás tarjeteando (<b>'+pe(p.tjActual)+'</b>) — con tus tarjetas cargadas, tarjetear es deuda cara.');
+  if(p.allDebts.length) pasos.push('Cubre el <b>mínimo</b> de tus '+p.allDebts.length+' deuda'+(p.allDebts.length>1?'s':'')+' para no caer en mora.');
+  if(p.saldo>0.5 && p.prio) pasos.push('Tu sobrante (<b>'+pe(p.saldo)+'</b>) → abónalo a <b>'+esc(p.prio.n)+'</b>, tu deuda más urgente.');
+  else if(p.saldo>0.5) pasos.push('Tu sobrante (<b>'+pe(p.saldo)+'</b>) → guárdalo en tu colchón.');
+  const pasosH = pasos.length?'<ol class="adv-steps">'+pasos.map(s=>'<li>'+s+'</li>').join('')+'</ol>':'<div class="adv-empty">Vas bien — no veo una jugada urgente que cambiar.</div>';
+  const comp=[];
+  if(p.tjActual>0.5) comp.push(['Tarjeteo', pe(p.tjActual), p.recEfectivo?'efectivo (S/ 0)':'ok', p.recEfectivo]);
+  if(p.allDebts.length) comp.push(['Deudas a cubrir', p.selCount+' de '+p.allDebts.length, 'las '+p.allDebts.length+' (mín)', p.faltanMin.length>0]);
+  if(p.saldo>0.5) comp.push(['Sobrante', 'libre '+pe(p.saldo), p.prio?'abona a '+esc(p.prio.n):'al colchón', true]);
+  const compH = comp.length?'<div class="adv-comp"><div class="ac-h">Lo que tienes vs. lo que recomiendo</div>'+
+    '<div class="ac-row ac-head"><span></span><span>Tú</span><span>Recomiendo</span></div>'+
+    comp.map(r=>'<div class="ac-row'+(r[3]?' ac-diff':'')+'"><span class="ac-k">'+r[0]+'</span><span class="ac-you">'+r[1]+'</span><span class="ac-rec">'+r[2]+(r[3]?' ⚠':' ✓')+'</span></div>').join('')+'</div>':'';
+  const apply = comp.some(r=>r[3])?'<button class="adv-apply" data-applyadvisor="1">✓ Aplicar tal cual</button><div class="adv-or">o haz los cambios a mano arriba — tú mandas.</div>':'';
+  return '<div class="advisor"><div class="adv-h">🧠 Tu jugada esta quincena</div>'+pasosH+compH+apply+'</div>';
+}
+function applyAdvisor(){
+  const p=advisorPlan();
+  snapshot();
+  if(p.recEfectivo){ // solo paso a efectivo si el plan lo recomienda (tarjetas cargadas/caras)
+    ['nec','luj'].forEach(g=>{(d[g]||[]).forEach(cat=>{
+      if(cat.tj){cat.tj=false;delete cat.tjCard;delete cat.tjCuotas;}
+      if(cat.sub)cat.sub.forEach(s=>{if(s.tj){s.tj=false;delete s.tjCard;delete s.tjCuotas;}});
+    });});
+    if(typeof reconcileTjDebts==='function')reconcileTjDebts();
+  }
+  if(!d.debtPay)d.debtPay={};
+  debts.filter(x=>!x.auto).forEach(x=>{if(!d.debtPay[x.n])d.debtPay[x.n]='min';});
+  save();render();renderDebts();
+}
+/* ===== Invertir — educativo, candado por TASA (no por "tienes deuda") ===== */
+const UMBRAL_CARA=15; // % anual: arriba de esto la deuda es "cara" y conviene pagarla antes de invertir
+function esDeudaCara(x){const t=parseFloat(x.tcea)||0; if(t>0)return t>UMBRAL_CARA; return isCardDebt(x);} // sin tasa: tarjeta=cara, préstamo=desconocido (no bloquea)
+function invertirH(){
+  const conSaldo=debts.filter(x=>!x.auto&&(parseFloat(x.total)||0)>0);
+  const caras=conSaldo.filter(esDeudaCara);
+  const ahoMeta=sum(d.inc)*0.2;
+  let h='<div class="sec-h"><span class="t">📈 Invertir</span></div><div class="inv-body">';
+  if(caras.length){
+    h+='<div class="inv-lock"><div class="il-h">🔒 Primero, tu deuda cara</div>'+
+      '<div class="il-txt">Pagar esta deuda <b>ES tu mejor inversión ahora</b>: te "rinde" su tasa, garantizado. Ninguna inversión normal le gana.</div>'+
+      '<div class="il-list">'+caras.map(x=>{const t=parseFloat(x.tcea)||0;return '<div class="il-row"><span>'+esc(x.n)+'</span><span class="il-r">'+(t>0?Math.round(t)+'%/año':'tarjeta · tasa alta')+'</span><span class="il-d">debes '+pe(parseFloat(x.total)||0)+'</span></div>';}).join('')+'</div>'+
+      '<div class="il-foot">Cuando bajes estas deudas del umbral (~'+UMBRAL_CARA+'%/año), esta sección se abre sola. ¿Una deuda sin tasa? Ponle su TCEA en <b>Deudas</b> para evaluarla bien.</div></div>';
+  } else {
+    h+='<div class="inv-open">'+
+      '<div class="io-meta">Tu meta de ahorro/inversión: <b>'+pe(ahoMeta)+'/mes</b> <span class="io-sub">(el 20% de tu ingreso)</span></div>'+
+      '<div class="io-h">Orden sano</div>'+
+      '<ol class="io-steps">'+
+        '<li><b>Fondo de emergencia primero</b> — 3 a 6 meses de tus gastos, en algo líquido y seguro (cuenta o caja). Es tu red, no tu inversión.</li>'+
+        '<li><b>Ya con la red, diversifica:</b>'+
+          '<div class="io-div"><div class="iod"><span class="iod-t">Renta fija</span><span class="iod-d">cajas / depósitos a plazo (Lima). Seguro, retorno bajo (~4–7%). Para estabilidad.</span></div>'+
+          '<div class="iod"><span class="iod-t">Renta variable</span><span class="iod-d">S&amp;P 500 / ETF global. Más riesgo, más retorno a largo plazo (~10% histórico). Para crecer.</span></div></div>'+
+          '<div class="io-mix">Mezcla según tu horizonte: mientras más lejos tu meta, más renta variable aguanta.</div></li>'+
+        '<li><b>¿Tienes deuda barata?</b> (ej. hipoteca &lt;'+UMBRAL_CARA+'%) Puedes invertir <b>en paralelo</b> — el mercado suele rendir más que esa tasa, así que no esperes a pagarla toda para empezar.</li>'+
+      '</ol>'+
+      '<div class="io-disc">ℹ️ Información educativa, no recomendación de un producto puntual. Las tasas cambian — contrasta con fuentes actuales antes de decidir.</div>'+
+    '</div>';
+  }
+  return h+'</div>';
+}
+function refreshInvertir(){const e=document.getElementById('sec-invertir');if(e)e.innerHTML=invertirH();}
 function renderDebts(){
   const el=document.getElementById('debts');if(!el)return;
   el.innerHTML=
@@ -1414,6 +1551,7 @@ function renderDebts(){
       '<div id="autodebts" style="display:none">'+autoDebtsH()+'</div>'+
       '<div class="plan" id="tjbox">'+tjInner()+'</div>'+
     '</div>'+
+    '<div id="advisorbox">'+advisorH()+'</div>'+
     '<div class="plan" id="planbox">'+planInner(computePlan())+'</div>';
   if(typeof applyView==='function')applyView();
 }
@@ -1426,6 +1564,7 @@ debtsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)re
   if(b.dataset.dadd){debts.push({n:'Nueva deuda',total:0,min:0,vence:''});saveDebts();renderDebts();}
   else if(b.dataset.cuotas){const el=document.getElementById('autodebts');if(el){el.innerHTML=autoDebtsH();el.style.display=el.style.display==='none'?'':'none';}}
   else if(b.dataset.allcash){allToCash();}
+  else if(b.dataset.applyadvisor){applyAdvisor();}
   else if(b.dataset.paid!==undefined){const n=b.dataset.paid;if(!d.paid)d.paid={};if(d.paid[n])delete d.paid[n];else d.paid[n]=true;save();refreshPlan();recompute();}
   else if(b.dataset.drm!==undefined){debts.splice(+b.dataset.drm,1);saveDebts();renderDebts();}});
 
