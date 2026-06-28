@@ -415,6 +415,21 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .tpl-del{font:inherit; font-size:15px; color:var(--tx3); background:transparent; border:none; padding:.3rem .6rem .3rem .2rem; cursor:pointer; line-height:1}
 .tpl-del:hover{color:var(--bad)}
 .tpl-empty{font-size:12px; color:var(--tx3); line-height:1.45; margin:0 auto .8rem; max-width:340px}
+/* Salud de tarjetas */
+.salud{background:var(--card); border:1px solid var(--line); border-radius:var(--rad); box-shadow:var(--shadow); padding:1rem 1.1rem; margin:.4rem 0 1.4rem}
+.sa-h{font-size:12px; font-weight:600; color:var(--tx2); margin-bottom:.8rem; line-height:1.4}
+.sa-row{display:flex; align-items:center; gap:.6rem; margin-bottom:.5rem}
+.sa-n{flex:0 0 32%; font-size:12.5px; color:var(--tx); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sa-bar{flex:1; height:8px; background:var(--line2); border-radius:5px; overflow:hidden}
+.sa-fill{display:block; height:100%; border-radius:5px; background:var(--tx3)}
+.sa-fill.sa-green{background:var(--ok)} .sa-fill.sa-amber{background:#e0922f} .sa-fill.sa-red{background:var(--bad)}
+.sa-pct{flex:0 0 auto; font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--tx2); min-width:56px; text-align:right}
+.sa-pct.sa-green{color:var(--ok)} .sa-pct.sa-amber{color:#e0922f} .sa-pct.sa-red{color:var(--bad)}
+.sa-verdict{font-size:12.5px; line-height:1.5; margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--line2); color:var(--tx)}
+.sa-prio{font-size:12.5px; line-height:1.5; margin-top:.6rem; color:var(--tx2)}
+.sa-prio b{color:var(--tx)}
+.tjpick:disabled,.tjpick.tjp-block{opacity:.45; cursor:not-allowed}
+.dd-d{font-size:11px; color:var(--tx3); white-space:nowrap; margin-right:.2rem}
 </style>
 </head>
 <body>
@@ -630,13 +645,15 @@ function tjPickerH(g,i,j,r){
   // Recomendada: la de mayor línea libre que aguante el monto; si ninguna aguanta, la de mayor línea libre.
   const byAvail=cards.slice().sort((a,b)=>avail(b)-avail(a));
   const rec=((byAvail.find(c=>hasInfo(c)&&avail(c)>=monto))||byAvail[0]).n;
-  const opts=cards.map(c=>{
+  const fits=cards.some(c=>hasInfo(c)&&avail(c)>=monto);
+  const opts=(fits?'':'<div class="tjpicker-h" style="color:var(--bad)">⚠️ Ninguna tarjeta tiene cupo para '+pe(monto)+'. Págalo en efectivo, o baja una tarjeta para liberar cupo.</div>')+cards.map(c=>{
     const av=avail(c);
+    const blocked=hasInfo(c)&&av<monto;
     const info= hasInfo(c)
       ? '<span class="tjav'+(av<monto?' bad':'')+'">disponible '+pe(av)+(av<monto?' · no alcanza':'')+'</span>'
       : '<span class="tjav warn" data-addline="'+debts.indexOf(c)+'">añade su línea ✎</span>';
-    return '<button class="tjpick'+(r.tjCard===c.n?' sel':'')+'" data-tjpick="'+esc(c.n)+'" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>'+
-      '<span class="tjnm">'+esc(c.n)+(c.n===rec?' <span class="rec">recomendada</span>':'')+'</span>'+
+    return '<button class="tjpick'+(r.tjCard===c.n?' sel':'')+(blocked?' tjp-block':'')+'"'+(blocked?' disabled':' data-tjpick="'+esc(c.n)+'"')+' data-grp="'+g+'" data-idx="'+i+'"'+sj+'>'+
+      '<span class="tjnm">'+esc(c.n)+(!blocked&&c.n===rec?' <span class="rec">recomendada</span>':'')+'</span>'+
       '<span class="tjright">'+info+'</span></button>';
   }).join('');
   const cuotas=Math.max(parseInt(r.tjCuotas)||1,1);
@@ -833,8 +850,10 @@ function recompute(){
   document.getElementById('b-sl-l').textContent=saldo>=0?'Saldo libre':'Déficit';
   // Rollover GUARDADO: muestra arriba de cada caja el monto disponible que quedó fijado
   // al hacer el rollover (d.rollover). Persiste — no se recalcula en vivo.
+  // Rollover DINÁMICO: reparte el saldo libre ACTUAL. Si pagas más deuda y baja el saldo, baja/desaparece solo.
+  const _ro={aho:0.2,nec:0.5,luj:0.3};
   ['aho','nec','luj'].forEach(g=>{const el=document.getElementById('roll-'+g);if(!el)return;
-    const amt=d.rollover&&d.rollover[g];
+    const amt=showRollover?Math.max(saldo,0)*_ro[g]:0;
     if(amt>0.5){el.style.display='';el.innerHTML='↻ Disponible para gastar aquí: <b>+ '+pe(amt)+'</b>';}
     else{el.style.display='none';el.innerHTML='';}});
   const aw=document.getElementById('assign-wrap');
@@ -988,7 +1007,7 @@ app.addEventListener('click',e=>{
     const form=b.closest('.cardform');const get=k=>{const el=form&&form.querySelector('[data-cf="'+k+'"]');return el?el.value:'';};
     const isCard=debtForm&&debtForm.kind==='card';
     const obj={n:get('n')||(isCard?'Tarjeta':'Préstamo'),total:get('total'),mes:get('mes'),min:get('min'),vence:get('vence'),kind:isCard?'card':'loan'};
-    if(isCard){obj.limite=get('limite');obj.disp=get('disp');}
+    if(isCard){obj.limite=get('limite');obj.disp=get('disp');obj.tcea=get('tcea');}
     if(debtForm&&debtForm.idx==='new')debts.push(obj);else if(debtForm&&debts[debtForm.idx])Object.assign(debts[debtForm.idx],obj);
     debtForm=null;saveDebts();render();renderDebts();
   }
@@ -1198,7 +1217,7 @@ function debtFormH(){
   const f=(lbl,key,ph)=>'<label class="cf-l">'+lbl+'<input class="cf-i" data-cf="'+key+'" type="number" min="0" step="1" value="'+v(key)+'" placeholder="'+ph+'"></label>';
   let h='<div class="cardform"><div class="cf-h">'+(isNew?(isCard?'Nueva tarjeta':'Nuevo préstamo'):'Editar')+'</div>'+
     '<label class="cf-l">Nombre<input class="cf-i" data-cf="n" type="text" value="'+v('n')+'" placeholder="'+(isCard?'Ej. Visa BCP':'Ej. Préstamo auto')+'"></label>';
-  if(isCard) h+=f('Línea de crédito','limite','3000')+f('Monto usado (lo que debes)','total','1200')+f('Monto disponible (lo que el banco te deja usar)','disp','1800');
+  if(isCard) h+=f('Línea de crédito','limite','3000')+f('Monto usado (lo que debes)','total','1200')+f('Monto disponible (lo que el banco te deja usar)','disp','1800')+f('Tasa de interés anual % — TCEA (opcional)','tcea','75');
   else h+=f('Monto total de la deuda','total','5000');
   h+=f('Pago mensual','mes','300')+f('Pago mínimo','min','150')+
     '<label class="cf-l">Fecha de pago<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>'+
@@ -1242,6 +1261,7 @@ function selectedDebtRowH(x,kind){
   const icon=kind==='card'?'<span class="dd-ic">'+TJ_SVG+'</span>':'';
   return '<div class="row sub'+(paid?' is-paid':'')+'">'+icon+
     '<span class="dd-n">'+esc(x.n)+'</span>'+
+    (kind==='card'?'<span class="dd-d">disp '+pe(cardAvail(x))+'</span>':'')+
     '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>'+
     '<button class="rm" data-unpick="'+esc(x.n)+'" title="Quitar de esta quincena">&times;</button></div>'+
     modeToggleH(x);
@@ -1293,12 +1313,38 @@ function tjInner(){
       (r.sobre>0.5?' · Sobrecosto <b style="color:var(--bad)">'+pe(r.sobre)+'</b>':' · <b style="color:var(--ok)">sin sobrecosto</b>')+'</div>':'');
 }
 function refreshTJ(){const b=document.getElementById('tjbox');if(b)b.innerHTML=tjInner();}
+function saludH(){
+  const cards=debts.filter(isCardDebt);
+  if(!cards.length) return '';
+  const util=c=>{const l=parseFloat(c.limite)||0,s=parseFloat(c.total)||0;return l>0?s/l:null;};
+  const totL=cards.reduce((t,c)=>t+(parseFloat(c.limite)||0),0);
+  const totS=cards.reduce((t,c)=>t+(parseFloat(c.total)||0),0);
+  const totU=totL>0?totS/totL:0;
+  const cls=u=>u==null?'':(u>0.7?'sa-red':(u>0.3?'sa-amber':'sa-green'));
+  const rows=cards.map(c=>{const u=util(c);
+    return '<div class="sa-row"><span class="sa-n">'+esc(c.n)+'</span><span class="sa-bar"><span class="sa-fill '+cls(u)+'" style="width:'+(u==null?0:Math.min(u*100,100))+'%"></span></span><span class="sa-pct '+cls(u)+'">'+(u==null?'sin línea':Math.round(u*100)+'%')+'</span></div>';
+  }).join('');
+  const verdict= totU>1?'🔴 Debes más crédito del que tienes. Lo urgente: bajar deuda, no sumar más a tarjeta.'
+    : totU>0.7?'🔴 Uso muy alto ('+Math.round(totU*100)+'%). Cada compra a tarjeta es deuda cara — paga en efectivo y abona.'
+    : totU>0.3?'🟡 Uso medio ('+Math.round(totU*100)+'%). Ojo con sumar más a tarjeta.'
+    : '🟢 Uso sano ('+Math.round(totU*100)+'%). Vas bien.';
+  const ranked=cards.filter(c=>util(c)!=null).sort((a,b)=>{
+    const ua=util(a),ub=util(b),oa=ua>1?1:0,ob=ub>1?1:0;
+    if(oa!==ob)return ob-oa;
+    if(Math.abs(ub-ua)>0.05)return ub-ua;
+    const ta=parseFloat(a.tcea)||0,tb=parseFloat(b.tcea)||0; if(ta!==tb)return tb-ta;
+    return dateVal(a.vence)-dateVal(b.vence);
+  });
+  const prio=ranked.length?'<div class="sa-prio"><b>Paga primero:</b> '+ranked.slice(0,3).map((c,k)=>(k+1)+') '+esc(c.n)+(util(c)>1?' (¡sobre el tope!)':' ('+Math.round(util(c)*100)+'%)')).join('  ·  ')+'</div>':'';
+  return '<div class="salud"><div class="sa-h">💳 Salud de tus tarjetas · usado vs línea (sano &lt;30%)</div>'+rows+'<div class="sa-verdict">'+verdict+'</div>'+prio+'</div>';
+}
 function renderDebts(){
   const el=document.getElementById('debts');if(!el)return;
   el.innerHTML=
     '<div id="debts-mgmt">'+
       '<h2>Deudas y tarjetas</h2>'+
       '<div class="dnote">Tus obligaciones reales. La app calcula qué pagar primero con el ingreso del mes (suma de ambas quincenas). Tus datos nunca salen de tu compu.</div>'+
+      saludH()+
       '<div class="dhead"><span>Deuda</span><span class="r">Total</span><span class="r">Línea</span><span class="r">Mín</span><span>Vence</span><span></span></div>'+
       debts.map((x,i)=>x.auto?'':debtRowH(x,i)).join('')+
       '<button class="add" data-dadd="1"><span class="p">+</span> Agregar deuda</button>'+
