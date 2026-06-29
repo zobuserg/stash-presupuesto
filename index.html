@@ -328,7 +328,8 @@ body.focuson .ov-bar{display:none}
 .tjgrid input:focus{outline:none; border-bottom-color:var(--accent)}
 /* Corazón — "Libre para gastar" por sección (lo primero que ves al abrir) */
 .heart{background:var(--card); border:1px solid var(--line); border-radius:var(--rad); box-shadow:var(--shadow); padding:1.1rem 1.1rem 1.2rem; margin:.4rem 0 1.6rem}
-.heart-h{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--tx2); text-align:center; margin-bottom:1rem}
+.heart-h{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--tx2); text-align:center; margin-bottom:.45rem}
+.heart-note{font-size:11px; color:var(--tx3); line-height:1.45; text-align:center; margin:0 0 1rem}
 html,body{overflow-x:hidden}
 .heart-rows{display:flex; flex-direction:column}
 .hrow{padding:.6rem 0; border-bottom:1px solid var(--line)}
@@ -833,13 +834,14 @@ function render(){
       '</div>'+
     '</div>'+
     '<div class="heart" id="heart">'+
-      '<div class="heart-h">Gastado · este ciclo</div>'+
+      '<div class="heart-h">Presupuestado · este ciclo</div>'+
+      '<div class="heart-note">Es tu plan del ciclo — aún no es gasto real. Los ✓ son recordatorios de lo que ya pagaste.</div>'+
       '<div class="heart-rows">'+
         '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Necesidades</span><span class="hr-amt" id="hamt-nec">&mdash;</span></div><div class="hr-over" id="hover-nec" style="display:none"></div></div>'+
         '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Gustos</span><span class="hr-amt" id="hamt-luj">&mdash;</span></div><div class="hr-over" id="hover-luj" style="display:none"></div></div>'+
         '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Ahorro</span><span class="hr-amt aho" id="hamt-aho">&mdash;</span></div></div>'+
       '</div>'+
-      '<div class="heart-total"><span>Total gastado</span><span id="hamt-total">&mdash;</span></div>'+
+      '<div class="heart-total"><span>Total presupuestado</span><span id="hamt-total">&mdash;</span></div>'+
     '</div>'+
     buckets.map((b,i)=>bucketH(b[0],b[1],b[2],i+1)).join('')+
     '<div class="sec'+(collapsed.balance?' is-collapsed':'')+'" id="sec-balance">'+
