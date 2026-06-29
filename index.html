@@ -339,8 +339,6 @@ html,body{overflow-x:hidden}
 .hr-lbl{font-size:13px; color:var(--tx2); font-weight:600; flex-shrink:0}
 .hr-amt{font-size:14px; color:var(--tx2); text-align:right; min-width:0}
 .hr-amt b{color:var(--tx); font-weight:700; font-variant-numeric:tabular-nums}
-.hr-amt.aho{color:var(--tx3); font-size:12.5px}
-.hr-amt.aho b{color:var(--tx2)}
 .hr-over{font-size:12px; color:var(--bad); font-weight:600; margin-top:.2rem; text-align:right}
 .heart-total{display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; margin-top:.85rem; padding-top:.7rem; border-top:1.5px solid var(--line2); font-size:13px; color:var(--tx2); font-weight:600}
 .heart-total b{color:var(--tx); font-weight:800; font-variant-numeric:tabular-nums}
@@ -839,7 +837,7 @@ function render(){
       '<div class="heart-rows">'+
         '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Necesidades</span><span class="hr-amt" id="hamt-nec">&mdash;</span></div><div class="hr-over" id="hover-nec" style="display:none"></div></div>'+
         '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Gustos</span><span class="hr-amt" id="hamt-luj">&mdash;</span></div><div class="hr-over" id="hover-luj" style="display:none"></div></div>'+
-        '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Ahorro</span><span class="hr-amt aho" id="hamt-aho">&mdash;</span></div></div>'+
+        '<div class="hrow"><div class="hr-top"><span class="hr-lbl">Ahorro</span><span class="hr-amt" id="hamt-aho">&mdash;</span></div></div>'+
       '</div>'+
       '<div class="heart-total"><span>Total presupuestado</span><span id="hamt-total">&mdash;</span></div>'+
     '</div>'+
@@ -954,7 +952,7 @@ function recompute(){
     };
     setAmt('nec',acts.nec||0,tgts.nec||0);
     setAmt('luj',acts.luj||0,tgts.luj||0);
-    const aa=document.getElementById('hamt-aho');if(aa)aa.innerHTML='apartado <b>'+pe(acts.aho||0)+'</b> de '+pe(tgts.aho||0);
+    const aa=document.getElementById('hamt-aho');if(aa)aa.innerHTML='<b>'+pe(acts.aho||0)+'</b> de '+pe(tgts.aho||0);
     const tot=document.getElementById('hamt-total');if(tot)tot.innerHTML='<b>'+pe(gas)+'</b> de '+pe(ti);
   })();
   document.getElementById('b-gas').textContent=pe(gas);
