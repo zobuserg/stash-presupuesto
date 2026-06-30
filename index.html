@@ -518,6 +518,9 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .df-l{display:flex; flex-direction:column; font-size:10.5px; color:var(--tx3); gap:.15rem}
 .df-l input{font:inherit; font-size:13px; color:var(--tx); background:var(--line2); border:1px solid var(--line); border-radius:7px; padding:.4rem .45rem}
 .df-l input:focus{outline:none; border-color:var(--accent)}
+.dr-debe{font-size:11px; color:var(--tx2); margin-top:.55rem; padding-top:.45rem; border-top:1px dashed var(--line)}
+.dr-debe b{color:var(--tx); font-variant-numeric:tabular-nums}
+.dr-debe span{color:var(--tx3); font-size:10px}
 </style>
 </head>
 <body>
@@ -1270,17 +1273,19 @@ function computePlan(){
 }
 function debtRowH(x,i){const card=isCardDebt(x);
   const f=(lbl,df,ph,step)=>'<label class="df-l">'+lbl+'<input data-di="'+i+'" data-df="'+df+'" type="number" step="'+(step||1)+'" value="'+(x[df]!=null?x[df]:'')+'" placeholder="'+ph+'"></label>';
+  const debe=Math.max((parseFloat(x.limite)||0)-(parseFloat(x.disp)||0),0);
   return '<div class="drow2">'+
     '<div class="dr-top"><input class="dr-n" data-di="'+i+'" data-df="n" value="'+esc(x.n)+'" placeholder="Nombre de la deuda"><button class="rm" data-drm="'+i+'" aria-label="Eliminar">&times;</button></div>'+
     '<div class="dr-grid">'+
-      f('Saldo (lo que debes)','total','0',0.01)+
-      (card?f('Línea de crédito','limite','0',1):'')+
-      (card?f('Disponible','disp','0',1):'')+
+      (card
+        ? f('Línea de crédito','limite','0',1)+f('Disponible (libre)','disp','0',1)
+        : f('Saldo (lo que debes)','total','0',0.01))+
       f('Pago mínimo','min','0',0.01)+
       f('Pago del mes','mes','0',0.01)+
       (card?f('TCEA % anual','tcea','',0.01):'')+
       '<label class="df-l">Fecha de pago<input data-di="'+i+'" data-df="vence" type="date" value="'+(x.vence||'')+'"></label>'+
     '</div>'+
+    (card?'<div class="dr-debe">Debes aprox <b>'+pe(debe)+'</b> <span>· línea − disponible (calculado, no lo tipeas)</span></div>':'')+
   '</div>';}
 function planRowH(r){
   const tag=r.status==='full'?'<span class="tag ok">al día</span>':'<span class="tag part">mínimo</span>';
@@ -1380,28 +1385,33 @@ function debtPaySum(){if(!d.debtPay)return 0;return debts.filter(x=>!x.auto).red
 // Asentar un pago de deuda: al marcar ✓, baja el saldo de esa deuda en el banco (se arrastra a los
 // siguientes ciclos). Al desmarcar, lo devuelve exacto. Guarda el monto aplicado para revertir bien.
 function toggleDebtPaid(name){
-  if(!d.paid)d.paid={}; if(!d.paidAmt)d.paidAmt={}; if(!d.paidDelta)d.paidDelta={}; if(!d.paidFields)d.paidFields={};
+  if(!d.paid)d.paid={}; if(!d.paidAmt)d.paidAmt={}; if(!d.paidFields)d.paidFields={};
   const x=debts.find(z=>z.n===name);
-  if(d.paid[name]){ // destildar: restaura saldo y los campos de pago que el banco recalcula
+  if(d.paid[name]){ // destildar: restaura los campos guardados (saldo/disponible/mín/mes)
     snapshot();
-    if(x&&!x.auto){
-      const delta=parseFloat(d.paidDelta[name])||0; x.total=(parseFloat(x.total)||0)+delta;
-      const pf=d.paidFields[name]; if(pf){x.min=pf.min;x.mes=pf.mes;}
-    }
-    delete d.paid[name]; delete d.paidAmt[name]; delete d.paidDelta[name]; delete d.paidFields[name];
-  } else { // marcar: asienta el pago. pago = lo que pagaste (cuenta como real); delta = cuánto bajó el saldo (editable por el interés)
-    let pago=0, delta=0;
+    if(x&&!x.auto){ const pf=d.paidFields[name]; if(pf){ ['total','disp','min','mes'].forEach(k=>{ if(pf[k]!==undefined)x[k]=pf[k]; }); } }
+    delete d.paid[name]; delete d.paidAmt[name]; delete d.paidFields[name];
+  } else { // marcar: asienta el pago. pago = lo que pagaste (cuenta como real / ejecutado)
+    let pago=0;
     if(x&&!x.auto){
       pago=debtAmt(x,(d.debtPay&&d.debtPay[name])||'min');
-      const old=parseFloat(x.total)||0, sugerido=Math.max(old-pago,0);
-      const inp=prompt('Pagaste '+pe(pago)+' a "'+name+'".\n\nNuevo saldo de la deuda — ojo: el pago mínimo casi no baja el saldo por el interés. Ajústalo con tu estado de cuenta si quieres:', Math.round(sugerido));
-      if(inp===null) return; // canceló: no marcar ni tocar saldos
-      const nuevo=parseFloat(inp), newTotal=isNaN(nuevo)?sugerido:Math.max(nuevo,0);
-      delta=old-newTotal; snapshot(); x.total=newTotal;
-      // el banco recalcula mínimo/pago del mes/disponible con el nuevo saldo → los dejo en blanco para rellenar el próximo ciclo con tu estado de cuenta
-      d.paidFields[name]={min:x.min,mes:x.mes}; x.min=''; x.mes=''; // el banco recalcula mín y pago del mes; el disponible lo mantienes/editas tú
+      if(isCardDebt(x)){
+        // tarjeta: el pago LIBERA disponible. El saldo se deriva de línea − disponible.
+        const oldDisp=parseFloat(x.disp)||0;
+        const inp=prompt('Pagaste '+pe(pago)+' a "'+name+'".\n\nNuevo DISPONIBLE de la tarjeta — subió ~'+pe(pago)+', pero el interés puede dejarlo en menos. Pon el que ves en tu banco:', Math.round(oldDisp+pago));
+        if(inp===null) return; // canceló
+        snapshot();
+        d.paidFields[name]={total:x.total, disp:x.disp, min:x.min, mes:x.mes};
+        const nd=parseFloat(inp), newDisp=isNaN(nd)?oldDisp+pago:Math.max(nd,0);
+        x.disp=newDisp; x.total=Math.max((parseFloat(x.limite)||0)-newDisp,0); x.min=''; x.mes='';
+      } else {
+        // préstamo: baja el saldo por el pago. Mín/mes son la cuota fija — no se borran ni se pregunta.
+        snapshot();
+        d.paidFields[name]={total:x.total};
+        x.total=Math.max((parseFloat(x.total)||0)-pago,0);
+      }
     } else { snapshot(); }
-    d.paid[name]=true; d.paidAmt[name]=pago; d.paidDelta[name]=delta;
+    d.paid[name]=true; d.paidAmt[name]=pago;
   }
   saveDebts(); save(); render(); if(typeof renderDebts==='function')renderDebts();
 }
@@ -1650,7 +1660,12 @@ const debtsEl=document.getElementById('debts');
 debtsEl.addEventListener('input',e=>{const t=e.target;if(!t.dataset)return;
   if(t.dataset.tj!==undefined){tj[t.dataset.tj]=t.value;saveTJ();refreshTJ();return;}
   if(t.dataset.di===undefined)return;
-  debts[+t.dataset.di][t.dataset.df]=t.value;saveDebts();refreshPlan();});
+  const i=+t.dataset.di; debts[i][t.dataset.df]=t.value;
+  if(isCardDebt(debts[i])&&(t.dataset.df==='limite'||t.dataset.df==='disp')){ // tarjeta: el saldo se deriva de línea − disponible
+    debts[i].total=Math.max((parseFloat(debts[i].limite)||0)-(parseFloat(debts[i].disp)||0),0);
+    const dn=t.closest('.drow2'),de=dn&&dn.querySelector('.dr-debe b'); if(de)de.textContent=pe(debts[i].total);
+  }
+  saveDebts();refreshPlan();});
 debtsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.dadd){debts.push({n:'Nueva deuda',total:0,min:0,vence:''});saveDebts();renderDebts();}
   else if(b.dataset.cuotas){const el=document.getElementById('autodebts');if(el){el.innerHTML=autoDebtsH();el.style.display=el.style.display==='none'?'':'none';}}
