@@ -509,6 +509,15 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
 #cyc-toast{position:fixed; bottom:84px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--tx); color:var(--card); font-size:13px; font-weight:700; padding:.5rem .95rem; border-radius:20px; opacity:0; z-index:300; pointer-events:none; transition:opacity .2s, transform .2s; box-shadow:var(--shadow)}
 #cyc-toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+/* Editor de deudas (tab Deudas) — todos los campos editables */
+.drow2{background:var(--card); border:1px solid var(--line); border-radius:var(--rad-sm); padding:.7rem .8rem; margin-bottom:.6rem}
+.dr-top{display:flex; gap:.5rem; align-items:center; margin-bottom:.6rem}
+.dr-n{flex:1; font:inherit; font-size:14px; font-weight:600; color:var(--tx); background:transparent; border:none; border-bottom:1px solid var(--line); padding:.2rem 0}
+.dr-n:focus{outline:none; border-bottom-color:var(--accent)}
+.dr-grid{display:grid; grid-template-columns:1fr 1fr; gap:.5rem}
+.df-l{display:flex; flex-direction:column; font-size:10.5px; color:var(--tx3); gap:.15rem}
+.df-l input{font:inherit; font-size:13px; color:var(--tx); background:var(--line2); border:1px solid var(--line); border-radius:7px; padding:.4rem .45rem}
+.df-l input:focus{outline:none; border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -1259,13 +1268,20 @@ function computePlan(){
     monthInc:cycles.reduce((t,c)=>t+quincenaData(c.id).income,0),
     paySum:rows.reduce((t,r)=>t+r.pay,0),revolveSum:rows.reduce((t,r)=>t+r.revolve,0),paidSum,pendingSum};
 }
-function debtRowH(x,i){return '<div class="drow">'+
-  '<input data-di="'+i+'" data-df="n" value="'+esc(x.n)+'" placeholder="Nombre">'+
-  '<input class="num" data-di="'+i+'" data-df="total" type="number" step="0.01" value="'+x.total+'" placeholder="Total">'+
-  '<input class="num" data-di="'+i+'" data-df="limite" type="number" step="1" value="'+(x.limite!=null?x.limite:'')+'" placeholder="Línea">'+
-  '<input class="num" data-di="'+i+'" data-df="min" type="number" step="0.01" value="'+x.min+'" placeholder="Mín">'+
-  '<input data-di="'+i+'" data-df="vence" type="date" value="'+(x.vence||'')+'">'+
-  '<button class="rm" data-drm="'+i+'" aria-label="Eliminar">&times;</button></div>';}
+function debtRowH(x,i){const card=isCardDebt(x);
+  const f=(lbl,df,ph,step)=>'<label class="df-l">'+lbl+'<input data-di="'+i+'" data-df="'+df+'" type="number" step="'+(step||1)+'" value="'+(x[df]!=null?x[df]:'')+'" placeholder="'+ph+'"></label>';
+  return '<div class="drow2">'+
+    '<div class="dr-top"><input class="dr-n" data-di="'+i+'" data-df="n" value="'+esc(x.n)+'" placeholder="Nombre de la deuda"><button class="rm" data-drm="'+i+'" aria-label="Eliminar">&times;</button></div>'+
+    '<div class="dr-grid">'+
+      f('Saldo (lo que debes)','total','0',0.01)+
+      (card?f('Línea de crédito','limite','0',1):'')+
+      (card?f('Disponible','disp','0',1):'')+
+      f('Pago mínimo','min','0',0.01)+
+      f('Pago del mes','mes','0',0.01)+
+      (card?f('TCEA % anual','tcea','',0.01):'')+
+      '<label class="df-l">Fecha de pago<input data-di="'+i+'" data-df="vence" type="date" value="'+(x.vence||'')+'"></label>'+
+    '</div>'+
+  '</div>';}
 function planRowH(r){
   const tag=r.status==='full'?'<span class="tag ok">al día</span>':'<span class="tag part">mínimo</span>';
   return '<div class="pl'+(r.paid?' is-paid':'')+'">'+
@@ -1370,7 +1386,7 @@ function toggleDebtPaid(name){
     snapshot();
     if(x&&!x.auto){
       const delta=parseFloat(d.paidDelta[name])||0; x.total=(parseFloat(x.total)||0)+delta;
-      const pf=d.paidFields[name]; if(pf){x.min=pf.min;x.mes=pf.mes;x.disp=pf.disp;}
+      const pf=d.paidFields[name]; if(pf){x.min=pf.min;x.mes=pf.mes;}
     }
     delete d.paid[name]; delete d.paidAmt[name]; delete d.paidDelta[name]; delete d.paidFields[name];
   } else { // marcar: asienta el pago. pago = lo que pagaste (cuenta como real); delta = cuánto bajó el saldo (editable por el interés)
@@ -1383,7 +1399,7 @@ function toggleDebtPaid(name){
       const nuevo=parseFloat(inp), newTotal=isNaN(nuevo)?sugerido:Math.max(nuevo,0);
       delta=old-newTotal; snapshot(); x.total=newTotal;
       // el banco recalcula mínimo/pago del mes/disponible con el nuevo saldo → los dejo en blanco para rellenar el próximo ciclo con tu estado de cuenta
-      d.paidFields[name]={min:x.min,mes:x.mes,disp:x.disp}; x.min=''; x.mes=''; x.disp='';
+      d.paidFields[name]={min:x.min,mes:x.mes}; x.min=''; x.mes=''; // el banco recalcula mín y pago del mes; el disponible lo mantienes/editas tú
     } else { snapshot(); }
     d.paid[name]=true; d.paidAmt[name]=pago; d.paidDelta[name]=delta;
   }
@@ -1618,7 +1634,7 @@ function renderDebts(){
       '<h2>Deudas y tarjetas</h2>'+
       '<div class="dnote">Tus obligaciones reales. La app calcula qué pagar primero con el ingreso del mes (suma de ambas quincenas). Tus datos nunca salen de tu compu.</div>'+
       saludH()+
-      '<div class="dhead"><span>Deuda</span><span class="r">Total</span><span class="r">Línea</span><span class="r">Mín</span><span>Vence</span><span></span></div>'+
+      '<div class="dnote" style="margin:.2rem 0 .8rem">Edita aquí todos los datos de cada deuda — saldo, línea, disponible, mínimo, pago del mes, TCEA.</div>'+
       debts.map((x,i)=>x.auto?'':debtRowH(x,i)).join('')+
       '<button class="add" data-dadd="1"><span class="p">+</span> Agregar deuda</button>'+
       '<button class="cuotas-toggle" data-cuotas="1">📅 Cuotas futuras de tarjeta'+cuotasCountH()+'</button>'+
