@@ -143,7 +143,10 @@ body.focuson .reset{display:none}
 .plan-detail>summary::before{content:'▸ '; color:var(--tx3)}
 .plan-detail[open]>summary::before{content:'▾ '}
 /* Rollover en vivo arriba de cada caja */
-.rollbonus{font-size:12.5px; color:var(--accent); background:rgba(74,124,247,.08); border:1px dashed var(--accent); border-radius:var(--rad-sm); padding:.5rem .7rem; margin:.3rem 0 .6rem}
+.rollbonus{font-size:12.5px; color:var(--ok); background:var(--ok-bg); border-radius:var(--rad-sm); padding:.5rem .7rem; margin:.3rem 0 .6rem}
+.ln-red{font-size:12px; color:var(--bad); font-weight:600; line-height:1.45; margin-top:.35rem}
+.ln-mg{font-size:12px; color:var(--accent); font-weight:600; line-height:1.45; margin-top:.25rem; text-decoration:underline dotted; text-underline-offset:3px}
+.ln-mg.neg{color:var(--bad); text-decoration:none}
 .rollbonus b{font-weight:700}
 .rb-pct{color:var(--tx3); font-size:11px}
 /* Selector de abono a deuda */
@@ -810,9 +813,13 @@ function bucketH(g,name,pct,num){
   return '<div class="sec'+(col?' is-collapsed':'')+'" id="sec-'+g+'">'+
     '<div class="sec-h tappable" data-collapse="'+g+'" title="Plegar/desplegar"><span class="tw"><span class="num num-'+g+'">'+num+'</span><span class="t">'+name+'</span></span><span class="sec-r"><span class="pct">'+Math.round(pct*100)+'%</span><span class="chev">'+(col?'▸':'▾')+'</span></span></div>'+
     (g==='aho'&&!col?'<div class="sec-note">Págate primero — esto sale antes de gastar.</div>':'')+
-    '<div class="meta">Meta <b id="tg-'+g+'"></b> · Gastado <b id="sm-'+g+'"></b> <span class="tag" id="tag-'+g+'"></span><span class="eaten" id="eaten-'+g+'"></span></div>'+
+    '<div class="meta">Meta <b id="tg-'+g+'"></b> · Gastado <b id="sm-'+g+'"></b></div>'+
     '<div class="bar"><div class="bar-fill" id="bar-'+g+'"></div></div>'+
-    '<div class="rollbonus" id="roll-'+g+'"></div>'+
+    '<div class="sec-lines"'+(col?' style="display:none"':'')+'>'+
+      '<div class="ln-red" id="red-'+g+'" style="display:none"></div>'+
+      '<div class="ln-mg" id="mg-'+g+'" style="display:none"></div>'+
+      '<div class="rollbonus" id="roll-'+g+'" style="display:none"></div>'+
+    '</div>'+
     '<div class="bucket-body"'+(col?' style="display:none"':'')+'>'+
       rows+
       (g==='aho'?ahoDebtBlockH():'')+
@@ -924,41 +931,32 @@ function recompute(){
     const tgt=ti*b[2];gas+=act;acts[g]=act;tgts[g]=tgt;
     document.getElementById('tg-'+g).textContent=pe(tgt);
     document.getElementById('sm-'+g).textContent=pe(act);
-    const tag=document.getElementById('tag-'+g);
-    const over=act>tgt;
-    tag.textContent=over?'excede '+pe(act-tgt):'dentro de la meta';
-    tag.className='tag '+(over?'bad':'ok');
     const bar=document.getElementById('bar-'+g);
     const pctFill=tgt>0?Math.min(act/tgt*100,100):0;
     bar.style.width=pctFill+'%';
-    bar.style.background=over?'var(--bad)':'var(--ok)';
+    bar.style.background=(act>tgt)?'var(--bad)':'var(--ok)';
   });
   // Cascada: el excedente de Ahorro (el MISMO "excede" del bucket, act-tgt, incluye deuda)
   // se come primero Gustos, luego Necesidades. Indicador único por bucket que cambia de signo:
   // neto = meta − gastado − comido_por_cascada. >0 = libre (verde), <0 = déficit (rojo).
+  // Líneas bajo cada sección (abajo del Meta/Gastado): ROJO = lo que se reduce; AZUL punteado = el margen
+  // que queda; (verde = el reparto, en .rollbonus). Todo dentro de .sec-lines → se oculta al minimizar.
   const overTotal=Math.max((acts.aho||0)-(tgts.aho||0),0);
   lastOver=overTotal; // para decidir el orden del wizard (Gustos primero si hay exceso)
   let over=overTotal;
   const eatenLuj=Math.min(over,tgts.luj||0);over-=eatenLuj;
   const eatenNec=Math.min(over,tgts.nec||0);
   const eatenOf={luj:eatenLuj,nec:eatenNec};
-  ['luj','nec'].forEach(g=>{const el=document.getElementById('eaten-'+g);const tagEl=document.getElementById('tag-'+g);if(!el)return;
-    const eat=eatenOf[g]||0;
-    const neto=(tgts[g]||0)-(acts[g]||0)-eat; // margen tras tu gasto y la cascada
-    if(eat>0.5){
-      // Mostrar EXPLÍCITO lo que bajó de tu ahorro + el resultado. Oculta el tag para no contradecir.
-      if(tagEl)tagEl.style.display='none';
-      const res = neto>0.5?'te queda + '+pe(neto)+' de margen' : (neto<-0.5?'te falta '+pe(-neto)+' (déficit)':'queda justo en 0');
-      el.className = neto<-0.5?'eaten':(neto>0.5?'eaten pos':'eaten neutral');
-      el.textContent=' · ↓ '+pe(eat)+' bajó de tu ahorro → '+res;
-    } else {
-      if(tagEl)tagEl.style.display='';
-      const margen=(tgts[g]||0)-(acts[g]||0);
-      if(margen>0.5){el.className='eaten pos';el.textContent=' · + '+pe(margen)+' de margen';}
-      else{el.className='eaten';el.textContent='';}
-    }});
-  const ahoEl=document.getElementById('eaten-aho');
-  if(ahoEl){ahoEl.className='eaten neutral';ahoEl.textContent=overTotal>0.5?' · baja '+pe(overTotal)+' a Gustos y Necesidades':'';}
+  const showLn=(id,txt,cls)=>{const e=document.getElementById(id);if(!e)return;e.textContent=txt||'';e.className=cls;e.style.display=txt?'':'none';};
+  ['luj','nec'].forEach(g=>{
+    const eat=eatenOf[g]||0, neto=(tgts[g]||0)-(acts[g]||0)-eat;
+    showLn('red-'+g, eat>0.5?'− '+pe(eat)+' deducidos, heredados de ahorro':'', 'ln-red');
+    if(neto>0.5) showLn('mg-'+g, 'quedan '+pe(neto), 'ln-mg');
+    else if(neto<-0.5) showLn('mg-'+g, 'te falta '+pe(-neto)+' (déficit)', 'ln-mg neg');
+    else showLn('mg-'+g, '', 'ln-mg');
+  });
+  showLn('red-aho', overTotal>0.5?'excede '+pe(overTotal)+', se deduce primero de gustos y luego de necesidades':'', 'ln-red');
+  showLn('mg-aho', '', 'ln-mg');
   // Corazón — cuánto llevas GASTADO por sector + total. Lo disponible vive abajo (el reparto), para no contradecir.
   (function(){
     const setAmt=(g,gastado,meta)=>{
@@ -1380,7 +1378,7 @@ function debtAmt(x,mode){
 // Etiqueta del monto: si el campo está en blanco (el banco aún no lo recalcula), muestra "s/d", no "S/ 0".
 function debtAmtLabel(x,mode){
   const raw = mode==='total'?x.total : (mode==='mes'?x.mes : x.min);
-  if(raw===''||raw==null) return 's/d';
+  if(raw===''||raw==null) return '?';
   return pe(debtAmt(x,mode));
 }
 function debtPaySum(){if(!d.debtPay)return 0;return debts.filter(x=>!x.auto).reduce((t,x)=>{
