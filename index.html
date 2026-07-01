@@ -23,7 +23,7 @@
   --shadow:0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
   --rad:18px; --rad-sm:11px;
 }
-@media(prefers-color-scheme:dark){:root{
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#000000; --card:#1c1c1e; --tx:#f5f5f7; --tx2:#98989d; --tx3:#636366;
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.06);
   --ok:#5fd3a0; --ok-bg:rgba(95,211,160,.13);
@@ -31,6 +31,15 @@
   --accent:#2997ff;
   --shadow:0 1px 3px rgba(0,0,0,.3);
 }}
+/* Tema manual (botón ☀️/🌙): fuerza oscuro aunque el sistema esté en claro. Mismos valores que el bloque de arriba. */
+:root[data-theme="dark"]{
+  --bg:#000000; --card:#1c1c1e; --tx:#f5f5f7; --tx2:#98989d; --tx3:#636366;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.06);
+  --ok:#5fd3a0; --ok-bg:rgba(95,211,160,.13);
+  --bad:#ff6961; --bad-bg:rgba(255,105,97,.14);
+  --accent:#2997ff;
+  --shadow:0 1px 3px rgba(0,0,0,.3);
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
@@ -570,6 +579,29 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .ft-sin{margin-top:1rem; padding-top:.7rem; border-top:1px solid var(--line); font-size:13px; color:var(--tx2)}
 .ft-sin b{color:var(--ok); font-variant-numeric:tabular-nums}
 .ft-sin.neg b{color:var(--bad)}
+/* ===== Pulido móvil (jul 2026): barra centrada · cajas con color · 4ª columna ✓ · tema manual ===== */
+#cyclebar{justify-content:center}
+#themebtn{position:absolute; top:0; right:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:15px; line-height:1; transition:.15s}
+#themebtn:hover{border-color:var(--accent)}
+#undo{right:42px}
+/* Cada caja del 50/30/20 vive en un contenedor de su color — se distingue de un vistazo qué número es de qué */
+.sec-tint{border-radius:var(--rad); border:1px solid; padding:1rem .9rem 1.05rem; margin-top:1.2rem}
+#sec-aho.sec-tint{background:rgba(52,199,89,.07); border-color:rgba(52,199,89,.32)}
+#sec-nec.sec-tint{background:rgba(0,113,227,.06); border-color:rgba(0,113,227,.28)}
+#sec-luj.sec-tint{background:rgba(224,146,47,.08); border-color:rgba(224,146,47,.32)}
+/* Macro y tríadas pasan de 3 a 4 columnas: Presupuestado · Utilizado · Disponible · ✓ Pagado */
+.macro,.triad{grid-template-columns:repeat(4,1fr)}
+.macro .mc-l{font-size:9.5px}
+.macro .mc-v{font-size:15px}
+.mc-tap{cursor:pointer; border-radius:8px; transition:background .15s; padding:.1rem 0}
+.mc-tap:hover{background:var(--line2)}
+.mc-hint{font-size:9px; color:var(--accent); border:1px solid var(--accent); border-radius:10px; padding:0 .35rem; margin:.2rem auto 0; width:max-content}
+.tr-tap{cursor:pointer}
+/* Checks más visibles: borde marcado, y el de "ya pagué" en verde aunque esté vacío */
+.pcheck{border-color:var(--tx3)}
+.pchk-paid:not(.on){border-color:var(--ok)}
+/* En celular las 4 etiquetas caben sin recortarse */
+@media(max-width:420px){.macro .mc-l,.triad .tr i{font-size:8.5px; letter-spacing:0}}
 </style>
 </head>
 <body>
@@ -601,6 +633,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
   <span class="month-wrap" style="display:none">Mes: <input id="month" placeholder="Julio 2026"></span>
   <div class="q-tabs" id="cyclebar"></div>
   <button id="undo" hidden>&#8624; Deshacer</button>
+  <button id="themebtn" title="Cambiar entre modo claro y oscuro">🌙</button>
 </div>
 <div id="app"></div>
 <div id="debts" class="debts"></div>
@@ -614,6 +647,22 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
   <button class="tabbtn" data-view="fondo"><span class="ti">🔒</span><span>Fondo</span></button>
 </nav>
 <script>
+// ===== Tema claro/oscuro: manual con el botón ☀️/🌙; sin elección guardada, sigue al sistema =====
+const THEME_KEY='midas_theme';
+let theme=localStorage.getItem(THEME_KEY)||'';
+function applyTheme(){
+  document.documentElement.dataset.theme=theme;
+  const sysDark=window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches;
+  const dark=theme?theme==='dark':!!sysDark;
+  const btn=document.getElementById('themebtn'); if(btn)btn.textContent=dark?'☀️':'🌙';
+  if(theme)document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute('content',dark?'#000000':'#fbfbfd'));
+}
+document.getElementById('themebtn').addEventListener('click',()=>{
+  const sysDark=window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches;
+  theme=(theme?theme==='dark':!!sysDark)?'light':'dark';
+  localStorage.setItem(THEME_KEY,theme);applyTheme();
+});
+applyTheme();
 // ===== Ciclos (quincenal o mensual). Cada ciclo tiene su propio presupuesto. =====
 function keyFor(id){return 'midas_pp_'+id;}
 function loadCycles(){try{const x=JSON.parse(localStorage.getItem('midas_cycles'));if(Array.isArray(x)&&x.length)return x;}catch(e){}
@@ -632,40 +681,61 @@ const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','
 function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
 function fmtFecha(iso){if(!iso)return '';const p=iso.split('-');return (+p[2])+' '+MESES[(+p[1])-1].slice(0,3);}
 function fmtFechaLarga(iso){if(!iso)return '';const p=iso.split('-');return (+p[2])+' de '+MESES[(+p[1])-1];}
+function cycleNum(c){const same=cycles.filter(x=>x.type===c.type);const k=same.indexOf(c);return k>=0?k+1:1;}
 function cycleLabel(c){
   if(!c)return 'Ciclo';
-  if(!c.start)return c.label||'Ciclo';
-  const p=c.start.split('-'), m=+p[1], dd=+p[2];
-  if(c.type==='m')return cap(MESES[m-1]);
-  if(c.type==='q')return cap(MESES[m-1])+' · Quincena '+(dd<=15?'1':'2');
-  return fmtFecha(c.start)+' – '+fmtFecha(c.end);
+  if(c.start){
+    const p=c.start.split('-'), y=+p[0], m=+p[1], dd=+p[2];
+    if(c.type==='m')return cap(MESES[m-1])+' '+y;
+    if(c.type==='q')return 'Quincena '+cap(MESES[m-1])+' · '+(dd<=15?'1':'2')+'/2';
+    return 'Periodo '+cycleNum(c);
+  }
+  if(c.type==='c')return 'Periodo '+cycleNum(c);
+  return c.label||'Ciclo';
 }
 function cycleCubre(c){if(!c||!c.start)return '';return 'cubre entre '+fmtFechaLarga(c.start)+' y '+fmtFechaLarga(c.end);}
 function isoToday(){const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
 function lastDay(y,m){return new Date(y,m,0).getDate();} // m 1-based
+function pad2(n){return String(n).padStart(2,'0');}
+function isoOf(dt){return dt.getFullYear()+'-'+pad2(dt.getMonth()+1)+'-'+pad2(dt.getDate());}
 function cyclePayday(id){const x=(id===activeQ&&typeof d!=='undefined')?d:load(id);return x&&x.payday||'';}
 function renderCycleBar(){
   const bar=document.getElementById('cyclebar');if(!bar)return;
   const idx=cycles.findIndex(c=>c.id===activeQ), cyc=cycleOf(activeQ);
-  const dates=cyc.start?' <span class="qt-d">('+fmtFecha(cyc.start)+' – '+fmtFecha(cyc.end)+')</span>':'';
   bar.innerHTML=
     '<button class="cyc-nav" data-cycnav="-1"'+(idx<=0?' disabled':'')+'>‹</button>'+
-    '<span class="cyc-cur">'+esc(cycleLabel(cyc))+dates+'</span>'+
+    '<span class="cyc-cur">'+esc(cycleLabel(cyc))+'</span>'+
     '<button class="cyc-nav" data-cycnav="1"'+(idx>=cycles.length-1?' disabled':'')+'>›</button>'+
     '<button class="cyc-add" data-addcycle="q" title="Agregar quincena">+Q</button>'+
-    '<button class="cyc-add" data-addcycle="m" title="Agregar mes">+M</button>';
+    '<button class="cyc-add" data-addcycle="m" title="Agregar mes">+M</button>'+
+    '<button class="cyc-add" data-addcycle="c" title="Agregar periodo personalizado">+P</button>';
 }
 function switchCycle(id){if(id===activeQ)return;save();activeQ=id;d=load(activeQ);showRollover=true;
   // se mantiene la tab actual (Inicio/Resumen/Deudas/Invertir) al cambiar de ciclo — no resetear a Inicio
   localStorage.setItem('midas_active_cycle',activeQ);history=[];render();renderDebts();updateUndo();}
 function addCycle(type){
+  // start/end del nuevo ciclo: arranca el día siguiente al último ciclo con fecha fin.
+  const ends=cycles.map(c=>c.end).filter(Boolean).sort();
+  let start='', end='';
+  if(ends.length){
+    const dt=new Date(ends[ends.length-1]+'T00:00:00'); dt.setDate(dt.getDate()+1);
+    start=isoOf(dt);
+    const y=dt.getFullYear(), m=dt.getMonth()+1, dd=dt.getDate();
+    if(type==='m'){const e=new Date(dt);e.setMonth(e.getMonth()+1);e.setDate(e.getDate()-1);end=isoOf(e);}
+    else if(type==='q'){
+      if(dd===1)end=y+'-'+pad2(m)+'-15';
+      else if(dd===16)end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));
+      else{const e=new Date(dt);e.setDate(e.getDate()+14);end=isoOf(e);}
+    }
+    else{const e=new Date(dt);e.setDate(e.getDate()+14);end=isoOf(e);} // periodo libre: 15 días por defecto
+  }
   const withDates=cycles.map(c=>dateVal(cyclePayday(c.id))).filter(s=>!isNaN(s)&&s<9e15);
   let base='';
   if(withDates.length){const dt=new Date(Math.max.apply(null,withDates));
     if(type==='m')dt.setMonth(dt.getMonth()+1); else dt.setDate(dt.getDate()+15);
-    base=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+    base=isoOf(dt);}
   const id='c'+Date.now(), n=cycles.filter(c=>c.type===type).length+1;
-  cycles.push({id,type,label:(type==='m'?'Mes ':'Quincena ')+n});saveCycles();
+  cycles.push({id,type,start,end,label:(type==='m'?'Mes ':type==='q'?'Quincena ':'Periodo ')+n});saveCycles();
   const nd=def();nd.payday=base;localStorage.setItem(keyFor(id),JSON.stringify(nd));
   switchCycle(id);
 }
@@ -676,6 +746,7 @@ let wizStep=0;
 let showRollover=true; // por defecto ON: el reparto 50/30/20 (disponible por sector) se ve al abrir
 let lastSaldo=0; // último saldo libre calculado (para congelar el rollover)
 let abonoOpen=false; // true = panel de saldo libre muestra el selector de a qué deuda abonar
+let macroAssignOpen=false; // true = el panel "dale un destino" está abierto bajo el macro (se abre tocando el Disponible)
 let collapsed={aho:true,nec:true,luj:true,balance:true}; // al abrir: 3 cajas + balance colapsados
 let incEdit=false; // editar/agregar ingreso (oculto por defecto; el ingreso se ve grande arriba)
 let view='inicio'; // tab activo: inicio (las 3 cajas) | plan | deudas | informe
@@ -730,9 +801,9 @@ const def=()=>({
   month:'',
   payday:'',
   inc:[{l:'Sueldo / quincena',a:0}],
-  nec:[{l:'Internet',a:0},{l:'Colegio / educación',a:0},{l:'Comida',a:0},{l:'Gastos fijos (luz, agua)',a:0},{l:'Transporte',a:0},{l:'Salud',a:0}],
-  luj:[{l:'Lujo / ocio / diversión',a:0},{l:'Regalos / cumpleaños',a:0}],
-  aho:[{l:'Ahorro',a:0},{l:'Fondo de emergencia',a:0},{l:'Inversión (largo plazo)',a:0}]
+  nec:[{l:'Gastos fijos (luz, agua)',a:0},{l:'Comida',a:0},{l:'Transporte',a:0},{l:'Salud',a:0},{l:'Proyecto / Sueño',a:0}],
+  luj:[{l:'Gustos / diversión',a:0},{l:'Regalos / cumpleaños',a:0}],
+  aho:[{l:'Ahorro',a:0},{l:'Inversión',a:0}]
 });
 
 function load(q){
@@ -853,7 +924,7 @@ const sum=a=>a.reduce((t,r)=>t+(parseFloat(r.a)||0),0);
 const sumCash=a=>a.reduce((t,r)=>t+(hasSubs(r)?(r.tj?0:r.sub.reduce((u,s)=>u+(s.tj?0:(parseFloat(s.a)||0)),0)):(r.tj?0:(parseFloat(r.a)||0))),0);
 const sumTj=a=>a.reduce((t,r)=>t+(hasSubs(r)?(r.tj?(parseFloat(r.a)||0):r.sub.reduce((u,s)=>u+(s.tj?(parseFloat(s.a)||0):0),0)):(r.tj?(parseFloat(r.a)||0):0)),0);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-const buckets=[['aho','Ahorro + Inversión',.2],['nec','Necesidades',.5],['luj','Gustos / diversión',.3]];
+const buckets=[['aho','Ahorro',.2],['nec','Necesidades',.5],['luj','Gustos',.3]];
 const hasSubs=r=>r.sub&&r.sub.length>0;
 
 const TJ_SVG='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>';
@@ -923,13 +994,14 @@ function bucketH(g,name,pct,num){
   const w=WIZBTN[g];
   const wizBtn=w?'<button class="wizgo" data-gostep="'+w[0]+'">'+w[1]+'</button>':'';
   const col=collapsed[g];
-  return '<div class="sec'+(col?' is-collapsed':'')+'" id="sec-'+g+'">'+
+  return '<div class="sec sec-tint'+(col?' is-collapsed':'')+'" id="sec-'+g+'">'+
     '<div class="sec-h tappable" data-collapse="'+g+'" title="Plegar/desplegar"><span class="tw"><span class="num num-'+g+'">'+num+'</span><span class="t">'+name+'</span></span><span class="sec-r"><span class="pct">'+Math.round(pct*100)+'%</span><span class="chev">'+(col?'▸':'▾')+'</span></span></div>'+
     (g==='aho'&&!col?'<div class="sec-note">Págate primero — esto sale antes de gastar.</div>':'')+
     '<div class="triad">'+
       '<span class="tr"><i>Presupuestado</i><b id="tg-'+g+'">&mdash;</b></span>'+
       '<span class="tr"><i>Utilizado</i><b class="tr-util" id="sm-'+g+'">&mdash;</b></span>'+
       '<span class="tr"><i>Disponible</i><b id="disp-'+g+'">&mdash;</b></span>'+
+      '<span class="tr tr-tap" data-openchecks="'+g+'" title="Ver qué falta pagar aquí"><i>✓ Pagado</i><b id="done-'+g+'">&mdash;</b></span>'+
     '</div>'+
     '<div class="bar"><div class="bar-fill" id="bar-'+g+'"></div></div>'+
     '<div class="sec-lines"'+(col?' style="display:none"':'')+'>'+
@@ -976,19 +1048,20 @@ function render(){
       '<div class="macro">'+
         '<div class="mc"><span class="mc-l">Presupuestado</span><span class="mc-v" id="mc-pres">&mdash;</span></div>'+
         '<div class="mc"><span class="mc-l">Utilizado</span><span class="mc-v tr-util" id="mc-util">&mdash;</span></div>'+
-        '<div class="mc"><span class="mc-l">Disponible</span><span class="mc-v" id="mc-disp">&mdash;</span></div>'+
+        '<div class="mc mc-tap" data-macrodisp="1" title="Dale un destino a lo disponible"><span class="mc-l">Disponible</span><span class="mc-v" id="mc-disp">&mdash;</span><span class="mc-hint">↻ 50/30/20</span></div>'+
+        '<div class="mc"><span class="mc-l">✓ Pagado</span><span class="mc-v" id="mc-done">&mdash;</span></div>'+
       '</div>'+
+      '<div id="macro-assign"></div>'+
     '</div>'+
     buckets.map((b,i)=>bucketH(b[0],b[1],b[2],i+1)).join('')+
     '<div class="sec'+(collapsed.balance?' is-collapsed':'')+'" id="sec-balance">'+
-      '<div class="sec-h tappable" data-collapse="balance" title="Balance y destino del sobrante"><span class="tw"><span class="t" style="font-size:14px">Balance y destino del sobrante</span></span><span class="sec-r"><span class="chev">'+(collapsed.balance?'▸':'▾')+'</span></span></div>'+
+      '<div class="sec-h tappable" data-collapse="balance" title="Balance"><span class="tw"><span class="t" style="font-size:14px">Balance</span></span><span class="sec-r"><span class="chev">'+(collapsed.balance?'▸':'▾')+'</span></span></div>'+
       '<div class="bucket-body"'+(collapsed.balance?' style="display:none"':'')+'>'+
         '<div class="grid sm">'+
           '<div class="bcard"><div class="lbl">Ingreso</div><div class="val" id="b-inc"></div></div>'+
           '<div class="bcard"><div class="lbl">Gasto total</div><div class="val" id="b-gas"></div></div>'+
           '<div class="bcard"><div class="lbl" id="b-sl-l">Saldo libre</div><div class="val" id="b-sl"></div></div>'+
         '</div>'+
-        '<div id="assign-wrap"></div>'+
         '<div class="fondo-box">'+
           '<div class="fondo-note" id="fondo-note"></div>'+
           '<button class="fondo-close" data-cerrar="1">Cerrar quincena y pasar a la siguiente →</button>'+
@@ -1037,7 +1110,9 @@ function recompute(){
   const tot=ge('tot-inc');if(tot)tot.textContent=pe(ti);
   const binc=ge('b-inc');if(binc)binc.textContent=pe(ti);
   const hn=ge('hi-num');if(hn)hn.textContent=pe(ti);
-  const hc=ge('hi-cycle');if(hc){const cyc=cycleOf(activeQ);const cu=cycleCubre(cyc);hc.textContent=cycleLabel(cyc)+(cu?' · '+cu:'');}
+  const hc=ge('hi-cycle');if(hc){const cyc=cycleOf(activeQ);
+    const dates=cyc.start?' ('+fmtFecha(cyc.start)+' – '+fmtFecha(cyc.end)+')':'';
+    hc.textContent=cycleLabel(cyc)+dates;}
   let gas=0;const acts={},tgts={};
   buckets.forEach(b=>{const g=b[0];let act=(g==='nec'||g==='luj')?sumCash(d[g]):sum(d[g]);
     if(g==='aho'){act+=debtPaySum();}
@@ -1080,6 +1155,16 @@ function recompute(){
     const disp=ti-gas, de=document.getElementById('mc-disp');
     if(de){de.textContent=pe(disp); de.style.color=disp<-0.5?'var(--bad)':'var(--ok)';}
   })();
+  // 4ª columna "✓ Pagado": % de lo comprometido que ya marcaste como real — por caja y global.
+  (function(){
+    const realG=ejecutadoPorGrupo();
+    const paint=(el,real,base)=>{if(!el)return;
+      const pct=base>0.5?Math.round(Math.min(real/base,1)*100):null;
+      el.textContent=pct==null?'—':pct+'%';
+      el.style.color=pct==null?'var(--tx3)':(pct>=100?'var(--ok)':(pct>0?'var(--accent)':'var(--tx3)'));};
+    ['aho','nec','luj'].forEach(g=>paint(document.getElementById('done-'+g),realG[g]||0,acts[g]||0));
+    paint(document.getElementById('mc-done'),realG.aho+realG.nec+realG.luj,gas);
+  })();
   document.getElementById('b-gas').textContent=pe(gas);
   const saldo=ti-gas,sl=document.getElementById('b-sl');
   lastSaldo=saldo; // para el snapshot del rollover
@@ -1097,8 +1182,12 @@ function recompute(){
     const amt=showRollover?Math.max(saldo,0)*_ro[g]:0;
     if(amt>0.5){el.style.display='';el.innerHTML='↻ Disponible para gastar aquí: <b>+ '+pe(amt)+'</b>';}
     else{el.style.display='none';el.innerHTML='';}});
-  const aw=document.getElementById('assign-wrap');
-  if(aw) aw.innerHTML = saldo>0.5 ? assignPanelH(saldo,abonoOpen) : '';
+  // Panel "dale un destino" — vive bajo el macro, se abre tocando el Disponible de arriba.
+  const ma=document.getElementById('macro-assign');
+  if(ma) ma.innerHTML = macroAssignOpen
+    ? (saldo>0.5 ? assignPanelH(saldo,abonoOpen)
+       : '<div class="assign"><div class="assign-h">Sin saldo libre por ahora.</div><div class="assign-sub">Cuando quede disponible, aquí le das destino: repartir, fondo o abono.</div></div>')
+    : '';
   refreshPlan();
   if(typeof refreshAutoDebts==='function')refreshAutoDebts();
   if(typeof refreshInforme==='function')refreshInforme();
@@ -1125,8 +1214,8 @@ function assignPanelH(saldo,abOpen){
     '<div class="assign-amt-wrap"><label>Monto a asignar</label>'+
       '<input id="assign-amt" type="number" min="0" step="1" value="'+v+'"></div>'+
     '<div class="assign-btns">'+
-      '<button data-rollover="1" class="'+(showRollover?'active':'')+'">↻ '+(showRollover?'Quitar el reparto':'Repartir el sobrante')+'<span class="n">'+(showRollover?'ocultar el reparto en las cajas':'reparte 50/30/20 arriba de cada caja')+'</span></button>'+
-      '<button data-assign="emer">🛟 Colchón<span class="n">fondo de emergencia</span></button>'+
+      '<button data-rollover="1" class="'+(showRollover?'active':'')+'">↻ '+(showRollover?'Quitar el reparto':'Repartir')+'<span class="n">'+(showRollover?'ocultar el reparto en las cajas':'reparte 50/30/20 en las 3 cajas')+'</span></button>'+
+      '<button data-assign="emer">🔒 Fondo<span class="n">apártalo como ahorro (fondo de emergencia)</span></button>'+
       '<button data-abono="1" class="'+(abOpen?'active':'')+'">💳 Abono<span class="n">pagar deuda</span></button>'+
     '</div>';
   if(abOpen){
@@ -1177,6 +1266,11 @@ app.addEventListener('input',e=>{const t=e.target;
 app.addEventListener('click',e=>{
   const hdr=e.target.closest('.sec-h[data-collapse]'); // header acordeón: todo el encabezado pliega
   if(hdr){collapsed[hdr.dataset.collapse]=!collapsed[hdr.dataset.collapse];render();return;}
+  const md=e.target.closest('[data-macrodisp]'); // tocar el Disponible del macro abre/cierra "dale un destino"
+  if(md){macroAssignOpen=!macroAssignOpen;abonoOpen=false;recompute();return;}
+  const oc=e.target.closest('[data-openchecks]'); // tocar "✓ Pagado" abre la caja para ver los checks
+  if(oc){const g=oc.dataset.openchecks;collapsed[g]=false;render();
+    const s=document.getElementById('sec-'+g);if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
   const al=e.target.closest('[data-addline]');
   if(al){const i=+al.dataset.addline;tjOpen=null;view='inicio';collapsed.aho=false;pickerOpen='card';debtForm={kind:'card',idx:i};render();const s=document.getElementById('sec-aho');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
   const b=e.target.closest('button');if(!b)return;
@@ -1528,20 +1622,22 @@ function toggleDebtPaid(name){
   }
   saveDebts(); save(); render(); if(typeof renderDebts==='function')renderDebts();
 }
-// Ejecutado/real: lo ya marcado como pagado (gastos en efectivo marcados + pagos de deuda marcados).
-function ejecutadoSum(){
-  let e=0;
-  ['nec','luj'].forEach(g=>{(d[g]||[]).forEach((r,i)=>{
+// Ejecutado/real POR CAJA: lo ya marcado como pagado. nec/luj = gastos en efectivo con ✓;
+// aho = pagos de deuda asentados (los checks de deuda viven en Ahorro).
+function ejecutadoPorGrupo(){
+  const r={aho:0,nec:0,luj:0};
+  ['nec','luj'].forEach(g=>{(d[g]||[]).forEach((row,i)=>{
     const padre=!!(d.itemPaid&&d.itemPaid[g+'-'+i]); // marcar el padre cuenta toda la categoría
-    if(hasSubs(r)){
-      if(!r.tj) r.sub.forEach((s,j)=>{ if((padre||(d.itemPaid&&d.itemPaid[g+'-'+i+'-'+j]))&&!s.tj) e+=parseFloat(s.a)||0; });
+    if(hasSubs(row)){
+      if(!row.tj) row.sub.forEach((s,j)=>{ if((padre||(d.itemPaid&&d.itemPaid[g+'-'+i+'-'+j]))&&!s.tj) r[g]+=parseFloat(s.a)||0; });
     } else {
-      if(padre&&!r.tj) e+=parseFloat(r.a)||0;
+      if(padre&&!row.tj) r[g]+=parseFloat(row.a)||0;
     }
   });});
-  if(d.paid){ debts.filter(x=>!x.auto).forEach(x=>{ if(d.paid[x.n]) e+=(parseFloat(d.paidAmt&&d.paidAmt[x.n])||debtAmt(x,(d.debtPay&&d.debtPay[x.n])||'min')); }); }
-  return e;
+  if(d.paid){ debts.filter(x=>!x.auto).forEach(x=>{ if(d.paid[x.n]) r.aho+=(parseFloat(d.paidAmt&&d.paidAmt[x.n])||debtAmt(x,(d.debtPay&&d.debtPay[x.n])||'min')); }); }
+  return r;
 }
+function ejecutadoSum(){const r=ejecutadoPorGrupo();return r.aho+r.nec+r.luj;}
 function recommendedDebt(){const c=debts.filter(x=>!x.auto&&x.vence).sort((a,b)=>dateVal(a.vence)-dateVal(b.vence))[0];return c?c.n:null;}
 function modeToggleH(x){
   const m=(d.debtPay&&d.debtPay[x.n])||'min';
@@ -1906,7 +2002,7 @@ if('serviceWorker' in navigator && location.protocol!=='file:' && !_isLocal){
       const idx=cycles.findIndex(c=>c.id===activeQ); let ni=idx;
       if(dx<0 && idx<cycles.length-1) ni=idx+1;        // swipe izquierda → siguiente
       else if(dx>0 && idx>0) ni=idx-1;                  // swipe derecha → anterior
-      if(ni!==idx){ switchCycle(cycles[ni].id); cycleToast(cycles[ni].label); }
+      if(ni!==idx){ switchCycle(cycles[ni].id); cycleToast(cycleLabel(cycles[ni])); }
     }
   },{passive:true});
 })();
