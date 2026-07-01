@@ -726,10 +726,15 @@ let history=[];
 let fondo=parseFloat(localStorage.getItem('midas_fondo'))||0;
 function saveFondo(){localStorage.setItem('midas_fondo',String(fondo));}
 function cerrarQuincena(){
+  if(d.closed && !confirm('Ya cerraste este ciclo antes. Cerrarlo otra vez volvería a sumar a tu Reserva (doble conteo). ¿Seguro?'))return;
   const ingreso=sum(d.inc);
   const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
+  const presup=ingreso-(lastSaldo||0); // gasto presupuestado de este ciclo
   const aReserva=ingreso-real; // lo no gastado de verdad (incl. presupuesto no materializado) se libera a la Reserva
-  if(!confirm('¿Cerrar este ciclo?\n\nGastado real (lo marcado ✓): '+pe(real)+'\nLo no usado pasa a tu Reserva: '+(aReserva>=0?'+ ':'− ')+pe(Math.abs(aReserva))+'\n\nEl siguiente ciclo arranca de cero con su propio presupuesto.'))return;
+  let msg='¿Cerrar este ciclo?\n\nGastado real (lo marcado ✓): '+pe(real)+'\nLo no usado pasa a tu Reserva: '+(aReserva>=0?'+ ':'− ')+pe(Math.abs(aReserva))+'\n\nEl siguiente ciclo arranca de cero.';
+  if(presup>50 && real<presup*0.5 && aReserva>presup*0.3)
+    msg='⚠️ Ojo: marcaste pagado solo '+pe(real)+' de '+pe(presup)+' presupuestado.\n\nSe enviará '+pe(aReserva)+' a tu Reserva COMO SI NO lo hubieras gastado. Si de verdad gastaste tu quincena, primero marca ✓ lo que pagaste — si no, tu colchón quedará inflado.\n\n¿Cerrar igual?';
+  if(!confirm(msg))return;
   snapshot();
   fondo+=aReserva; saveFondo();
   d.closed=true; save();
@@ -952,8 +957,8 @@ function recompute(){
   ['luj','nec'].forEach(g=>{
     const eat=eatenOf[g]||0, neto=(tgts[g]||0)-(acts[g]||0)-eat;
     showLn('red-'+g, eat>0.5?'− '+pe(eat)+' deducidos, heredados de ahorro':'', 'ln-red');
-    if(neto>0.5) showLn('mg-'+g, 'quedan '+pe(neto), 'ln-mg');
-    else if(neto<-0.5) showLn('mg-'+g, 'te falta '+pe(-neto)+' (déficit)', 'ln-mg neg');
+    if(neto<-0.5) showLn('mg-'+g, 'te falta '+pe(-neto)+' (déficit)', 'ln-mg neg');
+    else if(neto>0.5 && !showRollover) showLn('mg-'+g, 'quedan '+pe(neto), 'ln-mg'); // con reparto ON, la línea verde ya muestra el disponible (una sola fuente de verdad)
     else showLn('mg-'+g, '', 'ln-mg');
   });
   showLn('red-aho', overTotal>0.5?'excede '+pe(overTotal)+', se deduce primero de gustos y luego de necesidades':'', 'ln-red');
