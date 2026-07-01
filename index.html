@@ -580,7 +580,11 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .ft-sin b{color:var(--ok); font-variant-numeric:tabular-nums}
 .ft-sin.neg b{color:var(--bad)}
 /* ===== Pulido móvil (jul 2026): barra centrada · cajas con color · 4ª columna ✓ · tema manual ===== */
-#cyclebar{justify-content:center}
+/* Dos filas para que el label quede REALMENTE centrado (no solo el grupo entero): fila 1 = navegación
+   (flechas simétricas + label), fila 2 = +Q/+M/+P debajo, sin competir por el centro de la fila 1. */
+#cyclebar{flex-direction:column; align-items:center; gap:.4rem}
+.cyc-main{display:flex; align-items:center; justify-content:center; gap:.5rem}
+.cyc-addrow{display:flex; gap:.4rem; justify-content:center}
 #themebtn{position:absolute; top:0; right:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:15px; line-height:1; transition:.15s}
 #themebtn:hover{border-color:var(--accent)}
 #undo{right:42px}
@@ -669,6 +673,24 @@ function loadCycles(){try{const x=JSON.parse(localStorage.getItem('midas_cycles'
   return [{id:'q1',type:'q',label:'Quincena 1'},{id:'q2',type:'q',label:'Quincena 2'}];}
 let cycles=loadCycles();
 function saveCycles(){localStorage.setItem('midas_cycles',JSON.stringify(cycles));}
+// Migración: ciclos viejos (q1/q2 por defecto, de antes del rediseño) no tenían start/end →
+// el label caía al texto plano "Quincena 1". Les asigna fechas del mes actual (1ra/2da quincena
+// por su orden en el arreglo) para que el label nuevo ("Quincena Julio · 1/2") funcione ya mismo,
+// sin esperar a que el usuario cree un ciclo nuevo. Solo cosmético: no toca payday ni el plan de deudas.
+function migrateCycleDates(){
+  const qs=cycles.filter(c=>c.type==='q');
+  let changed=false;
+  const t=new Date(), y=t.getFullYear(), m=t.getMonth()+1;
+  cycles.forEach(c=>{
+    if(c.start||c.type==='c')return; // ya tiene fecha, o es periodo libre (no le inventamos rango)
+    if(c.type==='m'){c.start=y+'-'+pad2(m)+'-01';c.end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));changed=true;return;}
+    const half=qs.indexOf(c);
+    if(half===0){c.start=y+'-'+pad2(m)+'-01';c.end=y+'-'+pad2(m)+'-15';changed=true;}
+    else if(half===1){c.start=y+'-'+pad2(m)+'-16';c.end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));changed=true;}
+  });
+  if(changed)saveCycles();
+}
+migrateCycleDates();
 // Migración: dato viejo v1 → q1
 (function migrate(){const old=localStorage.getItem('midas_pp_v1');
   if(old && !localStorage.getItem(keyFor('q1'))) localStorage.setItem(keyFor('q1'), old);})();
@@ -702,13 +724,20 @@ function cyclePayday(id){const x=(id===activeQ&&typeof d!=='undefined')?d:load(i
 function renderCycleBar(){
   const bar=document.getElementById('cyclebar');if(!bar)return;
   const idx=cycles.findIndex(c=>c.id===activeQ), cyc=cycleOf(activeQ);
+  // Fila 1 (navegación) centrada de VERDAD: flechas simétricas a ambos lados del label, sin nada
+  // más compitiendo por espacio. Fila 2 (+Q/+M/+P) va debajo, también centrada — son acciones
+  // secundarias (crear ciclo), no deben empujar el label del centro.
   bar.innerHTML=
-    '<button class="cyc-nav" data-cycnav="-1"'+(idx<=0?' disabled':'')+'>‹</button>'+
-    '<span class="cyc-cur">'+esc(cycleLabel(cyc))+'</span>'+
-    '<button class="cyc-nav" data-cycnav="1"'+(idx>=cycles.length-1?' disabled':'')+'>›</button>'+
-    '<button class="cyc-add" data-addcycle="q" title="Agregar quincena">+Q</button>'+
-    '<button class="cyc-add" data-addcycle="m" title="Agregar mes">+M</button>'+
-    '<button class="cyc-add" data-addcycle="c" title="Agregar periodo personalizado">+P</button>';
+    '<div class="cyc-main">'+
+      '<button class="cyc-nav" data-cycnav="-1"'+(idx<=0?' disabled':'')+'>‹</button>'+
+      '<span class="cyc-cur">'+esc(cycleLabel(cyc))+'</span>'+
+      '<button class="cyc-nav" data-cycnav="1"'+(idx>=cycles.length-1?' disabled':'')+'>›</button>'+
+    '</div>'+
+    '<div class="cyc-addrow">'+
+      '<button class="cyc-add" data-addcycle="q" title="Agregar quincena">+Q</button>'+
+      '<button class="cyc-add" data-addcycle="m" title="Agregar mes">+M</button>'+
+      '<button class="cyc-add" data-addcycle="c" title="Agregar periodo personalizado">+P</button>'+
+    '</div>';
 }
 function switchCycle(id){if(id===activeQ)return;save();activeQ=id;d=load(activeQ);showRollover=true;
   // se mantiene la tab actual (Inicio/Resumen/Deudas/Invertir) al cambiar de ciclo — no resetear a Inicio
