@@ -553,6 +553,23 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .cyc-cur{font-size:12.5px; font-weight:600; color:var(--tx); padding:0 .2rem}
 .cyc-cur .qt-d{font-weight:400; color:var(--tx3); font-size:11px}
 .cyc-add{font:inherit; font-size:11px; padding:.25rem .4rem; border:1px dashed var(--line); border-radius:7px; background:none; color:var(--tx3); cursor:pointer}
+/* Pestaña Fondo (caja fuerte + metas) */
+.ft-total{display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; margin-bottom:1.1rem}
+.ft-l{font-size:14px; color:var(--tx); font-weight:600}
+.ft-hint{display:block; font-size:11px; color:var(--tx3); font-weight:400}
+.ft-v{font-size:15px; color:var(--tx2); white-space:nowrap}
+.ft-v input{width:104px; font:inherit; font-size:17px; font-weight:800; text-align:right; color:var(--tx); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.4rem .5rem}
+.ft-v input:focus{outline:none; border-color:var(--accent)}
+.ft-cats-h{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--tx3); margin-bottom:.55rem}
+.ft-cat{display:flex; gap:.4rem; align-items:center; margin-bottom:.45rem}
+.ftc-n{flex:1; min-width:0; font:inherit; font-size:13.5px; color:var(--tx); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.45rem .5rem}
+.ftc-a{font-size:13px; color:var(--tx2); white-space:nowrap}
+.ftc-a input{width:82px; font:inherit; font-size:14px; font-weight:600; text-align:right; color:var(--tx); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.45rem .45rem}
+.ftc-n:focus,.ftc-a input:focus{outline:none; border-color:var(--accent)}
+.ftc-rm{border:none; background:none; color:var(--tx3); font-size:18px; cursor:pointer; padding:0 .15rem}
+.ft-sin{margin-top:1rem; padding-top:.7rem; border-top:1px solid var(--line); font-size:13px; color:var(--tx2)}
+.ft-sin b{color:var(--ok); font-variant-numeric:tabular-nums}
+.ft-sin.neg b{color:var(--bad)}
 </style>
 </head>
 <body>
@@ -588,11 +605,13 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 <div id="app"></div>
 <div id="debts" class="debts"></div>
 <div id="sec-invertir" class="sec" style="display:none"></div>
+<div id="sec-fondo" class="sec" style="display:none"></div>
 <nav class="tabbar">
   <button class="tabbtn active" data-view="inicio"><span class="ti">🏠</span><span>Inicio</span></button>
   <button class="tabbtn" data-view="deudas"><span class="ti">💳</span><span>Deudas</span></button>
   <button class="tabbtn" data-view="resumen"><span class="ti">📊</span><span>Resumen</span></button>
   <button class="tabbtn" data-view="invertir"><span class="ti">📈</span><span>Invertir</span></button>
+  <button class="tabbtn" data-view="fondo"><span class="ti">🔒</span><span>Fondo</span></button>
 </nav>
 <script>
 // ===== Ciclos (quincenal o mensual). Cada ciclo tiene su propio presupuesto. =====
@@ -697,6 +716,7 @@ function applyView(){
   setD('planbox', view==='resumen');
   setD('advisorbox', view==='resumen');
   setD('sec-invertir', view==='invertir');
+  setD('sec-fondo', view==='fondo');
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
 }
 function focusGo(delta){const scenes=focusScenes();
@@ -774,22 +794,56 @@ let history=[];
 // Fondo / Reserva: ahorros pre-existentes. El resultado de cada quincena (sobró/faltó) suma o resta aquí.
 let fondo=parseFloat(localStorage.getItem('midas_fondo'))||0;
 function saveFondo(){localStorage.setItem('midas_fondo',String(fondo));}
+// ===== Fondo (caja fuerte, aparte de los ciclos) con metas dentro =====
+function loadFondoCats(){try{const x=JSON.parse(localStorage.getItem('midas_fondo_cats'));return Array.isArray(x)?x:[];}catch(e){return [];}}
+let fondoCats=loadFondoCats();
+function saveFondoCats(){localStorage.setItem('midas_fondo_cats',JSON.stringify(fondoCats));}
+function fondoH(){
+  const asignado=fondoCats.reduce((t,c)=>t+(parseFloat(c.a)||0),0), sin=fondo-asignado;
+  return '<div class="sec-h"><span class="t">🔒 Fondo</span></div>'+
+    '<div class="fondo-tab">'+
+      '<div class="ft-total"><span class="ft-l">Tu Fondo<span class="ft-hint">tu caja fuerte, aparte de los ciclos</span></span><span class="ft-v">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
+      '<div class="ft-cats-h">Metas — reparte tu fondo en objetivos</div>'+
+      fondoCats.map((c,i)=>'<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="Ej. Emergencia, Vacaciones"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="Quitar">&times;</button></div>').join('')+
+      '<button class="add" data-ftadd="1"><span class="p">+</span> Agregar meta</button>'+
+      '<div class="ft-sin'+(sin<-0.5?' neg':'')+'">Sin asignar a una meta: <b>'+pe(sin)+'</b>'+(sin<-0.5?' — asignaste más de lo que tienes':'')+'</div>'+
+    '</div>';
+}
+function refreshFondo(){const e=document.getElementById('sec-fondo');if(e)e.innerHTML=fondoH();}
+function refreshSinAsignar(){const e=document.querySelector('#sec-fondo .ft-sin');if(!e)return;
+  const asignado=fondoCats.reduce((t,c)=>t+(parseFloat(c.a)||0),0), sin=fondo-asignado;
+  e.className='ft-sin'+(sin<-0.5?' neg':'');
+  e.innerHTML='Sin asignar a una meta: <b>'+pe(sin)+'</b>'+(sin<-0.5?' — asignaste más de lo que tienes':'');}
+(function(){const sf=document.getElementById('sec-fondo');if(!sf)return;
+  sf.addEventListener('input',e=>{const t=e.target;
+    if(t.id==='fondo-inp'){fondo=parseFloat(t.value)||0;saveFondo();refreshSinAsignar();return;}
+    if(t.dataset&&t.dataset.ftc!==undefined){const i=+t.dataset.ftc;if(fondoCats[i]){fondoCats[i][t.dataset.ff]=t.value;saveFondoCats();if(t.dataset.ff==='a')refreshSinAsignar();}return;}
+  });
+  sf.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.ftadd){fondoCats.push({n:'',a:''});saveFondoCats();refreshFondo();}
+    else if(b.dataset.ftcrm!==undefined){fondoCats.splice(+b.dataset.ftcrm,1);saveFondoCats();refreshFondo();}
+  });
+})();
 function cerrarQuincena(){
-  if(d.closed && !confirm('Ya cerraste este ciclo antes. Cerrarlo otra vez volvería a sumar a tu Reserva (doble conteo). ¿Seguro?'))return;
+  if(d.closed && !confirm('Ya cerraste este ciclo antes. Cerrarlo otra vez volvería a sumar a tu Fondo (doble conteo). ¿Seguro?'))return;
   const ingreso=sum(d.inc);
   const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
   const presup=ingreso-(lastSaldo||0); // gasto presupuestado de este ciclo
-  const aReserva=ingreso-real; // lo no gastado de verdad (incl. presupuesto no materializado) se libera a la Reserva
-  let msg='¿Cerrar este ciclo?\n\nGastado real (lo marcado ✓): '+pe(real)+'\nLo no usado pasa a tu Reserva: '+(aReserva>=0?'+ ':'− ')+pe(Math.abs(aReserva))+'\n\nEl siguiente ciclo arranca de cero.';
+  const aReserva=ingreso-real; // lo no gastado de verdad (incl. presupuesto no materializado)
+  let msg='¿Cerrar este ciclo?\n\nGastado real (lo marcado ✓): '+pe(real)+'\nSobrante: '+(aReserva>=0?'+ ':'− ')+pe(Math.abs(aReserva))+'\n\nEl siguiente ciclo arranca de cero.';
   if(presup>50 && real<presup*0.5 && aReserva>presup*0.3)
-    msg='⚠️ Ojo: marcaste pagado solo '+pe(real)+' de '+pe(presup)+' presupuestado.\n\nSe enviará '+pe(aReserva)+' a tu Reserva COMO SI NO lo hubieras gastado. Si de verdad gastaste tu quincena, primero marca ✓ lo que pagaste — si no, tu colchón quedará inflado.\n\n¿Cerrar igual?';
+    msg='⚠️ Ojo: marcaste pagado solo '+pe(real)+' de '+pe(presup)+' presupuestado.\n\nEl sobrante ('+pe(aReserva)+') se tratará como NO gastado. Si de verdad gastaste tu quincena, primero marca ✓ lo que pagaste.\n\n¿Cerrar igual?';
   if(!confirm(msg))return;
+  // Destino del sobrante (solo si es positivo): a tu Fondo, o al siguiente ciclo.
+  let alFondo=true;
+  if(aReserva>0.5) alFondo=confirm('Tu sobrante es '+pe(aReserva)+'.\n\n¿Guardarlo en tu FONDO (caja fuerte)?\n\nAceptar = al Fondo · Cancelar = pásalo al siguiente ciclo como saldo inicial');
   snapshot();
-  fondo+=aReserva; saveFondo();
+  if(alFondo){ fondo+=aReserva; saveFondo(); }
   d.closed=true; save();
   const idx=cycles.findIndex(c=>c.id===activeQ);
   if(idx>=0 && idx<cycles.length-1){ switchCycle(cycles[idx+1].id); }
   else { addCycle(cycleOf(activeQ).type); }
+  if(!alFondo && aReserva>0.5){ d.inc.push({l:'Sobrante del ciclo anterior', a:Math.round(aReserva)}); save(); render(); renderDebts(); }
 }
 function snapshot(){history.push(JSON.stringify({d:d,debts:(typeof debts!=='undefined'?debts:[])}));if(history.length>50)history.shift();updateUndo();}
 function updateUndo(){const u=document.getElementById('undo');if(u)u.hidden=history.length===0;}
@@ -936,7 +990,6 @@ function render(){
         '</div>'+
         '<div id="assign-wrap"></div>'+
         '<div class="fondo-box">'+
-          '<div class="fondo-row"><span class="fondo-lbl">Fondo<span class="fondo-hint">tu caja fuerte — aparte del ciclo</span></span><span class="fondo-val">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
           '<div class="fondo-note" id="fondo-note"></div>'+
           '<button class="fondo-close" data-cerrar="1">Cerrar quincena y pasar a la siguiente →</button>'+
         '</div>'+
@@ -1035,7 +1088,7 @@ function recompute(){
   document.getElementById('b-sl-l').textContent=saldo>=0?'Saldo libre':'Déficit';
   const fn=document.getElementById('fondo-note');
   if(fn){ const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0; const aRes=ti-real;
-    fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓) → lo no usado (<b>'+pe(aRes)+'</b>) pasa a tu Reserva, quedaría <b>'+pe(fondo+aRes)+'</b>'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso)</span>':'')+'.'; }
+    fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Fondo</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso)</span>':'')+'.'; }
   // Rollover GUARDADO: muestra arriba de cada caja el monto disponible que quedó fijado
   // al hacer el rollover (d.rollover). Persiste — no se recalcula en vivo.
   // Rollover DINÁMICO: reparte el saldo libre ACTUAL. Si pagas más deuda y baja el saldo, baja/desaparece solo.
@@ -1050,6 +1103,7 @@ function recompute(){
   if(typeof refreshAutoDebts==='function')refreshAutoDebts();
   if(typeof refreshInforme==='function')refreshInforme();
   if(typeof refreshInvertir==='function')refreshInvertir();
+  if(typeof refreshFondo==='function')refreshFondo();
   // Split-preview en la escena de Sueldo: el 50/30/20 al instante + el aval.
   const sp=document.getElementById('split-preview');
   if(sp)sp.innerHTML = ti>0
