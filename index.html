@@ -678,16 +678,20 @@ function saveCycles(){localStorage.setItem('midas_cycles',JSON.stringify(cycles)
 // por su orden en el arreglo) para que el label nuevo ("Quincena Julio · 1/2") funcione ya mismo,
 // sin esperar a que el usuario cree un ciclo nuevo. Solo cosmético: no toca payday ni el plan de deudas.
 function migrateCycleDates(){
-  const qs=cycles.filter(c=>c.type==='q');
+  // Generalizado: CUALQUIER cantidad de quincenas/meses legacy sin fecha (no solo las 2 primeras),
+  // encadenadas en orden — cada 2 quincenas avanza un mes (idx 0,1=mes actual · 2,3=mes siguiente…).
+  const qs=cycles.filter(c=>c.type==='q'&&!c.start);
+  const ms=cycles.filter(c=>c.type==='m'&&!c.start);
   let changed=false;
-  const t=new Date(), y=t.getFullYear(), m=t.getMonth()+1;
-  cycles.forEach(c=>{
-    if(c.start||c.type==='c')return; // ya tiene fecha, o es periodo libre (no le inventamos rango)
-    if(c.type==='m'){c.start=y+'-'+pad2(m)+'-01';c.end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));changed=true;return;}
-    const half=qs.indexOf(c);
-    if(half===0){c.start=y+'-'+pad2(m)+'-01';c.end=y+'-'+pad2(m)+'-15';changed=true;}
-    else if(half===1){c.start=y+'-'+pad2(m)+'-16';c.end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));changed=true;}
+  const t=new Date(), y0=t.getFullYear(), m0=t.getMonth()+1;
+  const addM=(mm)=>{let yy=y0,mo=m0+mm;while(mo>12){mo-=12;yy++;}return {yy,mo};};
+  qs.forEach((c,i)=>{
+    const {yy,mo}=addM(Math.floor(i/2));
+    if(i%2===0){c.start=yy+'-'+pad2(mo)+'-01';c.end=yy+'-'+pad2(mo)+'-15';}
+    else{c.start=yy+'-'+pad2(mo)+'-16';c.end=yy+'-'+pad2(mo)+'-'+pad2(lastDay(yy,mo));}
+    changed=true;
   });
+  ms.forEach((c,i)=>{const {yy,mo}=addM(i);c.start=yy+'-'+pad2(mo)+'-01';c.end=yy+'-'+pad2(mo)+'-'+pad2(lastDay(yy,mo));changed=true;});
   if(changed)saveCycles();
 }
 migrateCycleDates();
@@ -1367,7 +1371,7 @@ app.addEventListener('click',e=>{
   else if(b.dataset.reset){if(confirm('¿Reiniciar esta quincena? Se borran los montos actuales.')){snapshot();d=def();save();render();}}
   else if(b.dataset.openpicker){pickerOpen=b.dataset.openpicker;debtForm=null;render();}
   else if(b.dataset.pickerclose){pickerOpen=null;debtForm=null;render();}
-  else if(b.dataset.pickdebt!==undefined){if(!d.debtPay)d.debtPay={};d.debtPay[b.dataset.pickdebt]=b.dataset.m;save();render();}
+  else if(b.dataset.pickdebt!==undefined){const nm=b.dataset.pickdebt,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;save();render();}
   else if(b.dataset.unpick!==undefined){if(d.debtPay)delete d.debtPay[b.dataset.unpick];save();render();}
   else if(b.dataset.newdebt){debtForm={kind:b.dataset.newdebt,idx:'new'};render();}
   else if(b.dataset.editdebt!==undefined){debtForm={kind:b.dataset.kind,idx:+b.dataset.editdebt};render();}
@@ -1381,7 +1385,7 @@ app.addEventListener('click',e=>{
     debtForm=null;saveDebts();render();renderDebts();
   }
   else if(b.dataset.deldebt!==undefined){snapshot();const i=+b.dataset.deldebt;const nm=debts[i]&&debts[i].n;debts.splice(i,1);if(nm&&d.debtPay)delete d.debtPay[nm];saveDebts();save();render();renderDebts();}
-  else if(b.dataset.debtmode!==undefined){if(!d.debtPay)d.debtPay={};d.debtPay[b.dataset.debtmode]=b.dataset.m;save();render();}
+  else if(b.dataset.debtmode!==undefined){const nm=b.dataset.debtmode,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;save();render();}
   else if(b.dataset.debtpaid!==undefined){toggleDebtPaid(b.dataset.debtpaid);}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;save();render();}
   else if(b.classList.contains('rm')){
@@ -1602,16 +1606,31 @@ function debtFormH(){
     '<div class="cf-btns"><button class="cf-cancel" data-debtformcancel="1">Cancelar</button><button class="cf-save" data-debtformsave="1">Guardar en el banco</button></div></div>';
   return h;
 }
+// "otro": monto libre que el usuario tipea para ESTE ciclo (ej. pagó más de lo presupuestado porque
+// se liberó plata) — vive en d.otroMonto (por ciclo), no en la deuda misma (a diferencia de min/mes/total,
+// que son atributos fijos de la deuda).
 function debtAmt(x,mode){
   if(mode==='total')return parseFloat(x.total)||parseFloat(x.min)||0;
   if(mode==='mes')return parseFloat(x.mes)||parseFloat(x.min)||0;
+  if(mode==='otro')return parseFloat(d.otroMonto&&d.otroMonto[x.n])||0;
   return parseFloat(x.min)||0;
 }
 // Etiqueta del monto: si el campo está en blanco (el banco aún no lo recalcula), muestra "s/d", no "S/ 0".
 function debtAmtLabel(x,mode){
+  if(mode==='otro'){const v=d.otroMonto&&d.otroMonto[x.n];return (v==null||v==='')?'?':pe(parseFloat(v)||0);}
   const raw = mode==='total'?x.total : (mode==='mes'?x.mes : x.min);
   if(raw===''||raw==null) return '?';
   return pe(debtAmt(x,mode));
+}
+// Al elegir "Otro": pregunta el monto (precargado si ya había uno) y lo guarda. false = canceló/inválido.
+function promptOtroMonto(name){
+  const cur=(d.otroMonto&&d.otroMonto[name])!=null?d.otroMonto[name]:'';
+  const inp=prompt('¿Qué monto pagas a "'+name+'" esta quincena?',cur||'');
+  if(inp===null)return false;
+  const v=parseFloat(inp); if(isNaN(v)||v<0)return false;
+  if(!d.otroMonto)d.otroMonto={};
+  d.otroMonto[name]=v;
+  return true;
 }
 function debtPaySum(){if(!d.debtPay)return 0;return debts.filter(x=>!x.auto).reduce((t,x)=>{
   if(!d.debtPay[x.n])return t;
@@ -1671,7 +1690,7 @@ function recommendedDebt(){const c=debts.filter(x=>!x.auto&&x.vence).sort((a,b)=
 function modeToggleH(x){
   const m=(d.debtPay&&d.debtPay[x.n])||'min';
   const opt=(mode,lbl)=>'<button class="dmode'+(m===mode?' on':'')+'" data-debtmode="'+esc(x.n)+'" data-m="'+mode+'">'+lbl+' '+debtAmtLabel(x,mode)+'</button>';
-  return '<div class="dmodes">'+opt('min','Mín')+opt('mes','Mes')+opt('total','Total')+'</div>';
+  return '<div class="dmodes">'+opt('min','Mín')+opt('mes','Mes')+opt('total','Total')+opt('otro','Otro')+'</div>';
 }
 function debtPickerH(kind){
   if(pickerOpen!==kind) return '';
@@ -1685,7 +1704,7 @@ function debtPickerH(kind){
       '<span class="pk-act"><button class="pk-edit" data-editdebt="'+i+'" data-kind="'+kind+'" title="Editar">&#9998;</button>'+
       '<button class="pk-del" data-deldebt="'+i+'" title="Quitar del banco">&times;</button></span></div>'+
       '<div class="pk-info">'+(x.vence?'vence '+dueLabel(x.vence):'sin fecha')+(isCard?' · disp '+pe(cardAvail(x)):' · debes '+pe(parseFloat(x.total)||0))+'</div>'+
-      '<div class="pk-modes">'+mb('min','Mín')+mb('mes','Mes')+mb('total','Total')+'</div></div>';
+      '<div class="pk-modes">'+mb('min','Mín')+mb('mes','Mes')+mb('total','Total')+mb('otro','Otro')+'</div></div>';
   }).join('');
   if(!list.length) rows='<div class="pk-empty">No te queda '+(isCard?'ninguna tarjeta':'ningún préstamo')+' por elegir. Agrega '+(isCard?'una':'uno')+' al banco abajo.</div>';
   return '<div class="debtpicker"><div class="pk-h">¿Cuál pagas esta quincena? Toca el monto (Mín / Mes / Total).</div>'+rows+
