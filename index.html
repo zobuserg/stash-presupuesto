@@ -1400,7 +1400,14 @@ app.addEventListener('click',e=>{
     row.a=sum(row.sub);
     save();render();
   }
-  else if(b.dataset.add){snapshot();d[b.dataset.add].push(b.dataset.add==='inc'?{l:'Nuevo ingreso',a:0}:{l:'Nueva categoría',a:0});save();render();}
+  else if(b.dataset.add){snapshot();const g=b.dataset.add;
+    d[g].push(g==='inc'?{l:'Nuevo ingreso',a:0}:{l:'Nueva categoría',a:0});
+    const newIdx=d[g].length-1; save();render();
+    // Autoenfoca el nombre de la categoría recién creada con el texto YA SELECCIONADO — el primer
+    // tecleo lo reemplaza directo, sin tener que borrar "Nueva categoría" a mano.
+    const inp=app.querySelector('input.l[data-grp="'+g+'"][data-idx="'+newIdx+'"]:not([data-sub])');
+    if(inp){inp.focus();inp.select();}
+  }
   else if(b.dataset.tjt){const g=b.dataset.grp,i=+b.dataset.idx,sub=b.dataset.sub;const k=sub!==undefined?g+'-'+i+'-'+sub:g+'-'+i;tjOpen=(tjOpen===k)?null:k;render();}
   else if(b.dataset.tjpick!==undefined){snapshot();const g=b.dataset.grp,i=+b.dataset.idx,card=b.dataset.tjpick;
     const tgt=(b.dataset.sub!==undefined)?d[g][i].sub[+b.dataset.sub]:d[g][i];
