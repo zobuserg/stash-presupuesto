@@ -151,8 +151,6 @@ body.focuson .reset{display:none}
 .plan-detail>summary::-webkit-details-marker{display:none}
 .plan-detail>summary::before{content:'▸ '; color:var(--tx3)}
 .plan-detail[open]>summary::before{content:'▾ '}
-/* Rollover en vivo arriba de cada caja */
-.rollbonus{font-size:12.5px; color:var(--ok); background:var(--ok-bg); border-radius:var(--rad-sm); padding:.5rem .7rem; margin:.3rem 0 .6rem}
 .ln-red{font-size:12px; color:var(--bad); font-weight:600; line-height:1.45; margin-top:.35rem}
 .ln-mg{font-size:12px; color:var(--accent); font-weight:600; line-height:1.45; margin-top:.25rem; text-decoration:underline dotted; text-underline-offset:3px}
 .ln-mg.neg{color:var(--bad); text-decoration:none}
@@ -167,7 +165,6 @@ body.focuson .reset{display:none}
 .triad .tr i{font-size:9.5px; color:var(--tx3); font-weight:500; font-style:normal; text-transform:uppercase; letter-spacing:.02em}
 .triad .tr b{font-size:13px; font-weight:800; color:var(--tx); font-variant-numeric:tabular-nums}
 .macro .mc-v.tr-util,.triad .tr b.tr-util{color:#e0872b}
-.rollbonus b{font-weight:700}
 .rb-pct{color:var(--tx3); font-size:11px}
 /* Selector de abono a deuda */
 .abono-pick{margin-top:.7rem; display:flex; flex-direction:column; gap:.35rem}
@@ -616,10 +613,17 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .tr-tap{cursor:pointer}
 /* Checks más visibles: borde marcado. El check "ya pagué" es SIEMPRE azul (accent), en
    cualquier caja — un solo color para "esto es real/ejecutado", distinto del verde/ámbar
-   del presupuesto (así se distingue de un vistazo qué está pagado vs. qué es solo el plan). */
+   del presupuesto (así se distingue de un vistazo qué está pagado vs. qué es solo el plan).
+   Fondo tintado SIEMPRE (no solo contorno) — el check debe ser el elemento MÁS visible de la
+   fila, no un cuadrito discreto. */
 .pcheck{border-color:var(--tx3)}
-.pchk-paid:not(.on){border-color:var(--accent)}
+.pchk-paid:not(.on){border-color:var(--accent); background:var(--ok-bg)}
 .pchk-paid.on{background:var(--accent); border-color:var(--accent)}
+/* Una vez pagado, el chip Mín/Mes/Total/Otro ya cumplió su función (elegir CUÁNTO) — se apaga
+   para que el check (el YA PAGADO) sea lo único que salte a la vista en esa fila. Antes ambos
+   competían en el mismo azul brillante; invertido a pedido de Doble D. */
+.row.sub.is-paid + .dmodes{opacity:.45}
+.row.sub.is-paid + .dmodes .dmode.on{background:var(--line2); color:var(--tx2); border-color:var(--line)}
 /* En celular las 4 etiquetas caben sin recortarse */
 @media(max-width:420px){.macro .mc-l,.triad .tr i{font-size:7.8px; letter-spacing:-.01em}}
 </style>
@@ -1082,7 +1086,6 @@ function bucketH(g,name,pct,num){
       '<div class="ln-red" id="red-'+g+'" style="display:none"></div>'+
       '<div class="ln-mg" id="mg-'+g+'" style="display:none"></div>'+
     '</div>'+
-    '<div class="rollbonus" id="roll-'+g+'" style="display:none"></div>'+
     '<div class="bucket-body"'+(col?' style="display:none"':'')+'>'+
       rows+
       (g==='aho'?ahoDebtBlockH():'')+
@@ -1236,7 +1239,7 @@ function recompute(){
     const paint=(el,real,base)=>{if(!el)return;
       const pct=base>0.5?Math.round(Math.min(real/base,1)*100):null;
       el.textContent=pct==null?'—':pct+'%';
-      el.style.color=pct==null?'var(--tx3)':(pct>=100?'var(--ok)':(pct>0?'var(--accent)':'var(--tx3)'));};
+      el.style.color=(pct==null||pct<=0)?'var(--tx3)':'var(--accent)';};
     ['aho','nec','luj'].forEach(g=>paint(document.getElementById('done-'+g),realG[g]||0,acts[g]||0));
     paint(document.getElementById('mc-done'),realG.aho+realG.nec+realG.luj,gas);
   })();
@@ -1251,13 +1254,12 @@ function recompute(){
     fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Fondo</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso)</span>':'')+'.'; }
   // Rollover GUARDADO: muestra arriba de cada caja el monto disponible que quedó fijado
   // al hacer el rollover (d.rollover). Persiste — no se recalcula en vivo.
-  // Rollover DINÁMICO: reparte el saldo libre ACTUAL. Si pagas más deuda y baja el saldo, baja/desaparece solo.
+  // Rollover DINÁMICO: reparte el saldo libre ACTUAL en la columna "Repartido" de cada caja.
+  // Si pagas más deuda y baja el saldo, el número baja/desaparece solo. (Antes vivía en un banner
+  // aparte .rollbonus — se retiró: quedaba duplicado con esta columna.)
   const _ro={aho:0.2,nec:0.5,luj:0.3};
   ['aho','nec','luj'].forEach(g=>{
     const amt=showRollover?Math.max(saldo,0)*_ro[g]:0;
-    const el=document.getElementById('roll-'+g);
-    if(el){ if(amt>0.5){el.style.display='';el.innerHTML='↻ Disponible para gastar aquí: <b>+ '+pe(amt)+'</b>';}
-    else{el.style.display='none';el.innerHTML='';} }
     const rp=document.getElementById('repto-'+g); if(rp)rp.textContent=amt>0.5?'+'+pn(amt):'—';
   });
   // Panel "dale un destino" — vive bajo el macro, se abre tocando el Disponible de arriba.
@@ -1773,8 +1775,8 @@ function selectedDebtRowH(x,kind){
   return '<div class="row sub'+(paid?' is-paid':'')+'">'+icon+
     '<span class="dd-n">'+esc(x.n)+'</span>'+
     (kind==='card'?'<span class="dd-d">disp '+pe(cardAvail(x))+'</span>':'')+
-    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>'+
-    '<button class="rm" data-unpick="'+esc(x.n)+'" title="Quitar de esta quincena">&times;</button></div>'+
+    '<button class="rm" data-unpick="'+esc(x.n)+'" title="Quitar de esta quincena">&times;</button>'+
+    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button></div>'+
     modeToggleH(x);
 }
 function ahoDebtBlockH(){
@@ -1785,7 +1787,7 @@ function ahoDebtBlockH(){
   const paidS=(d.paid)?debts.filter(x=>!x.auto&&sel[x.n]&&d.paid[x.n]).reduce((t,x)=>t+debtAmt(x,sel[x.n]),0):0;
   return '<div class="dgroup">'+
     '<div class="dg-t">Deuda</div>'+
-    '<div class="dlegend">Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>verde</b> cuando ya lo pagaste.</div>'+
+    '<div class="dlegend">Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>azul</b> cuando ya lo pagaste.</div>'+
     '<div class="subwrap">'+
       '<div class="dsub-t">Préstamo</div>'+
       loans.map(x=>selectedDebtRowH(x,'loan')).join('')+
