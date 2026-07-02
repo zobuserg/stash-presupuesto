@@ -251,6 +251,14 @@ body.focuson .ov-bar{display:none}
 
 /* subcategorías */
 .subwrap{margin-left:.9rem; padding-left:.95rem; border-left:1.5px solid var(--line2)}
+/* Chevron para plegar/desplegar las subcategorías de una categoría (o Préstamo/Tarjeta dentro de Deuda) */
+.subtoggle{flex:none; width:20px; height:28px; border:none; background:transparent; color:var(--tx3); cursor:pointer; font-size:12px; line-height:1; padding:0; margin-right:-.2rem}
+.subtoggle:hover{color:var(--accent)}
+.subtoggle-sp{flex:none; width:20px; margin-right:-.2rem}
+.dg-fold{display:flex; align-items:center; gap:.15rem; cursor:pointer; user-select:none}
+.dg-fold .subtoggle{height:auto}
+.dg-fold:hover{color:var(--accent)}
+.dg-total{margin-left:auto; font-size:13px; font-weight:700; color:var(--tx); font-variant-numeric:tabular-nums}
 .row.sub input.l,.row.sub input.a{font-size:13.5px; color:var(--tx2); padding-top:.45rem; padding-bottom:.45rem}
 .row.sub input.a{font-weight:500}
 .row.sub input:focus{color:var(--tx)}
@@ -1041,7 +1049,14 @@ function rowH(g,i,r){
   const amt=sub?sum(r.sub):r.a;
   const canTj=(g==='nec'||g==='luj');
   const paid=!!(d.itemPaid&&d.itemPaid[g+'-'+i]);
+  // Plegar subcategorías: solo tiene sentido si HAY subcategorías. Chevron a la izquierda de la fila
+  // (mismo lenguaje que el header de las cajas). Estado por categoría en collapsed['g-i'] (igual que
+  // itemPaid se llavea por g-i — cosmético, se auto-cura al reindexar). Por defecto DESPLEGADO.
+  const foldable=sub && g!=='inc';
+  const folded=foldable && !!collapsed[g+'-'+i];
   let h='<div class="row'+(r.tj?' tjon':'')+(paid?' is-paid':'')+'">'+
+    (foldable?'<button class="subtoggle" data-subfold="'+g+'-'+i+'" title="Plegar/desplegar subcategorías">'+(folded?'▸':'▾')+'</button>'
+      :(g!=='inc'?'<span class="subtoggle-sp"></span>':''))+ // espaciador: alinea con las filas que sí tienen chevron
     '<input class="l" data-grp="'+g+'" data-idx="'+i+'" data-f="l" value="'+esc(r.l)+'" placeholder="Categoría">'+
     '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-f="a" value="'+amt+'" placeholder="0"'+(sub?' readonly':'')+'>'+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
@@ -1049,7 +1064,7 @@ function rowH(g,i,r){
     (canTj?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>':'')+'</div>';
   if(canTj && tjOpen===(g+'-'+i)) h+=tjPickerH(g,i,null,r);
   if(g!=='inc'){
-    h+='<div class="subwrap">';
+    h+='<div class="subwrap"'+(folded?' style="display:none"':'')+'>';
     if(sub) h+=r.sub.map((s,j)=>subRowH(g,i,j,s)).join('');
     h+='<button class="add sub-add" data-subadd="'+g+'" data-idx="'+i+'"><span class="p">+</span> Subcategoría</button></div>';
   }
@@ -1324,6 +1339,10 @@ app.addEventListener('click',e=>{
   const oc=e.target.closest('[data-openchecks]'); // tocar "✓ Pagado" abre la caja para ver los checks
   if(oc){const g=oc.dataset.openchecks;collapsed[g]=false;render();
     const s=document.getElementById('sec-'+g);if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  const sf=e.target.closest('[data-subfold]'); // chevron de categoría: pliega/despliega sus subcategorías
+  if(sf){collapsed[sf.dataset.subfold]=!collapsed[sf.dataset.subfold];render();return;}
+  const df=e.target.closest('[data-deudafold]'); // encabezado "Deuda": pliega/despliega Préstamo + Tarjeta
+  if(df){collapsed['deuda']=!collapsed['deuda'];render();return;}
   const al=e.target.closest('[data-addline]');
   if(al){const i=+al.dataset.addline;tjOpen=null;view='inicio';collapsed.aho=false;pickerOpen='card';debtForm={kind:'card',idx:i};render();const s=document.getElementById('sec-aho');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
   const b=e.target.closest('button');if(!b)return;
@@ -1719,20 +1738,26 @@ function ahoDebtBlockH(){
   const cards=debts.filter(x=>isCardDebt(x)&&sel[x.n]);
   const planned=debtPaySum();
   const paidS=(d.paid)?debts.filter(x=>!x.auto&&sel[x.n]&&d.paid[x.n]).reduce((t,x)=>t+debtAmt(x,sel[x.n]),0):0;
+  const folded=!!collapsed['deuda'];
+  // "Deuda" se comporta como una categoría con subcategorías: chevron para plegar Préstamo/Tarjeta,
+  // y su total (lo que pagas este ciclo) a la derecha, siempre visible — como "Gastos fijos" en Necesidades.
   return '<div class="dgroup">'+
-    '<div class="dg-t">Deuda</div>'+
-    '<div class="dlegend">Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>azul</b> cuando ya lo pagaste.</div>'+
-    '<div class="subwrap">'+
-      '<div class="dsub-t">Préstamo</div>'+
-      loans.map(x=>selectedDebtRowH(x,'loan')).join('')+
-      '<button class="add sub-add" data-openpicker="loan"><span class="p">+</span> Préstamo</button>'+
-      debtPickerH('loan')+
-      '<div class="dsub-t" style="margin-top:.7rem">Tarjeta de crédito</div>'+
-      cards.map(x=>selectedDebtRowH(x,'card')).join('')+
-      '<button class="add sub-add" data-openpicker="card"><span class="p">+</span> Tarjeta de crédito</button>'+
-      debtPickerH('card')+
-      (planned>0?'<div class="dtotal">Pagas este ciclo: <b>'+pe(planned)+'</b>'+(paidS>0?' · ya pagaste <b>'+pe(paidS)+'</b> · falta <b>'+pe(planned-paidS)+'</b>':'')+' <span style="color:var(--tx3)">— sale de tu ahorro</span></div>':'')+
-    '</div>'+
+    '<div class="dg-t dg-fold" data-deudafold="1" title="Plegar/desplegar deudas"><span class="subtoggle">'+(folded?'▸':'▾')+'</span>Deuda'+
+      (planned>0?'<span class="dg-total">'+pe(planned)+'</span>':'')+'</div>'+
+    (folded?'':
+      '<div class="dlegend">Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>azul</b> cuando ya lo pagaste.</div>'+
+      '<div class="subwrap">'+
+        '<div class="dsub-t">Préstamo</div>'+
+        loans.map(x=>selectedDebtRowH(x,'loan')).join('')+
+        '<button class="add sub-add" data-openpicker="loan"><span class="p">+</span> Préstamo</button>'+
+        debtPickerH('loan')+
+        '<div class="dsub-t" style="margin-top:.7rem">Tarjeta de crédito</div>'+
+        cards.map(x=>selectedDebtRowH(x,'card')).join('')+
+        '<button class="add sub-add" data-openpicker="card"><span class="p">+</span> Tarjeta de crédito</button>'+
+        debtPickerH('card')+
+        (planned>0?'<div class="dtotal">Pagas este ciclo: <b>'+pe(planned)+'</b>'+(paidS>0?' · ya pagaste <b>'+pe(paidS)+'</b> · falta <b>'+pe(planned-paidS)+'</b>':'')+' <span style="color:var(--tx3)">— sale de tu ahorro</span></div>':'')+
+      '</div>'
+    )+
   '</div>';
 }
 /* ===== Simulador de tarjeteo ===== */
