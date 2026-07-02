@@ -1057,7 +1057,9 @@ function rowH(g,i,r){
   // (algunas ✓, otras no) se abre sola para que veas cuál falta. Si todas o ninguna → plegada.
   const someSubPaid=sub && d.itemPaid && r.sub.some((s,j)=>d.itemPaid[key+'-'+j]);
   const allSubPaid=sub && r.sub.every((s,j)=>d.itemPaid&&d.itemPaid[key+'-'+j]);
-  const partial=!!(someSubPaid && !allSubPaid);
+  // Parcial = abre sola. PERO si el check de la categoría (padre) está marcado, NO se abre (aunque
+  // queden subs sin marcar): la categoría se dio por pagada entera → se oculta.
+  const partial=!!(someSubPaid && !allSubPaid && !paid);
   const folded=foldable && (key in collapsed ? !!collapsed[key] : !partial);
   let h='<div class="row'+(r.tj?' tjon':'')+(paid?' is-paid':'')+'">'+
     (foldable?'<button class="subtoggle" data-subfold="'+key+'" title="Plegar/desplegar subcategorías">'+(folded?'▸':'▾')+'</button>':'')+
