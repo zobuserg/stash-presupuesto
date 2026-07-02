@@ -1227,31 +1227,51 @@ function recompute(){
     bar.style.width=pctFill+'%';
     bar.style.background=(act>tgt)?'var(--bad)':'var(--ok)';
   });
-  // Cascada por PRIORIDAD (proteger): Ahorro > Necesidades > Gustos. Gustos es el AMORTIGUADOR:
-  // absorbe tanto el excedente de Ahorro (ahorraste de más) como el exceso de Necesidades (te pasaste
-  // en un gasto esencial) — se recorta la diversión antes que el ahorro o las necesidades. Gustos es lo
-  // MENOS importante, así que su propio exceso NO se arrastra a nadie: es terminal (muestra su rojo).
-  const overAho=Math.max((acts.aho||0)-(tgts.aho||0),0);
-  const overNec=Math.max((acts.nec||0)-(tgts.nec||0),0);
-  lastOver=overAho; // para decidir el orden del wizard
+  // Cascada "el déficit busca liquidez" (modelo de DD): ningún exceso se queda como negativo si otra
+  // caja tiene saldo para cubrirlo — no puedes administrar un negativo, solo lo que ves. El exceso de
+  // cualquier caja se descuenta de donde HAYA saldo: primero de Gustos (lo menos importante), luego de
+  // Necesidades. Ahorro nunca absorbe (se protege). Si YA no hay de dónde sacar, el residuo queda en
+  // NECESIDADES como único negativo de toda la vista = el indicador de déficit global del presupuesto.
+  const rawAho=(tgts.aho||0)-(acts.aho||0);
+  const rawNec=(tgts.nec||0)-(acts.nec||0);
+  const rawLuj=(tgts.luj||0)-(acts.luj||0);
+  const cargaAho=Math.max(-rawAho,0), cargaNec=Math.max(-rawNec,0), cargaLuj=Math.max(-rawLuj,0);
+  lastOver=cargaAho; // para decidir el orden del wizard
+  let poolLuj=Math.max(rawLuj,0), poolNec=Math.max(rawNec,0);
+  // exceso de ahorro → gustos, luego necesidades
+  const ahoToLuj=Math.min(cargaAho,poolLuj); poolLuj-=ahoToLuj;
+  const ahoToNec=Math.min(cargaAho-ahoToLuj,poolNec); poolNec-=ahoToNec;
+  let resid=cargaAho-ahoToLuj-ahoToNec;
+  // exceso de necesidades → gustos
+  const necToLuj=Math.min(cargaNec,poolLuj); poolLuj-=necToLuj;
+  resid+=cargaNec-necToLuj;
+  // exceso de gustos → necesidades
+  const lujToNec=Math.min(cargaLuj,poolNec); poolNec-=lujToNec;
+  resid+=cargaLuj-lujToNec;
+  poolNec-=resid; // lo que nadie pudo cubrir → único negativo, en necesidades
   const showLn=(id,txt,cls)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=txt||'';e.className=cls;e.style.display=txt?'':'none';};
   const setDisp=(g,v)=>{const e=document.getElementById('disp-'+g);if(e){e.textContent=pn(v);e.style.color=v<-0.5?'var(--bad)':(v>0.5?'var(--ok)':'var(--tx2)');}};
-  // Ahorro y Necesidades muestran su disponible propio (negativo si se pasaron); su exceso va a Gustos.
-  setDisp('aho', (tgts.aho||0)-(acts.aho||0));
-  setDisp('nec', (tgts.nec||0)-(acts.nec||0));
-  showLn('red-aho', overAho>0.5?'− '+pe(overAho)+' se arrastra a gustos':'', 'ln-red');
+  setDisp('aho', Math.max(rawAho,0)); // su exceso ya se transfirió — no muestra negativo
+  setDisp('luj', poolLuj);            // nunca negativo: su exceso se fue a necesidades
+  setDisp('nec', poolNec);            // único que puede quedar negativo (déficit global)
+  // Utilizado mostrado = propio + lo absorbido (para que Presup − Utilizado = Disponible cuadre)
+  {const sm=document.getElementById('sm-luj'); if(sm)sm.textContent=pn((acts.luj||0)+ahoToLuj+necToLuj);}
+  {const sm=document.getElementById('sm-nec'); if(sm)sm.textContent=pn((acts.nec||0)+ahoToNec+lujToNec);}
+  showLn('red-aho', cargaAho>0.5?'− '+pe(cargaAho)+' se arrastra a '+((ahoToNec>0.5||resid>0.5)?'gustos y necesidades':'gustos'):'', 'ln-red');
   showLn('mg-aho', '', 'ln-mg');
-  showLn('red-nec', overNec>0.5?'− '+pe(overNec)+' se arrastra a gustos':'', 'ln-red');
-  showLn('mg-nec', '', 'ln-mg');
-  // Gustos absorbe overAho + overNec (Utilizado incluye lo arrastrado; Disponible = meta − Utilizado)
-  const utilLuj=(acts.luj||0)+overAho+overNec, dispLuj=(tgts.luj||0)-utilLuj;
-  {const sm=document.getElementById('sm-luj'); if(sm)sm.textContent=pn(utilLuj);}
-  setDisp('luj', dispLuj);
   const lujParts=[];
-  if(overAho>0.5) lujParts.push('− '+pe(overAho)+' se arrastra de exceso de ahorro');
-  if(overNec>0.5) lujParts.push('− '+pe(overNec)+' se arrastra de exceso de necesidades');
+  if(ahoToLuj>0.5) lujParts.push('− '+pe(ahoToLuj)+' cubre el exceso de ahorro');
+  if(necToLuj>0.5) lujParts.push('− '+pe(necToLuj)+' cubre el exceso de necesidades');
+  if(cargaLuj>0.5) lujParts.push('− '+pe(cargaLuj)+' se arrastra a necesidades');
   showLn('red-luj', lujParts.join('<br>'), 'ln-red');
   showLn('mg-luj', '', 'ln-mg');
+  const necParts=[];
+  if(necToLuj>0.5) necParts.push('− '+pe(necToLuj)+' se arrastra a gustos'); // solo lo que Gustos SÍ cubrió
+  if(ahoToNec>0.5) necParts.push('− '+pe(ahoToNec)+' cubre el exceso de ahorro');
+  if(lujToNec>0.5) necParts.push('− '+pe(lujToNec)+' cubre el exceso de gustos');
+  if(poolNec<-0.5) necParts.push('<b>Déficit: al presupuesto le faltan '+pe(-poolNec)+'</b>');
+  showLn('red-nec', necParts.join('<br>'), 'ln-red');
+  showLn('mg-nec', '', 'ln-mg');
   // Macro (arriba): Presupuestado (tu presupuesto total) / Utilizado (lo asignado, naranja) / Disponible (lo que queda).
   (function(){
     const p=document.getElementById('mc-pres'); if(p)p.textContent=pn(ti);
