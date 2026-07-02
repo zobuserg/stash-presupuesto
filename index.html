@@ -98,10 +98,12 @@ body{
 .bar{height:6px; border-radius:6px; background:var(--line2); overflow:hidden; margin-bottom:1rem}
 .bar-fill{height:100%; width:0; border-radius:6px; background:var(--ok); transition:width .35s cubic-bezier(.4,0,.2,1),background .25s}
 
-.row{display:flex; gap:.6rem; align-items:center; padding:.15rem 0}
+.row{display:flex; gap:.4rem; align-items:center; padding:.15rem 0}
 .row input{font:inherit; color:var(--tx); background:transparent; border:none; padding:.55rem .2rem; transition:background .15s}
 .row input.l{flex:1; min-width:0; border-bottom:1px solid var(--line2)}
-.row input.a{width:118px; flex:none; text-align:right; font-weight:600; font-variant-numeric:tabular-nums; border-bottom:1px solid var(--line2)}
+/* Monto más angosto (antes 118px) → deja más ancho a la etiqueta para que el nombre de la categoría
+   no se corte ("Transporte", "Educación" entran completos). Un monto rara vez pasa de 5-6 dígitos. */
+.row input.a{width:78px; flex:none; text-align:right; font-weight:600; font-variant-numeric:tabular-nums; border-bottom:1px solid var(--line2)}
 .row input:focus{outline:none; border-bottom-color:var(--accent)}
 .row input.l::placeholder,.row input.a::placeholder{color:var(--tx3)}
 input.saved{background:rgba(52,199,89,.20) !important}
@@ -154,7 +156,9 @@ body.focuson .reset{display:none}
 .ln-red{font-size:12px; color:var(--bad); font-weight:600; line-height:1.45; margin-top:.35rem}
 .ln-mg{font-size:12px; color:var(--accent); font-weight:600; line-height:1.45; margin-top:.25rem; text-decoration:underline dotted; text-underline-offset:3px}
 .ln-mg.neg{color:var(--bad); text-decoration:none}
-.heart.macro-card{background:none; border:none; box-shadow:none; padding:0 0 .7rem; margin:.4rem 0 1.1rem; border-bottom:1px solid var(--line)}
+/* padding lateral = .9rem + 1px (el padding + borde de las cajas .sec-tint) para que las 5 columnas
+   del macro queden ALINEADAS verticalmente con las 5 columnas de cada caja. */
+.heart.macro-card{background:none; border:none; box-shadow:none; padding:0 calc(.9rem + 1px) .7rem; margin:.4rem 0 1.1rem; border-bottom:1px solid var(--line)}
 .macro{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.4rem; text-align:center}
 .macro .mc{display:flex; flex-direction:column; gap:.2rem; min-width:0}
 .macro .mc-l{font-size:10.5px; color:var(--tx3); font-weight:500; text-transform:uppercase; letter-spacing:.02em}
@@ -254,7 +258,6 @@ body.focuson .ov-bar{display:none}
 /* Chevron para plegar/desplegar las subcategorías de una categoría (o Préstamo/Tarjeta dentro de Deuda) */
 .subtoggle{flex:none; width:20px; height:28px; border:none; background:transparent; color:var(--tx3); cursor:pointer; font-size:12px; line-height:1; padding:0; margin-right:-.2rem}
 .subtoggle:hover{color:var(--accent)}
-.subtoggle-sp{flex:none; width:20px; margin-right:-.2rem}
 .dg-fold{display:flex; align-items:center; gap:.15rem; cursor:pointer; user-select:none}
 .dg-fold .subtoggle{height:auto}
 .dg-fold:hover{color:var(--accent)}
@@ -591,25 +594,15 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 #sec-aho.sec-tint{background:rgba(52,199,89,.07); border-color:rgba(52,199,89,.32)}
 #sec-nec.sec-tint{background:rgba(0,113,227,.06); border-color:rgba(0,113,227,.28)}
 #sec-luj.sec-tint{background:rgba(224,146,47,.08); border-color:rgba(224,146,47,.32)}
-/* Tríada por caja: Presupuestado · Utilizado · Disponible · Repartido · ✓ Pagado (5 columnas).
-   El macro (arriba) simplificado a 3: Presupuestado · Utilizado · Disponible — "Repartido" no
-   tenía número propio a nivel macro (siempre era "—", solo tiene sentido por caja) y solo
-   generaba la pregunta "¿dónde pongo esto?". Pagado vive aparte en la insignia .macro-pagado.
+/* Macro (arriba) y tríada de cada caja: MISMAS 5 columnas, alineadas vertical y por color:
+   Presupuestado · Utilizado · Disponible · Repartido · ✓ Pagado. El macro no repite el reparto por
+   caja — en su columna Repartido vive el chip ↻ 50/30/20 (el control); el resultado se ve en cada caja.
    Valores SIN "S/" (pn(), no pe()) — el "S/" ya está grande arriba en el hero. */
-.triad{grid-template-columns:repeat(5,1fr)}
-.macro{grid-template-columns:repeat(3,1fr)}
+.macro,.triad{grid-template-columns:repeat(5,1fr)}
 .macro .mc-l{font-size:9.5px}
 .macro .mc-v{font-size:14px}
-.macro-row{display:flex; align-items:center; gap:.6rem}
-.macro-row .macro{flex:1; min-width:0}
-.macro-pagado{flex:none; display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.2rem .1rem 0; border-left:1px solid var(--line); padding-left:.6rem}
-.mp-v{font-size:13px; font-weight:800; color:var(--tx3); font-variant-numeric:tabular-nums}
-.mp-l{font-size:8px; color:var(--tx3); text-transform:uppercase; letter-spacing:.02em}
-/* Chip "↻ 50/30/20" bajo Disponible: única acción sobre lo disponible — muestra/oculta el reparto
-   50/30/20 en la columna "Repartido" de cada caja. Píldora azul: contorno cuando está apagado,
-   relleno cuando está encendido (mismo lenguaje que los demás chips de la app). */
-.mc-rollchip{font:inherit; font-size:9px; font-weight:600; color:var(--accent); background:transparent;
-  border:1px solid var(--accent); border-radius:10px; padding:1px .4rem; margin:.25rem auto 0; cursor:pointer; width:max-content; transition:.15s}
+.mc-rollchip{font:inherit; font-size:8.5px; font-weight:600; color:var(--accent); background:transparent;
+  border:1px solid var(--accent); border-radius:10px; padding:1px .3rem; margin:.15rem auto 0; cursor:pointer; width:max-content; max-width:100%; white-space:nowrap; transition:.15s}
 .mc-rollchip.on{background:var(--accent); color:#fff}
 .tr-tap{cursor:pointer}
 /* Checks más visibles: borde marcado. El check "ya pagué" es SIEMPRE azul (accent), en
@@ -1049,14 +1042,15 @@ function rowH(g,i,r){
   const amt=sub?sum(r.sub):r.a;
   const canTj=(g==='nec'||g==='luj');
   const paid=!!(d.itemPaid&&d.itemPaid[g+'-'+i]);
-  // Plegar subcategorías: solo tiene sentido si HAY subcategorías. Chevron a la izquierda de la fila
-  // (mismo lenguaje que el header de las cajas). Estado por categoría en collapsed['g-i'] (igual que
-  // itemPaid se llavea por g-i — cosmético, se auto-cura al reindexar). Por defecto DESPLEGADO.
-  const foldable=sub && g!=='inc';
-  const folded=foldable && !!collapsed[g+'-'+i];
+  // Plegar subcategorías: TODA categoría (nec/luj/aho) tiene chevron. Por defecto DESPLEGADA si tiene
+  // subcategorías (muestra el desglose), PLEGADA si no las tiene (solo ves el monto — no ensucia con el
+  // botón "+ Subcategoría" hasta que entras). Estado en collapsed['g-i'] (igual que itemPaid se llavea
+  // por g-i — cosmético, se auto-cura al reindexar).
+  const foldable=g!=='inc';
+  const key=g+'-'+i;
+  const folded=foldable && (key in collapsed ? !!collapsed[key] : !sub);
   let h='<div class="row'+(r.tj?' tjon':'')+(paid?' is-paid':'')+'">'+
-    (foldable?'<button class="subtoggle" data-subfold="'+g+'-'+i+'" title="Plegar/desplegar subcategorías">'+(folded?'▸':'▾')+'</button>'
-      :(g!=='inc'?'<span class="subtoggle-sp"></span>':''))+ // espaciador: alinea con las filas que sí tienen chevron
+    (foldable?'<button class="subtoggle" data-subfold="'+key+'" title="Plegar/desplegar subcategorías">'+(folded?'▸':'▾')+'</button>':'')+
     '<input class="l" data-grp="'+g+'" data-idx="'+i+'" data-f="l" value="'+esc(r.l)+'" placeholder="Categoría">'+
     '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-f="a" value="'+amt+'" placeholder="0"'+(sub?' readonly':'')+'>'+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
@@ -1095,7 +1089,7 @@ function bucketH(g,name,pct,num){
     '<div class="bucket-body"'+(col?' style="display:none"':'')+'>'+
       rows+
       (g==='aho'?ahoDebtBlockH():'')+
-      (g!=='aho'?'<button class="add" data-add="'+g+'"><span class="p">+</span> Agregar categoría</button>':'')+
+      '<button class="add" data-add="'+g+'"><span class="p">+</span> Agregar categoría</button>'+ // también en Ahorro
     '</div>'+
     wizBtn+'</div>';
 }
@@ -1128,15 +1122,14 @@ function render(){
       '</div>'+
     '</div>'+
     '<div class="heart macro-card" id="heart">'+
-      '<div class="macro-row">'+
-        '<div class="macro">'+
-          '<div class="mc"><span class="mc-l">Presup.</span><span class="mc-v" id="mc-pres">&mdash;</span></div>'+
-          '<div class="mc"><span class="mc-l">Utilizado</span><span class="mc-v tr-util" id="mc-util">&mdash;</span></div>'+
-          '<div class="mc"><span class="mc-l">Disponible</span><span class="mc-v" id="mc-disp">&mdash;</span>'+
-            '<button class="mc-rollchip'+(showRollover?' on':'')+'" data-toggleroll="1" title="Repartir lo disponible 50/30/20 en las 3 cajas">&#8635; 50/30/20</button>'+
-          '</div>'+
+      '<div class="macro">'+ // 5 columnas, ALINEADAS con la tríada de cada caja (mismo orden y color)
+        '<div class="mc"><span class="mc-l">Presup.</span><span class="mc-v" id="mc-pres">&mdash;</span></div>'+
+        '<div class="mc"><span class="mc-l">Utilizado</span><span class="mc-v tr-util" id="mc-util">&mdash;</span></div>'+
+        '<div class="mc"><span class="mc-l">Disponible</span><span class="mc-v" id="mc-disp">&mdash;</span></div>'+
+        '<div class="mc"><span class="mc-l">Repartido</span>'+
+          '<button class="mc-rollchip'+(showRollover?' on':'')+'" data-toggleroll="1" title="Repartir lo disponible 50/30/20 en las 3 cajas">&#8635; 50/30/20</button>'+
         '</div>'+
-        '<div class="macro-pagado" title="Porcentaje pagado del total (el detalle vive en cada caja)"><span class="mp-v" id="mc-done">&mdash;</span><span class="mp-l">pagado</span></div>'+
+        '<div class="mc"><span class="mc-l">&#10003; Pagado</span><span class="mc-v" id="mc-done">&mdash;</span></div>'+
       '</div>'+
     '</div>'+
     buckets.map((b,i)=>bucketH(b[0],b[1],b[2],i+1)).join('')+
@@ -1340,7 +1333,9 @@ app.addEventListener('click',e=>{
   if(oc){const g=oc.dataset.openchecks;collapsed[g]=false;render();
     const s=document.getElementById('sec-'+g);if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
   const sf=e.target.closest('[data-subfold]'); // chevron de categoría: pliega/despliega sus subcategorías
-  if(sf){collapsed[sf.dataset.subfold]=!collapsed[sf.dataset.subfold];render();return;}
+  if(sf){const k=sf.dataset.subfold, p=k.split('-'), gg=p[0], ii=+p[1], rr=d[gg]&&d[gg][ii];
+    const curFolded=(k in collapsed)?!!collapsed[k]:!(rr&&hasSubs(rr)); // mismo default que rowH
+    collapsed[k]=!curFolded; render(); return;}
   const df=e.target.closest('[data-deudafold]'); // encabezado "Deuda": pliega/despliega Préstamo + Tarjeta
   if(df){collapsed['deuda']=!collapsed['deuda'];render();return;}
   const al=e.target.closest('[data-addline]');
