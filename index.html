@@ -1466,7 +1466,9 @@ function bucketH(g,name,pct,num){
       '<span class="tr tr-tap" data-openchecks="'+g+'" title="Ver qué falta pagar aquí"><i>✓ Pagado</i><b id="done-'+g+'">&mdash;</b></span>'+
     '</div>'+
     '<div class="bar"><div class="bar-fill" id="bar-'+g+'"></div></div>'+
-    '<div class="sec-lines"'+(col?' style="display:none"':'')+'>'+
+    // La historia de la cascada ("− X cubre el exceso" / "− X se arrastra a…") se ve SIEMPRE,
+    // aunque la caja esté plegada — es el punto de "el déficit busca liquidez", no debe esconderse.
+    '<div class="sec-lines">'+
       '<div class="ln-red" id="red-'+g+'" style="display:none"></div>'+
       '<div class="ln-mg" id="mg-'+g+'" style="display:none"></div>'+
     '</div>'+
