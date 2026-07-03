@@ -467,6 +467,52 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .fondo-note b{color:var(--tx); font-variant-numeric:tabular-nums}
 .fondo-close{display:block; width:100%; margin-top:.85rem; font:inherit; font-size:13px; font-weight:600; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.6rem; cursor:pointer}
 .fondo-close:hover{filter:brightness(1.08)}
+/* Reserva: escalera de pisos (Colchón → Metas → Inversiones) + estado de cuenta del ciclo */
+.ft-piso{display:flex; align-items:center; gap:.45rem; font-size:13px; font-weight:700; color:var(--tx); margin:1.1rem 0 .4rem}
+.ft-piso .ft-hint{font-weight:400; display:inline; margin-left:.15rem}
+.ftp-n{width:18px; height:18px; border-radius:50%; background:var(--accent); color:#fff; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; flex:none}
+.ftc-bar{height:8px; background:var(--line2); border-radius:99px; overflow:hidden}
+.ftc-fill{height:100%; background:var(--ok); border-radius:99px; transition:width .25s}
+.ftc-l{font-size:11.5px; color:var(--tx2); margin-top:.3rem}
+.ftc-l .neg,.ftm-r .neg{color:var(--bad)}
+.ft-mov{background:var(--line2); border-radius:var(--rad-sm); padding:.55rem .7rem; margin:.7rem 0 0}
+.ftm-h{font-size:11.5px; font-weight:700; color:var(--tx2); margin-bottom:.25rem}
+.ftm-r{display:flex; justify-content:space-between; gap:.6rem; font-size:12px; color:var(--tx2); padding:.14rem 0}
+.ftm-r b{font-variant-numeric:tabular-nums; white-space:nowrap}
+.ftm-r b.ok{color:var(--ok)}
+/* Ceremonia de cierre: modal de liquidación por caja (reemplaza los confirm() encadenados) */
+.cierre-ovl{position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.45); display:flex; align-items:flex-end; justify-content:center}
+.cierre-card{background:var(--card); border-radius:18px 18px 0 0; box-shadow:var(--shadow); width:100%; max-width:560px; max-height:88vh; overflow-y:auto; padding:1.1rem 1.15rem 1.3rem}
+@media(min-width:600px){.cierre-ovl{align-items:center; padding:1rem}.cierre-card{border-radius:18px}}
+.ci-h{font-size:16px; font-weight:800; color:var(--tx); margin-bottom:.15rem}
+.ci-sub{font-size:12px; color:var(--tx3); margin-bottom:.7rem}
+.ci-nums{display:flex; gap:.5rem; margin:.6rem 0}
+.ci-num{flex:1; background:var(--line2); border-radius:var(--rad-sm); padding:.55rem .5rem; text-align:center}
+.ci-num i{display:block; font-style:normal; font-size:10px; color:var(--tx3); text-transform:uppercase; letter-spacing:.03em}
+.ci-num b{font-size:15px; color:var(--tx); font-variant-numeric:tabular-nums}
+.ci-sec{margin-top:1rem}
+.ci-sec-h{font-size:11.5px; font-weight:700; color:var(--tx2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.35rem}
+.ci-row{display:flex; align-items:center; gap:.5rem; padding:.42rem 0; border-bottom:1px solid var(--line2); font-size:13px; color:var(--tx)}
+.ci-row .cr-a{margin-left:auto; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap}
+.ci-tog{font:inherit; font-size:11px; font-weight:700; border:1.5px solid var(--line); background:transparent; color:var(--tx3); border-radius:999px; padding:.3rem .55rem; cursor:pointer; white-space:nowrap}
+.ci-tog.on{border-color:var(--accent); background:var(--accent); color:#fff}
+.ci-q{margin-top:.6rem; font-size:13.5px; font-weight:600; color:var(--tx); line-height:1.45}
+.ci-opts{display:flex; gap:.5rem; margin-top:.55rem; flex-wrap:wrap}
+.ci-opt{flex:1; min-width:150px; font:inherit; font-size:12.5px; font-weight:600; border:1.5px solid var(--line); background:transparent; color:var(--tx); border-radius:10px; padding:.6rem .5rem; cursor:pointer; text-align:center; line-height:1.35}
+.ci-opt.on{border-color:var(--accent); background:var(--accent); color:#fff}
+.ci-note{font-size:11.5px; color:var(--tx3); margin-top:.4rem; line-height:1.5}
+.ci-abs{font-size:12.5px; color:var(--tx2); margin-top:.4rem; line-height:1.5}
+.ci-warn{background:var(--line2); border-left:3px solid var(--bad); padding:.5rem .7rem; border-radius:8px; font-size:12px; color:var(--tx2); margin-top:.6rem; line-height:1.5}
+.ci-btns{display:flex; gap:.6rem; margin-top:1.1rem}
+.ci-cancel{flex:0 0 auto; font:inherit; font-size:13px; color:var(--tx2); background:transparent; border:1.5px solid var(--line); border-radius:10px; padding:.65rem .9rem; cursor:pointer}
+.ci-go{flex:1; font:inherit; font-size:13.5px; font-weight:700; color:#fff; background:var(--accent); border:none; border-radius:10px; padding:.65rem; cursor:pointer}
+.ci-go:disabled{opacity:.45; cursor:not-allowed}
+.dd-carried{font-size:10px; color:var(--accent); background:var(--line2); border-radius:6px; padding:.1rem .35rem; margin-left:.3rem; white-space:nowrap}
+/* Banners de frontera de ciclo (cierre pendiente / ciclo cerrado) */
+.close-banner{display:flex; align-items:center; gap:.55rem; flex-wrap:wrap; background:var(--line2); border:1.5px solid var(--accent); border-radius:var(--rad-sm); padding:.7rem .85rem; margin:.6rem 0 .2rem; font-size:12.5px; color:var(--tx); line-height:1.4}
+.close-banner .cb-btn{margin-left:auto; font:inherit; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent); border:none; border-radius:8px; padding:.45rem .7rem; cursor:pointer; white-space:nowrap}
+.closed-banner{background:var(--line2); border-left:3px solid var(--ok); border-radius:var(--rad-sm); padding:.55rem .85rem; margin:.6rem 0 .2rem; font-size:12.5px; color:var(--tx2)}
+.closed-banner b{color:var(--tx)}
 .hero-fondo{text-align:center; font-size:12.5px; color:var(--tx2); margin:.2rem 0 .5rem}
 .hero-fondo input{width:88px; font:inherit; font-size:14px; font-weight:600; text-align:right; color:var(--tx); background:transparent; border:none; border-bottom:1px dashed var(--line); padding:1px 3px}
 .hero-fondo input:focus{outline:none; border-bottom-color:var(--accent)}
@@ -670,14 +716,15 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 </div>
 <div id="app"></div>
 <div id="debts" class="debts"></div>
-<div id="sec-invertir" class="sec" style="display:none"></div>
 <div id="sec-fondo" class="sec" style="display:none"></div>
+<div id="sec-invertir" class="sec" style="display:none"></div>
+<div id="cierre-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="cierre-card"></div></div>
+<!-- 3 tabs = el balance general: Inicio (flujo del ciclo) · Deudas (pasivos) · Reserva (activos).
+     Invertir vive DENTRO de Reserva (piso 3 de la escalera); Resumen se fundió en Deudas. -->
 <nav class="tabbar">
   <button class="tabbtn active" data-view="inicio"><span class="ti">🏠</span><span>Inicio</span></button>
   <button class="tabbtn" data-view="deudas"><span class="ti">💳</span><span>Deudas</span></button>
-  <button class="tabbtn" data-view="resumen"><span class="ti">📊</span><span>Resumen</span></button>
-  <button class="tabbtn" data-view="invertir"><span class="ti">📈</span><span>Invertir</span></button>
-  <button class="tabbtn" data-view="fondo"><span class="ti">🔒</span><span>Fondo</span></button>
+  <button class="tabbtn" data-view="fondo"><span class="ti">🔒</span><span>Reserva</span></button>
 </nav>
 <script>
 // ===== Tema claro/oscuro: manual con el botón ☀️/🌙; sin elección guardada, sigue al sistema =====
@@ -797,7 +844,9 @@ function cycEditH(c){
 function switchCycle(id){if(id===activeQ)return;save();activeQ=id;d=load(activeQ);showRollover=true;
   // se mantiene la tab actual (Inicio/Resumen/Deudas/Invertir) al cambiar de ciclo — no resetear a Inicio
   localStorage.setItem('midas_active_cycle',activeQ);history=[];render();renderDebts();updateUndo();}
-function addCycle(type){
+// createCycle: crea el ciclo y devuelve su id SIN cambiar a él (el cierre lo usa para escribir
+// arrastres/rollover en el siguiente ciclo antes de saltar). addCycle = crear + saltar (la barra).
+function createCycle(type){
   // start/end del nuevo ciclo: arranca el día siguiente al último ciclo con fecha fin.
   const ends=cycles.map(c=>c.end).filter(Boolean).sort();
   let start='', end='';
@@ -821,8 +870,9 @@ function addCycle(type){
   const id='c'+Date.now(), n=cycles.filter(c=>c.type===type).length+1;
   cycles.push({id,type,start,end,label:(type==='m'?'Mes ':type==='q'?'Quincena ':'Periodo ')+n});saveCycles();
   const nd=def();nd.payday=base;localStorage.setItem(keyFor(id),JSON.stringify(nd));
-  switchCycle(id);
+  return id;
 }
+function addCycle(type){switchCycle(createCycle(type));}
 let tjOpen=null; // "g-i" de la línea con el selector de tarjeta abierto
 // Modo guiado por escenas: Ahorro → Gustos → Necesidades → Plan quincenal.
 const WIZ=['sec-aho','sec-luj','sec-nec','planbox'];
@@ -862,13 +912,16 @@ function applyView(){
   setD('heart', inicio);
   const tog=document.getElementById('focus-toggle');if(tog)tog.style.display=inicio?'':'none';
   const reset=document.querySelector('.reset');if(reset)reset.style.display=inicio?'':'none';
-  setD('sec-informe', view==='resumen');
-  const showDebts=(view==='resumen'||view==='deudas');
-  setD('debts', showDebts);
+  const tpl=document.querySelector('.tpl');if(tpl)tpl.style.display=inicio?'':'none';       // plantillas y backup
+  const bk=document.querySelector('.backup');if(bk)bk.style.display=inicio?'':'none';       // son cosas de Inicio
+  // Deudas = estado de cuenta del ciclo (informe + plan + jugada) + el banco (gestión).
+  // Reserva = activos (colchón + metas) con Inversiones como piso 3 adentro.
+  setD('sec-informe', view==='deudas');
+  setD('debts', view==='deudas');
   setD('debts-mgmt', view==='deudas');
-  setD('planbox', view==='resumen');
-  setD('advisorbox', view==='resumen');
-  setD('sec-invertir', view==='invertir');
+  setD('planbox', view==='deudas');
+  setD('advisorbox', view==='deudas');
+  setD('sec-invertir', view==='fondo');
   setD('sec-fondo', view==='fondo');
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
 }
@@ -901,6 +954,41 @@ function load(q){
     }
   }catch(e){}
   return def();
+}
+// ===== Resolución por fecha: amaneces en el ciclo que corresponde a HOY =====
+// La fecha solo decide DÓNDE ABRES — jamás cierra un ciclo sola (cerrar es siempre decisión tuya).
+// Si el ciclo guardado ya venció (o aún no empieza), salta al que contiene la fecha de hoy;
+// si hoy quedó después del último ciclo datado, nace el ciclo del periodo ACTUAL (mismo tipo).
+function cycleForToday(){const hoy=isoToday();const c=cycles.find(x=>x.start&&x.end&&x.start<=hoy&&hoy<=x.end);return c?c.id:null;}
+function createCycleForToday(type){
+  const hoy=isoToday(), p=hoy.split('-'), y=+p[0], m=+p[1], dd=+p[2];
+  let start,end;
+  if(type==='m'){start=y+'-'+pad2(m)+'-01';end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));}
+  else{ if(dd<=15){start=y+'-'+pad2(m)+'-01';end=y+'-'+pad2(m)+'-15';} else {start=y+'-'+pad2(m)+'-16';end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));} }
+  const id='c'+Date.now(), n=cycles.filter(c=>c.type===type).length+1;
+  cycles.push({id,type,start,end,label:(type==='m'?'Mes ':type==='q'?'Quincena ':'Periodo ')+n});saveCycles();
+  localStorage.setItem(keyFor(id),JSON.stringify(def()));
+  return id;
+}
+(function resolveByDate(){
+  const hoy=isoToday(), cur=cycleOf(activeQ);
+  if(cur.start&&cur.end&&cur.start<=hoy&&hoy<=cur.end)return; // el guardado sigue vigente — no molestar
+  let id=cycleForToday();
+  if(!id){ const dated=cycles.filter(x=>x.end);
+    const last=dated.length?dated.reduce((a,b)=>a.end>b.end?a:b):null;
+    if(last&&last.end<hoy) id=createCycleForToday(last.type==='m'?'m':'q'); }
+  if(id&&id!==activeQ){activeQ=id;localStorage.setItem('midas_active_cycle',activeQ);}
+})();
+// Ciclo vencido y sin cerrar (con data): el más antiguo. Alimenta el banner "ciérrala".
+// Los cierres van en orden, del más viejo al más nuevo — cada resultado alimenta al siguiente.
+function pendingCloseCycle(){
+  const hoy=isoToday(); let cand=null;
+  cycles.forEach(c=>{ if(!c.end||c.end>=hoy)return;
+    const x=(c.id===activeQ)?d:load(c.id);
+    if(x.closed)return;
+    if(sum(x.inc)<=0)return; // ciclo vacío: no hay nada que cerrar
+    if(!cand||c.end<cand.end)cand=c; });
+  return cand;
 }
 let d=load(activeQ);
 showRollover=true; // por defecto ON: el disponible por sector se ve al abrir
@@ -952,21 +1040,38 @@ function loadFondoCats(){try{const x=JSON.parse(localStorage.getItem('midas_fond
 let fondoCats=loadFondoCats();
 function saveFondoCats(){localStorage.setItem('midas_fondo_cats',JSON.stringify(fondoCats));}
 function fondoH(){
+  // Reserva = tus ACTIVOS, leídos como escalera de 3 pisos: Colchón (protege) → Metas (ilusiona)
+  // → Inversiones (multiplica, vive en sec-invertir debajo). Todo ahorro sube tu patrimonio.
   const asignado=fondoCats.reduce((t,c)=>t+(parseFloat(c.a)||0),0), sin=fondo-asignado;
-  return '<div class="sec-h"><span class="t">🔒 Fondo</span></div>'+
+  // Piso 1 · Colchón = lo NO asignado a metas. Meta clásica: 3 meses de tus necesidades.
+  const necMes=(cycleOf(activeQ).type==='q'?2:1)*sumCash(d.nec||[]);
+  const target=necMes*3;
+  const pctC=target>0?Math.min(Math.max(sin,0)/target*100,100):0;
+  // Estado de cuenta del CICLO: qué le pasó a la Reserva en este ciclo (aportes en vivo, cierre).
+  let movs=[];try{movs=(JSON.parse(localStorage.getItem('midas_reslog'))||[]).filter(m=>m.q===activeQ);}catch(e){}
+  const movSum=movs.reduce((t,m)=>t+(m.a||0),0);
+  return '<div class="sec-h"><span class="t">🔒 Reserva</span></div>'+
     '<div class="fondo-tab">'+
-      '<div class="ft-total"><span class="ft-l">Tu Fondo<span class="ft-hint">tu caja fuerte, aparte de los ciclos</span></span><span class="ft-v">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
-      '<div class="ft-cats-h">Metas — reparte tu fondo en objetivos</div>'+
-      fondoCats.map((c,i)=>'<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="Ej. Emergencia, Vacaciones"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="Quitar">&times;</button></div>').join('')+
+      '<div class="ft-total"><span class="ft-l">Tu Reserva<span class="ft-hint">tu caja fuerte, aparte de los ciclos</span></span><span class="ft-v">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
+      (movs.length?'<div class="ft-mov"><div class="ftm-h">Este ciclo: '+(movSum>=0?'+ ':'− ')+pe(Math.abs(movSum))+'</div>'+
+        movs.slice(-6).reverse().map(m=>'<div class="ftm-r"><span>'+esc(m.n||'')+'</span><b class="'+((m.a||0)>=0?'ok':'neg')+'">'+((m.a||0)>=0?'+':'−')+' '+pe(Math.abs(m.a||0))+'</b></div>').join('')+'</div>'
+        :'<div class="ft-mov"><div class="ftm-h">Este ciclo: sin movimientos aún</div><div class="ftm-r" style="color:var(--tx3)">Marca ✓ tu ahorro en Inicio y verás el aporte llegar aquí solo.</div></div>')+
+      '<div class="ft-piso"><span class="ftp-n">1</span> Colchón <span class="ft-hint">tu red de emergencia — lo que no está en una meta</span></div>'+
+      '<div class="ftc-bar"><div class="ftc-fill" style="width:'+pctC+'%"></div></div>'+
+      '<div class="ftc-l">'+pe(Math.max(sin,0))+(target>0?' de '+pe(target)+' <span style="color:var(--tx3)">(≈3 meses de tus necesidades)</span>':'')+(sin<-0.5?' — <span class="neg">asignaste a metas más de lo que tienes</span>':'')+'</div>'+
+      '<div class="ft-piso"><span class="ftp-n">2</span> Metas <span class="ft-hint">sueños con nombre — la cuota de esperanza</span></div>'+
+      fondoCats.map((c,i)=>'<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="Ej. Emergencia, Auto, Viaje"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="Quitar">&times;</button></div>').join('')+
       '<button class="add" data-ftadd="1"><span class="p">+</span> Agregar meta</button>'+
-      '<div class="ft-sin'+(sin<-0.5?' neg':'')+'">Sin asignar a una meta: <b>'+pe(sin)+'</b>'+(sin<-0.5?' — asignaste más de lo que tienes':'')+'</div>'+
     '</div>';
 }
 function refreshFondo(){const e=document.getElementById('sec-fondo');if(e)e.innerHTML=fondoH();}
-function refreshSinAsignar(){const e=document.querySelector('#sec-fondo .ft-sin');if(!e)return;
+function refreshSinAsignar(){ // actualiza el Colchón (piso 1) en vivo sin re-render (no pierde el foco)
   const asignado=fondoCats.reduce((t,c)=>t+(parseFloat(c.a)||0),0), sin=fondo-asignado;
-  e.className='ft-sin'+(sin<-0.5?' neg':'');
-  e.innerHTML='Sin asignar a una meta: <b>'+pe(sin)+'</b>'+(sin<-0.5?' — asignaste más de lo que tienes':'');}
+  const necMes=(cycleOf(activeQ).type==='q'?2:1)*sumCash(d.nec||[]), target=necMes*3;
+  const fill=document.querySelector('#sec-fondo .ftc-fill');
+  if(fill)fill.style.width=(target>0?Math.min(Math.max(sin,0)/target*100,100):0)+'%';
+  const l=document.querySelector('#sec-fondo .ftc-l');
+  if(l)l.innerHTML=pe(Math.max(sin,0))+(target>0?' de '+pe(target)+' <span style="color:var(--tx3)">(≈3 meses de tus necesidades)</span>':'')+(sin<-0.5?' — <span class="neg">asignaste a metas más de lo que tienes</span>':'');}
 (function(){const sf=document.getElementById('sec-fondo');if(!sf)return;
   sf.addEventListener('input',e=>{const t=e.target;
     if(t.id==='fondo-inp'){fondo=parseFloat(t.value)||0;saveFondo();refreshSinAsignar();return;}
@@ -977,28 +1082,136 @@ function refreshSinAsignar(){const e=document.querySelector('#sec-fondo .ft-sin'
     else if(b.dataset.ftcrm!==undefined){fondoCats.splice(+b.dataset.ftcrm,1);saveFondoCats();refreshFondo();}
   });
 })();
-function cerrarQuincena(){
-  if(d.closed && !confirm('Ya cerraste este ciclo antes. Cerrarlo otra vez volvería a sumar a tu Fondo (doble conteo). ¿Seguro?'))return;
-  const ingreso=sum(d.inc);
-  const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
-  const presup=ingreso-(lastSaldo||0); // gasto presupuestado de este ciclo
-  const aReserva=ingreso-real; // lo no gastado de verdad (incl. presupuesto no materializado)
-  let msg='¿Cerrar este ciclo?\n\nGastado real (lo marcado ✓): '+pe(real)+'\nSobrante: '+(aReserva>=0?'+ ':'− ')+pe(Math.abs(aReserva))+'\n\nEl siguiente ciclo arranca de cero.';
-  if(presup>50 && real<presup*0.5 && aReserva>presup*0.3)
-    msg='⚠️ Ojo: marcaste pagado solo '+pe(real)+' de '+pe(presup)+' presupuestado.\n\nEl sobrante ('+pe(aReserva)+') se tratará como NO gastado. Si de verdad gastaste tu quincena, primero marca ✓ lo que pagaste.\n\n¿Cerrar igual?';
-  if(!confirm(msg))return;
-  // Destino del sobrante (solo si es positivo): a tu Fondo, o al siguiente ciclo.
-  let alFondo=true;
-  if(aReserva>0.5) alFondo=confirm('Tu sobrante es '+pe(aReserva)+'.\n\n¿Guardarlo en tu FONDO (caja fuerte)?\n\nAceptar = al Fondo · Cancelar = pásalo al siguiente ciclo como saldo inicial');
-  snapshot();
-  if(alFondo){ fondo+=aReserva; saveFondo(); }
-  d.closed=true; save();
-  const idx=cycles.findIndex(c=>c.id===activeQ);
-  if(idx>=0 && idx<cycles.length-1){ switchCycle(cycles[idx+1].id); }
-  else { addCycle(cycleOf(activeQ).type); }
-  if(!alFondo && aReserva>0.5){ d.inc.push({l:'Sobrante del ciclo anterior', a:Math.round(aReserva)}); save(); render(); renderDebts(); }
+/* ===== Ceremonia de cierre (period-end close) — liquidación POR CAJA =====
+   El cierre nunca adivina: (a) ahorro sin ✓ → pregunta "¿lo apartaste?" (sí → Reserva; no → caduca,
+   budget lapse); (b) deudas sin ✓ → son la lista EXACTA de lo que quedó debiendo (arrears) → se
+   ofrecen arrastrar al siguiente ciclo con su foto; (c) sobrante → pregunta Reserva o siguiente
+   ciclo; (d) déficit → la Reserva absorbe VISIBLE (nunca en silencio) y el resto pregunta:
+   descontar del siguiente presupuesto (ingreso negativo) o empezar de cero. Deja asiento (closeLog). */
+// Historial de la Reserva: cada movimiento (aporte en vivo, sobrante, absorción) deja una línea.
+function addResLog(a,n){try{const l=JSON.parse(localStorage.getItem('midas_reslog'))||[];
+  l.push({f:isoToday(),q:activeQ,a:Math.round(a),n:n});localStorage.setItem('midas_reslog',JSON.stringify(l));}catch(e){}}
+// ✓ de AHORRO en tiempo real: cuánto mueve un check (padre = solo lo aún no movido por sus subs)
+// y su etiqueta. El monto movido queda en d.ahoMoved[k] para revertir EXACTO al destildar.
+function ahoKeyAmount(k){const pp=k.split('-');const row=d.aho&&d.aho[+pp[1]];if(!row)return 0;
+  if(pp.length===3){const s=row.sub&&row.sub[+pp[2]];return s?(parseFloat(s.a)||0):0;}
+  if(hasSubs(row)){let t=0;row.sub.forEach((s,j)=>{if(!(d.itemPaid&&d.itemPaid['aho-'+pp[1]+'-'+j]))t+=parseFloat(s.a)||0;});return t;}
+  return parseFloat(row.a)||0;}
+function ahoKeyLabel(k){const pp=k.split('-');const row=d.aho&&d.aho[+pp[1]];if(!row)return 'Ahorro';
+  if(pp.length===3){const s=row.sub&&row.sub[+pp[2]];return (row.l?row.l+' / ':'')+((s&&s.l)||'ahorro');}
+  return row.l||'Ahorro';}
+let cierre=null; // estado del modal: {ing, ahoPend[], debtPend[], destino, defTrato}
+function openCierre(){
+  if(d.closed && !confirm('Este ciclo ya se cerró antes. ¿Revisarlo y cerrarlo otra vez? (Ojo: volvería a aplicar su resultado — doble conteo.)'))return;
+  const ing=sum(d.inc);
+  const ahoPend=[]; // ahorro presupuestado sin ✓ → candidato a "¿lo apartaste?"
+  (d.aho||[]).forEach((r,i)=>{
+    const parentPaid=!!(d.itemPaid&&d.itemPaid['aho-'+i]);
+    if(hasSubs(r)){ r.sub.forEach((s,j)=>{ const a=parseFloat(s.a)||0;
+      if(a>0.5&&!parentPaid&&!(d.itemPaid&&d.itemPaid['aho-'+i+'-'+j])) ahoPend.push({k:'aho-'+i+'-'+j,label:(r.l?r.l+' / ':'')+(s.l||'ahorro'),amt:a,yes:false}); }); }
+    else { const a=parseFloat(r.a)||0; if(a>0.5&&!parentPaid) ahoPend.push({k:'aho-'+i,label:r.l||'Ahorro',amt:a,yes:false}); }
+  });
+  const debtPend=Object.keys(d.debtPay||{}).filter(n=>debts.some(x=>x.n===n&&!x.auto)&&!(d.paid&&d.paid[n]))
+    .map(n=>({n,amt:debtAmt(snapOf(n)||debts.find(z=>z.n===n)||{},d.debtPay[n]||'min'),carry:true}));
+  cierre={ing,ahoPend,debtPend,destino:null,defTrato:null};
+  renderCierre();
+  const ov=document.getElementById('cierre-ovl'); if(ov)ov.hidden=false;
 }
-function snapshot(){history.push(JSON.stringify({d:d,debts:(typeof debts!=='undefined'?debts:[])}));if(history.length>50)history.shift();updateUndo();}
+function renderCierre(){
+  const el=document.getElementById('cierre-card'); if(!el||!cierre)return;
+  const c=cierre;
+  const ejecBase=ejecutadoSum();
+  const extra=c.ahoPend.filter(x=>x.yes).reduce((t,x)=>t+x.amt,0);
+  const ejec=ejecBase+extra, res=c.ing-ejec;
+  const D=res<-0.5?-res:0, usa=Math.min(fondo,D), resto=D-usa;
+  const presup=c.ing-(lastSaldo||0);
+  let h='<div class="ci-h">Cerrar '+cycleLabel(cycleOf(activeQ))+'</div>'+
+    '<div class="ci-sub">'+(cycleCubre(cycleOf(activeQ))||'el único momento donde todo se vuelve definitivo')+'</div>'+
+    '<div class="ci-nums"><div class="ci-num"><i>Entró</i><b>'+pe(c.ing)+'</b></div>'+
+    '<div class="ci-num"><i>Real (✓)</i><b>'+pe(ejec)+'</b></div>'+
+    '<div class="ci-num"><i>Resultado</i><b style="color:'+(res>=-0.5?'var(--ok)':'var(--bad)')+'">'+(res>=0?'+ ':'− ')+pe(Math.abs(res))+'</b></div></div>';
+  if(presup>50&&ejec<presup*0.5&&res>presup*0.3)
+    h+='<div class="ci-warn">⚠ Marcaste ✓ solo '+pe(ejec)+' de '+pe(presup)+' presupuestado. Si de verdad gastaste tu quincena, cancela y marca ✓ lo pagado — si no, este "sobrante" es falso.</div>';
+  if(c.ahoPend.length){
+    h+='<div class="ci-sec"><div class="ci-sec-h">Ahorro presupuestado sin marcar</div>';
+    c.ahoPend.forEach((x,i)=>{h+='<div class="ci-row"><span>'+esc(x.label)+'</span><span class="cr-a">'+pe(x.amt)+'</span><button class="ci-tog'+(x.yes?' on':'')+'" data-ciaho="'+i+'">'+(x.yes?'✓ Sí lo aparté':'¿Lo apartaste?')+'</button></div>';});
+    h+='<div class="ci-note">Lo que marques "sí" viaja AHORA a tu Reserva. Lo que no, simplemente no se ahorró este ciclo — no pasa nada, no es deuda.</div></div>';
+  }
+  if(c.debtPend.length){
+    h+='<div class="ci-sec"><div class="ci-sec-h">Deudas del ciclo que quedaron sin pagar</div>';
+    c.debtPend.forEach((x,i)=>{h+='<div class="ci-row"><span>'+esc(x.n)+'</span><span class="cr-a">'+pe(x.amt)+'</span><button class="ci-tog'+(x.carry?' on':'')+'" data-cicarry="'+i+'">'+(x.carry?'→ pasa al siguiente':'se queda aquí')+'</button></div>';});
+    h+='<div class="ci-note">Estas siguen vivas (y pueden generar intereses). Si las pasas, el siguiente ciclo las muestra como "arrastrada". La deuda real sigue en tu tab Deudas de todos modos.</div></div>';
+  }
+  if(res>0.5){
+    h+='<div class="ci-sec"><div class="ci-q">Te sobraron <b>'+pe(res)+'</b> 🎉 ¿Qué hacemos con eso?</div><div class="ci-opts">'+
+      '<button class="ci-opt'+(c.destino==='fondo'?' on':'')+'" data-cidest="fondo">🔒 A mi Reserva<br><span style="font-size:10.5px;opacity:.75">tu caja fuerte crece</span></button>'+
+      '<button class="ci-opt'+(c.destino==='ciclo'?' on':'')+'" data-cidest="ciclo">→ Al siguiente ciclo<br><span style="font-size:10.5px;opacity:.75">más presupuesto el próximo</span></button></div></div>';
+  } else if(D>0.5){
+    h+='<div class="ci-sec"><div class="ci-q">Gastaste <b>'+pe(D)+'</b> más de lo que entró.</div>';
+    if(usa>0.5) h+='<div class="ci-abs">🔒 Tu Reserva cubre <b>'+pe(usa)+'</b>'+(resto<=0.5?' — para eso está 💪. Te quedará <b>'+pe(fondo-usa)+'</b>.':', queda en S/ 0, y aún faltan <b>'+pe(resto)+'</b>.')+'</div>';
+    if(resto>0.5){h+='<div class="ci-q" style="margin-top:.6rem">Los <b>'+pe(resto)+'</b> que nada cubre:</div><div class="ci-opts">'+
+      '<button class="ci-opt'+(c.defTrato==='desc'?' on':'')+'" data-cidef="desc">− Descontar del siguiente<br><span style="font-size:10.5px;opacity:.75">el próximo arranca con menos</span></button>'+
+      '<button class="ci-opt'+(c.defTrato==='cero'?' on':'')+'" data-cidef="cero">Empezar de cero<br><span style="font-size:10.5px;opacity:.75">queda registrado, no castiga</span></button></div>';}
+    h+='</div>';
+  } else {
+    h+='<div class="ci-sec"><div class="ci-q">Cerraste al centavo ✨ El siguiente ciclo arranca limpio.</div></div>';
+  }
+  const need=(res>0.5&&!c.destino)||(resto>0.5&&!c.defTrato);
+  h+='<div class="ci-btns"><button class="ci-cancel" data-cicancel="1">Cancelar</button><button class="ci-go" data-cigo="1"'+(need?' disabled':'')+'>Cerrar ciclo →</button></div>';
+  el.innerHTML=h;
+}
+function commitCierre(){
+  const c=cierre; if(!c)return;
+  const ejecBase=ejecutadoSum();
+  const ahoYes=c.ahoPend.filter(x=>x.yes);
+  const ejecFinal=ejecBase+ahoYes.reduce((t,x)=>t+x.amt,0);
+  const res=c.ing-ejecFinal;
+  const D=res<-0.5?-res:0, usa=Math.min(fondo,D), resto=D-usa;
+  if((res>0.5&&!c.destino)||(resto>0.5&&!c.defTrato))return; // faltan decisiones
+  snapshot();
+  const fondoAntes=fondo;
+  const miLabel=cycleLabel(cycleOf(activeQ));
+  // 1) ahorro confirmado al cerrar → Reserva (queda revertible al destildar, igual que en vivo)
+  ahoYes.forEach(x=>{ if(!d.itemPaid)d.itemPaid={}; d.itemPaid[x.k]=true;
+    if(!d.ahoMoved)d.ahoMoved={}; d.ahoMoved[x.k]=x.amt;
+    fondo+=x.amt; addResLog(x.amt,x.label+' (al cerrar)'); });
+  // 2) resultado del ciclo
+  let destino='limpio';
+  if(res>0.5){ if(c.destino==='fondo'){fondo+=res;addResLog(res,'Sobrante de '+miLabel);destino='fondo';} else destino='ciclo'; }
+  else if(D>0.5){ if(usa>0.5){fondo-=usa;addResLog(-usa,'Cubrió el déficit de '+miLabel);}
+    destino=resto>0.5?(c.defTrato==='desc'?'descuento':'cero'):'reserva'; }
+  saveFondo();
+  // 3) asiento de cierre (closing entry) — la memoria del ciclo, para el historial y comparaciones
+  d.closeLog={fecha:isoToday(),ingreso:Math.round(c.ing),ejecutado:Math.round(ejecFinal),resultado:Math.round(res),
+    fondoAntes:Math.round(fondoAntes),fondoDespues:Math.round(fondo),destino,
+    arrastradas:c.debtPend.filter(x=>x.carry).map(x=>x.n)};
+  d.closed=true; save();
+  // 4) siguiente ciclo (el que sigue en la barra, o nace) + arrastres + rollover/descuento
+  const idx=cycles.findIndex(x=>x.id===activeQ);
+  const nid=(idx>=0&&idx<cycles.length-1)?cycles[idx+1].id:createCycle(cycleOf(activeQ).type);
+  const nx=load(nid);
+  c.debtPend.filter(x=>x.carry).forEach(x=>{const n=x.n;
+    if(!nx.debtPay)nx.debtPay={}; nx.debtPay[n]=(d.debtPay&&d.debtPay[n])||'min';
+    if(d.debtPay&&d.debtPay[n]==='otro'){if(!nx.otroMonto)nx.otroMonto={};nx.otroMonto[n]=d.otroMonto&&d.otroMonto[n];}
+    const s=d.debtSnap&&d.debtSnap[n]; if(s){if(!nx.debtSnap)nx.debtSnap={};nx.debtSnap[n]=JSON.parse(JSON.stringify(s));}
+    if(!nx.carried)nx.carried={}; nx.carried[n]=miLabel; });
+  if(res>0.5&&c.destino==='ciclo')nx.inc.push({l:'Sobrante del ciclo anterior',a:Math.round(res)});
+  if(resto>0.5&&c.defTrato==='desc')nx.inc.push({l:'Déficit del ciclo anterior',a:-Math.round(resto)});
+  localStorage.setItem(keyFor(nid),JSON.stringify(nx));
+  cierre=null; const ov=document.getElementById('cierre-ovl'); if(ov)ov.hidden=true;
+  switchCycle(nid);
+}
+(function(){const ov=document.getElementById('cierre-ovl');if(!ov)return;
+  ov.addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b||!cierre)return;
+    if(b.dataset.ciaho!==undefined){const x=cierre.ahoPend[+b.dataset.ciaho];if(x)x.yes=!x.yes;renderCierre();}
+    else if(b.dataset.cicarry!==undefined){const x=cierre.debtPend[+b.dataset.cicarry];if(x)x.carry=!x.carry;renderCierre();}
+    else if(b.dataset.cidest){cierre.destino=b.dataset.cidest;renderCierre();}
+    else if(b.dataset.cidef){cierre.defTrato=b.dataset.cidef;renderCierre();}
+    else if(b.dataset.cicancel){cierre=null;ov.hidden=true;}
+    else if(b.dataset.cigo){commitCierre();}
+  });})();
+function snapshot(){history.push(JSON.stringify({d:d,debts:(typeof debts!=='undefined'?debts:[]),fondo:fondo}));if(history.length>50)history.shift();updateUndo();}
 function updateUndo(){const u=document.getElementById('undo');if(u)u.hidden=history.length===0;}
 const pe=n=>'S/ '+Math.round(n).toLocaleString('es-PE');
 // Sin "S/": para las celdas del macro/tríada (5 columnas) — el signo ya está grande en el hero de arriba.
@@ -1019,7 +1232,7 @@ function subRowH(g,i,j,s){const canTj=(g==='nec'||g==='luj');
   '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" data-f="a" value="'+s.a+'" placeholder="0">'+
   (canTj?'<button class="tjt'+(s.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" title="'+(s.tj?'En tarjeta: '+esc(s.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
   '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" aria-label="Eliminar">&times;</button>'+
-  (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'-'+j+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>':'')+'</div>';
+  (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'-'+j+'" title="'+(g==='aho'?'Ya lo aparté — viaja a tu Reserva':'Ya pagué esto')+'">'+(paid?'✓':'')+'</button>':'')+'</div>';
   if(canTj && tjOpen===(g+'-'+i+'-'+j)) h+=tjPickerH(g,i,j,s);
   return h;}
 
@@ -1077,7 +1290,7 @@ function rowH(g,i,r){
     '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-f="a" value="'+amt+'" placeholder="0"'+(sub?' readonly':'')+'>'+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button>'+
-    (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button>':'')+'</div>';
+    (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="'+(g==='aho'?'Ya lo aparté — viaja a tu Reserva':'Ya pagué esto')+'">'+(paid?'✓':'')+'</button>':'')+'</div>';
   if(canTj && tjOpen===(g+'-'+i)) h+=tjPickerH(g,i,null,r);
   if(g!=='inc'){
     h+='<div class="subwrap"'+(folded?' style="display:none"':'')+'>';
@@ -1127,7 +1340,16 @@ function render(){
   // sincronizar botones de tab
   renderCycleBar();
   let incRows=d.inc.map((r,i)=>rowH('inc',i,r)).join('');
-  document.getElementById('app').innerHTML=
+  // Banners de frontera de ciclo: (a) este/otro ciclo venció y sigue sin cerrar → invita a cerrarlo
+  // (prompted commit: la app detecta la frontera, el humano aprieta el botón); (b) ciclo ya cerrado
+  // → muestra su asiento (closeLog) como línea de solo-lectura.
+  const pcyc=pendingCloseCycle();
+  const bannersH=
+    (d.closed?'<div class="closed-banner">✅ Ciclo cerrado'+(d.closeLog?' el '+fmtFecha(d.closeLog.fecha)+' · '+(d.closeLog.resultado>=0?'sobró <b>'+pe(d.closeLog.resultado)+'</b>':'faltó <b>'+pe(-d.closeLog.resultado)+'</b>')+(d.closeLog.destino==='fondo'?' → a tu Reserva':d.closeLog.destino==='ciclo'?' → al siguiente ciclo':d.closeLog.destino==='reserva'?' · lo cubrió tu Reserva':''):'')+'</div>':'')+
+    (pcyc?(pcyc.id===activeQ
+      ?'<div class="close-banner">📅 Este ciclo terminó'+(pcyc.end?' el '+fmtFecha(pcyc.end):'')+'. Ciérralo para pasar su resultado al siguiente.<button class="cb-btn" data-gocierre="'+pcyc.id+'">Cerrar ciclo →</button></div>'
+      :'<div class="close-banner">📅 <b>'+cycleLabel(pcyc)+'</b> terminó'+(pcyc.end?' el '+fmtFecha(pcyc.end):'')+' y sigue sin cerrar.<button class="cb-btn" data-gocierre="'+pcyc.id+'">Revisar y cerrar →</button></div>'):'');
+  document.getElementById('app').innerHTML= bannersH +
     '<div class="sec" id="sec-inc" style="margin-top:.5rem">'+
       '<div class="hero-inc">'+
         '<div class="hi-num" id="hi-num">—</div>'+
@@ -1173,7 +1395,7 @@ function render(){
         '</div>'+
       '</div>'+
     '</div>'+
-    '<div class="sec" id="sec-informe"><div class="sec-h"><span class="t">Informe</span></div><div id="informe-body"></div></div>'+
+    '<div class="sec" id="sec-informe"><div class="sec-h"><span class="t">📊 Informe del ciclo</span></div><div id="informe-body"></div></div>'+
     '<button class="reset" data-reset="1">Reiniciar esta quincena</button>'+
     templatesH()+
     '<div class="backup"><button class="bk-btn" data-export="1">⬇ Exportar copia</button><button class="bk-btn" data-import="1">⬆ Importar copia</button><input type="file" id="importfile" accept="application/json,.json" hidden></div>'+
@@ -1196,7 +1418,7 @@ function informeH(){
   let h='<div class="inf-h">A dónde va tu plata esta quincena</div>';
   h+=bar('Necesidades (efectivo)',necCash,'c-nec');
   h+=bar('Gustos (efectivo)',lujCash,'c-luj');
-  h+=bar('Ahorro (Fondo + Inversión)',ahoSav,'c-aho');
+  h+=bar('Ahorro (Reserva + Inversión)',ahoSav,'c-aho');
   h+=bar('Deuda (pago de mínimos)',debtPay,'c-deu');
   h+='<div class="inf-tot">Destinas <b>'+pe(total)+'</b> de <b>'+pe(ti)+'</b> de ingreso'+(ti-total>0.5?' · te queda <b>'+pe(ti-total)+'</b> libre':'')+'</div>';
   h+='<div class="inf-h" style="margin-top:1.3rem">Deuda: ¿la reduces o la creces?</div>';
@@ -1306,7 +1528,7 @@ function recompute(){
   document.getElementById('b-sl-l').textContent=saldo>=0?'Saldo libre':'Déficit';
   const fn=document.getElementById('fondo-note');
   if(fn){ const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0; const aRes=ti-real;
-    fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Fondo</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso)</span>':'')+'.'; }
+    fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Reserva</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso — tu Reserva puede cubrirlo)</span>':'')+'.'; }
   // Reparto 50/30/20: el chip "↻ 50/30/20" bajo Disponible enciende/apaga esto (showRollover).
   // Reparte el saldo libre ACTUAL en la columna "Repartido" de cada caja. Es la ÚNICA acción sobre
   // lo disponible — en envelope budgeting, disponible solo se asigna a los sobres. La deuda vive en
@@ -1467,7 +1689,10 @@ app.addEventListener('click',e=>{
   else if(b.dataset.loadtpl!==undefined){const n=b.dataset.loadtpl;const tiene=(d.nec&&d.nec.some(r=>(parseFloat(r.a)||0)>0||(r.sub&&r.sub.length)))||(d.inc&&sum(d.inc)>0);if(!tiene||confirm('¿Cargar la plantilla "'+n+'"? Reemplaza las categorías de esta quincena.'))applyTemplate(n);}
   else if(b.dataset.deltpl!==undefined){const n=b.dataset.deltpl;if(confirm('¿Borrar la plantilla "'+n+'"?')){saveTpls(loadTemplates().filter(x=>x.name!==n));render();}}
   else if(b.dataset.import){const fi=document.getElementById('importfile');if(fi)fi.click();}
-  else if(b.dataset.cerrar){cerrarQuincena();}
+  else if(b.dataset.cerrar){openCierre();}
+  else if(b.dataset.gocierre){const id=b.dataset.gocierre;
+    if(id!==activeQ)switchCycle(id);
+    openCierre();} // la ceremonia ES la revisión (muestra lo pendiente); Cancelar te deja en el ciclo
   else if(b.dataset.reset){if(confirm('¿Reiniciar esta quincena? Se borran los montos actuales.')){snapshot();d=def();save();render();}}
   else if(b.dataset.openpicker){pickerOpen=b.dataset.openpicker;debtForm=null;render();}
   else if(b.dataset.pickerclose){pickerOpen=null;debtForm=null;render();}
@@ -1494,6 +1719,25 @@ app.addEventListener('click',e=>{
   else if(b.dataset.debtmode!==undefined){const nm=b.dataset.debtmode,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;save();render();}
   else if(b.dataset.debtpaid!==undefined){toggleDebtPaid(b.dataset.debtpaid);}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};
+    // ✓ en la caja AHORRO = "ya me lo pagué" → el monto viaja a tu Reserva AL INSTANTE (tiempo real).
+    // Pregunta dónde lo guardaste (esa pregunta ES la confirmación de que fue real). Destildar lo
+    // revierte exacto. En nec/luj el ✓ sigue siendo solo recordatorio; en deudas la verdad la tiene el banco.
+    if(k.indexOf('aho-')===0){
+      if(!d.itemPaid[k]){ // marcando
+        const amt=ahoKeyAmount(k);
+        if(amt>0.5){
+          const lugar=prompt('¿Dónde guardaste este dinero?\n(ej. alcancía virtual, cuenta aparte, bajo el colchón)','');
+          if(lugar===null)return; // canceló → no se marca
+          snapshot();
+          if(!d.ahoMoved)d.ahoMoved={}; d.ahoMoved[k]=amt;
+          fondo+=amt; saveFondo(); addResLog(amt,ahoKeyLabel(k)+(lugar?' · '+lugar:''));
+        }
+      } else { // destildando → la plata vuelve del Reserva (deshace el movimiento exacto)
+        const amt=(d.ahoMoved&&d.ahoMoved[k])||0;
+        if(amt>0.5){snapshot();fondo-=amt;saveFondo();addResLog(-amt,ahoKeyLabel(k)+' · deshecho');}
+        if(d.ahoMoved)delete d.ahoMoved[k];
+      }
+    }
     if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;
     // Si marqué una SUBcategoría (g-i-j): cuando TODAS las subs de la categoría quedan ✓, se marca
     // sola la categoría padre; si desmarco una, se desmarca el padre.
@@ -1524,7 +1768,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'){const t=e.target;
   else if(t.tagName!=='INPUT'&&t.tagName!=='TEXTAREA'&&t.tagName!=='BUTTON'){e.preventDefault();if(focusMode)focusGo(1);else wizGo(wizStep+1);/* 2do Enter: avanza escena */}
 }});
 document.addEventListener('focusout',e=>{const t=e.target;if(t.tagName==='INPUT'&&t.type==='number'){t.classList.add('saved');setTimeout(()=>t.classList.remove('saved'),550);}});
-function doUndo(){if(history.length){const s=JSON.parse(history.pop());if(s&&s.d){d=s.d;if(s.debts){debts=s.debts;saveDebts();}}else{d=s;}save();render();if(typeof renderDebts==='function')renderDebts();updateUndo();}}
+function doUndo(){if(history.length){const s=JSON.parse(history.pop());if(s&&s.d){d=s.d;if(s.debts){debts=s.debts;saveDebts();}if(s.fondo!=null){fondo=s.fondo;saveFondo();}}else{d=s;}save();render();if(typeof renderDebts==='function')renderDebts();updateUndo();}}
 document.getElementById('undo').addEventListener('click',doUndo);
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();doUndo();}});
 
@@ -1834,7 +2078,7 @@ function selectedDebtRowH(x,kind){
   const s=snapOf(x.n)||x; // FOTO congelada: el disponible se muestra tal cual estaba al presupuestar
   const icon=kind==='card'?'<span class="dd-ic">'+TJ_SVG+'</span>':'';
   return '<div class="row sub'+(paid?' is-paid':'')+'">'+icon+
-    '<span class="dd-n">'+esc(x.n)+'</span>'+
+    '<span class="dd-n">'+esc(x.n)+(d.carried&&d.carried[x.n]?'<span class="dd-carried">arrastrada · '+esc(d.carried[x.n])+'</span>':'')+'</span>'+
     (kind==='card'?'<span class="dd-d">disp '+pe(cardAvail(s))+'</span>':'')+
     '<button class="rm" data-unpick="'+esc(x.n)+'" title="Quitar de esta quincena">&times;</button>'+
     '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button></div>'+
@@ -2013,41 +2257,62 @@ function applyAdvisor(){
   debts.filter(x=>!x.auto).forEach(x=>{if(!d.debtPay[x.n])d.debtPay[x.n]='min';});
   save();render();renderDebts();
 }
-/* ===== Invertir — educativo, candado por TASA (no por "tienes deuda") ===== */
-const UMBRAL_CARA=15; // % anual: arriba de esto la deuda es "cara" y conviene pagarla antes de invertir
-function esDeudaCara(x){const t=parseFloat(x.tcea)||0; if(t>0)return t>UMBRAL_CARA; return isCardDebt(x);} // sin tasa: tarjeta=cara, préstamo=desconocido (no bloquea)
+/* ===== Inversiones — piso 3 de la Reserva. Consejo visible, NUNCA candado: la app muestra el
+   precio de cada decisión y tú mandas (con deuda cara, el consejo es matemática, no una puerta). ===== */
+const UMBRAL_CARA=15; // % anual: arriba de esto la deuda es "cara" y pagarla rinde más que invertir
+function esDeudaCara(x){const t=parseFloat(x.tcea)||0; if(t>0)return t>UMBRAL_CARA; return isCardDebt(x);} // sin tasa: tarjeta=cara, préstamo=desconocido (no alarma)
+let invSim={m:200,y:10,r:8}; // simulador: aporte mensual, años, tasa % anual
+function invSimOut(){
+  const m=parseFloat(invSim.m)||0, y=parseFloat(invSim.y)||0, r=(parseFloat(invSim.r)||0)/100;
+  const n=Math.round(y*12), i=r/12;
+  const fv=i>0?m*((Math.pow(1+i,n)-1)/i):m*n; const inv=m*n;
+  if(inv<=0)return 'Pon un aporte y unos años — mira lo que hace el tiempo.';
+  return 'Aportas <b>'+pe(inv)+'</b> en '+y+' años → tendrías <b style="color:var(--ok)">'+pe(fv)+'</b> · el interés compuesto puso <b>'+pe(fv-inv)+'</b> solo';
+}
 function invertirH(){
   const conSaldo=debts.filter(x=>!x.auto&&(parseFloat(x.total)||0)>0);
   const caras=conSaldo.filter(esDeudaCara);
   const ahoMeta=sum(d.inc)*0.2;
-  let h='<div class="sec-h"><span class="t">📈 Invertir</span></div><div class="inv-body">';
-  if(caras.length){
-    h+='<div class="inv-lock"><div class="il-h">🔒 Primero, tu deuda cara</div>'+
-      '<div class="il-txt">Pagar esta deuda <b>ES tu mejor inversión ahora</b>: te "rinde" su tasa, garantizado. Ninguna inversión normal le gana.</div>'+
+  let h='<div class="sec-h"><span class="t">📈 Inversiones <span class="secpct">· piso 3</span></span></div><div class="inv-body">';
+  if(caras.length){ // consejo con matemática adentro — la sección sigue ABIERTA debajo
+    h+='<div class="inv-lock"><div class="il-h">💡 Antes de invertir: tu deuda cara rinde más</div>'+
+      '<div class="il-txt">Pagar esta deuda <b>ES tu mejor inversión hoy</b>: te "rinde" su tasa, garantizado — ninguna inversión normal le gana.</div>'+
       '<div class="il-list">'+caras.map(x=>{const t=parseFloat(x.tcea)||0;return '<div class="il-row"><span>'+esc(x.n)+'</span><span class="il-r">'+(t>0?Math.round(t)+'%/año':'tarjeta · tasa alta')+'</span><span class="il-d">debes '+pe(parseFloat(x.total)||0)+'</span></div>';}).join('')+'</div>'+
-      '<div class="il-foot">Cuando bajes estas deudas del umbral (~'+UMBRAL_CARA+'%/año), esta sección se abre sola. ¿Una deuda sin tasa? Ponle su TCEA en <b>Deudas</b> para evaluarla bien.</div></div>';
-  } else {
-    h+='<div class="inv-open">'+
-      '<div class="io-meta">Tu meta de ahorro/inversión: <b>'+pe(ahoMeta)+'/mes</b> <span class="io-sub">(el 20% de tu ingreso)</span></div>'+
-      '<div class="io-h">Orden sano</div>'+
-      '<ol class="io-steps">'+
-        '<li><b>Fondo de emergencia primero</b> — 3 a 6 meses de tus gastos, en algo líquido y seguro (cuenta o caja). Es tu red, no tu inversión.</li>'+
-        '<li><b>Ya con la red, diversifica:</b>'+
-          '<div class="io-div"><div class="iod"><span class="iod-t">Renta fija</span><span class="iod-d">cajas / depósitos a plazo (Lima). Seguro, retorno bajo (~4–7%). Para estabilidad.</span></div>'+
-          '<div class="iod"><span class="iod-t">Renta variable</span><span class="iod-d">S&amp;P 500 / ETF global. Más riesgo, más retorno a largo plazo (~10% histórico). Para crecer.</span></div></div>'+
-          '<div class="io-mix">Mezcla según tu horizonte: mientras más lejos tu meta, más renta variable aguanta.</div></li>'+
-        '<li><b>¿Tienes deuda barata?</b> (ej. hipoteca &lt;'+UMBRAL_CARA+'%) Puedes invertir <b>en paralelo</b> — el mercado suele rendir más que esa tasa, así que no esperes a pagarla toda para empezar.</li>'+
-      '</ol>'+
-      '<div class="io-disc">ℹ️ Información educativa, no recomendación de un producto puntual. Las tasas cambian — contrasta con fuentes actuales antes de decidir.</div>'+
-    '</div>';
+      '<div class="il-foot">Puedes explorar y simular abajo igual — tú mandas. Solo recuerda: cada sol invertido mientras debes a esas tasas, pierde contra pagarlas. ¿Una deuda sin tasa? Ponle su TCEA en <b>Deudas</b>.</div></div>';
   }
+  h+='<div class="inv-open">'+
+    '<div class="io-meta">Tu meta de ahorro/inversión: <b>'+pe(ahoMeta)+'/mes</b> <span class="io-sub">(el 20% de tu ingreso)</span></div>'+
+    '<div class="io-h">La escalera (orden sano)</div>'+
+    '<ol class="io-steps">'+
+      '<li><b>Colchón primero</b> — 3 a 6 meses de tus gastos, líquido y seguro (piso 1 de tu Reserva). Es tu red, no tu inversión.</li>'+
+      '<li><b>Ya con la red, diversifica:</b>'+
+        '<div class="io-div"><div class="iod"><span class="iod-t">Renta fija</span><span class="iod-d">cajas / depósitos a plazo (Lima). Seguro, retorno bajo (~4–7%). Para estabilidad.</span></div>'+
+        '<div class="iod"><span class="iod-t">Renta variable</span><span class="iod-d">S&amp;P 500 / ETF global. Más riesgo, más retorno a largo plazo (~10% histórico). Para crecer.</span></div></div>'+
+        '<div class="io-mix">Mezcla por horizonte (regla clásica: "110 − tu edad" en renta variable): mientras más lejos tu meta, más variable aguanta.</div></li>'+
+      '<li><b>¿Tienes deuda barata?</b> (ej. hipoteca &lt;'+UMBRAL_CARA+'%) Puedes invertir <b>en paralelo</b> — el mercado suele rendir más que esa tasa. El tiempo compuesto es lo más valioso que tienes.</li>'+
+    '</ol>'+
+    '<div class="io-h" style="margin-top:1.1rem">Juega: el interés compuesto en acción</div>'+
+    '<div class="tjgrid">'+
+      '<label>Al mes S/<input data-invsim="m" type="number" step="1" value="'+esc(invSim.m)+'" placeholder="200"></label>'+
+      '<label>Años<input data-invsim="y" type="number" step="1" value="'+esc(invSim.y)+'" placeholder="10"></label>'+
+      '<label>Tasa % anual<input data-invsim="r" type="number" step="0.5" value="'+esc(invSim.r)+'" placeholder="8"></label>'+
+    '</div>'+
+    '<div class="plan-sum" id="invsim-out" style="margin-top:.8rem">'+invSimOut()+'</div>'+
+    '<div class="io-disc">ℹ️ Información educativa, no recomendación de un producto puntual. Las tasas cambian — contrasta con fuentes actuales antes de decidir.</div>'+
+  '</div>';
   return h+'</div>';
 }
+(function(){const si=document.getElementById('sec-invertir');if(!si)return;
+  si.addEventListener('input',e=>{const t=e.target;if(!t.dataset||t.dataset.invsim===undefined)return;
+    invSim[t.dataset.invsim]=t.value;
+    const o=document.getElementById('invsim-out');if(o)o.innerHTML=invSimOut();});})();
 function refreshInvertir(){const e=document.getElementById('sec-invertir');if(e)e.innerHTML=invertirH();}
 function renderDebts(){
   const el=document.getElementById('debts');if(!el)return;
   if(typeof ensureDebtSnaps==='function')ensureDebtSnaps();
   el.innerHTML=
+    '<div class="plan" id="planbox">'+planInner(computePlan())+'</div>'+
+    '<div id="advisorbox">'+advisorH()+'</div>'+
     '<div id="debts-mgmt">'+
       '<h2>Deudas y tarjetas</h2>'+
       '<div class="dnote">Tus obligaciones reales. La app calcula qué pagar primero con el ingreso del mes (suma de ambas quincenas). Tus datos nunca salen de tu compu.</div>'+
@@ -2059,9 +2324,7 @@ function renderDebts(){
       '<button class="cuotas-toggle" data-allcash="1">💵 Pasar todo a efectivo (quitar tarjeteo)</button>'+
       '<div id="autodebts" style="display:none">'+autoDebtsH()+'</div>'+
       '<div class="plan" id="tjbox">'+tjInner()+'</div>'+
-    '</div>'+
-    '<div id="advisorbox">'+advisorH()+'</div>'+
-    '<div class="plan" id="planbox">'+planInner(computePlan())+'</div>';
+    '</div>';
   if(typeof applyView==='function')applyView();
 }
 const debtsEl=document.getElementById('debts');
