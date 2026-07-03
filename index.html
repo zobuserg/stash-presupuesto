@@ -479,6 +479,8 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .cta-row .cta-a input{width:82px; font:inherit; font-size:14px; font-weight:600; text-align:right; color:var(--tx); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.35rem .45rem}
 .cta-row .cta-a input:focus{outline:none; border-color:var(--accent)}
 .beta-tag{display:inline-block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); border:1px solid var(--accent); border-radius:5px; padding:0 .25rem; vertical-align:middle; opacity:.8}
+.cta-sub{font-size:11.5px; color:var(--tx3); margin:.15rem 0 .3rem}
+.cta-sub b{color:var(--tx2); font-variant-numeric:tabular-nums}
 .ft-of{font-size:11.5px; color:var(--tx3); margin:-.2rem 0 .2rem}
 .ft-of b{color:var(--tx2)}
 .ft-of .neg{color:var(--bad)}
@@ -1253,21 +1255,33 @@ function commitCierre(){
    (evita volver a tarjetear en la próxima emergencia), si no, abono a la más urgente del ranking. */
 // Lista de cuentas en el Balance (mismo patrón que categorías: fila nombre+monto, edición en vivo).
 function cuentasH(){
-  const has=cuentas.length>0;
-  let h='<div class="fondo-row"><span class="fondo-lbl">💳 En tus cuentas ahora <span class="beta-tag">beta</span><span class="fondo-hint">experimento — agrega cada cuenta y su saldo; el total se suma solo al editar</span></span>'+
-    (has?'<span class="fondo-val" style="font-weight:700">S/ <span id="cta-total">'+pn(totalCuentas())+'</span></span>':'')+'</div>';
+  const has=cuentas.length>0, pagado=has?saldoPagado():0;
+  let h='<div class="fondo-row"><span class="fondo-lbl">💳 En el banco ahora <span class="beta-tag">beta</span><span class="fondo-hint">tu saldo real — baja solo con cada pago que marcas ✓</span></span>'+
+    (has?'<span class="fondo-val" style="font-weight:700">S/ <span id="cta-total">'+pn(saldoVivo())+'</span></span>':'')+'</div>';
+  h+='<div class="cta-sub" id="cta-sub"'+(pagado>0.5?'':' style="display:none"')+'>de <b>'+pn(totalCuentas())+'</b> de arranque · ya pagaste <b>'+pn(pagado)+'</b></div>';
   if(has)h+='<div class="cta-list">'+cuentas.map((c,i)=>
     '<div class="cta-row"><input class="cta-n" data-cta="'+i+'" data-cf="n" value="'+esc(c.n||'')+'" placeholder="Ej. Interbank, BCP, Efectivo"><span class="cta-a">S/ <input data-cta="'+i+'" data-cf="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ctarm="'+i+'" aria-label="Quitar">&times;</button></div>').join('')+'</div>';
   h+='<button class="add" data-ctaadd="1"><span class="p">+</span> Agregar cuenta</button>';
-  h+='<div class="fondo-note" id="banco-rec"></div><div id="banco-cta"></div>';
   return h;
 }
+// Salidas reales del banco este ciclo = pagos que SACAN plata de tu cuenta (gastos en efectivo + pagos
+// de deuda marcados ✓). El ahorro NO sale: queda apartado dentro de tus cuentas (es earmark, no salida).
+function ejecCash(){
+  const g=(typeof ejecutadoPorGrupo==='function')?ejecutadoPorGrupo():{nec:0,luj:0};
+  let debtPaid=0; if(d.paid)debts.filter(x=>!x.auto).forEach(x=>{if(d.paid[x.n])debtPaid+=(parseFloat(d.paidAmt&&d.paidAmt[x.n])||0);});
+  return (g.nec||0)+(g.luj||0)+debtPaid;
+}
+// Total VIVO: el saldo entrado baja solo con cada pago marcado (para saber cuánto te queda sin abrir el
+// banco). bancoBase = las salidas que YA existían cuando confirmaste tu saldo → solo bajan los pagos
+// posteriores (así puedes tipear tu saldo real en cualquier momento y no se descuenta lo ya reflejado).
+function saldoVivo(){const base=(d.bancoBase!=null)?d.bancoBase:ejecCash();return totalCuentas()-Math.max(ejecCash()-base,0);}
+function saldoPagado(){const base=(d.bancoBase!=null)?d.bancoBase:ejecCash();return Math.max(ejecCash()-base,0);}
 function bancoExtra(){ // null = sin cuentas · extra>0 plata sin trabajo · extra<0 fuga
   if(!hasCuentas())return null;
   const ejec=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
   let util=0;buckets.forEach(b=>{const g=b[0];let a=(g==='nec'||g==='luj')?sumCash(d[g]):sum(d[g]);if(g==='aho')a+=debtPaySum();util+=a;});
-  const pendiente=Math.max(util-ejec,0), libre=Math.max(lastSaldo||0,0), reserva=Math.max(fondo,0), total=totalCuentas();
-  // La Reserva es un apartado del MISMO dinero → es una cuarta reclamación sobre el total, no una pila aparte.
+  const pendiente=Math.max(util-ejec,0), libre=Math.max(lastSaldo||0,0), reserva=Math.max(fondo,0), total=saldoVivo();
+  // Total vivo (ya neto de lo pagado) − lo que aún debes pagar − libre − reserva = residuo sin trabajo.
   return {extra:total-pendiente-libre-reserva, pendiente, libre, reserva, total};
 }
 function windfallPlan(extra){
@@ -1514,6 +1528,12 @@ function render(){
     '<div class="sec'+(collapsed.balance?' is-collapsed':'')+'" id="sec-balance">'+
       '<div class="sec-h tappable" data-collapse="balance" title="Balance"><span class="tw"><span class="t" style="font-size:14px">Balance</span></span><span class="sec-r"><span class="chev">'+(collapsed.balance?'▸':'▾')+'</span></span></div>'+
       '<div class="bucket-body"'+(collapsed.balance?' style="display:none"':'')+'>'+
+        // 1) ¿Qué hacer con tu plata? (arriba) — la lectura + la jugada de plata extra
+        '<div class="banco-box" id="advisor-box">'+
+          '<div class="fondo-row"><span class="fondo-lbl">🧭 ¿Qué hacer con tu plata?<span class="fondo-hint">si cada sol tiene trabajo, y qué hacer con lo que sobra</span></span></div>'+
+          '<div class="fondo-note" id="banco-rec"></div><div id="banco-cta"></div>'+
+        '</div>'+
+        // 2) Tu saldo en el banco (abajo) — el total vivo que baja con cada pago
         '<div class="banco-box" id="banco-box">'+cuentasH()+'</div>'+
         '<div class="fondo-box">'+
           '<div class="fondo-note" id="fondo-note"></div>'+
@@ -1656,6 +1676,11 @@ function recompute(){
   if(fn){ const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0; const aRes=ti-real;
     fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Reserva</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso — tu Reserva puede cubrirlo)</span>':'')+'.'; }
   // Conciliación bancaria: ¿cada sol de tu cuenta tiene trabajo? (se actualiza en vivo, sin re-render)
+  if(d.bancoBase==null && hasCuentas())d.bancoBase=ejecCash(); // ancla inicial: de aquí en más, los pagos bajan el saldo
+  // Total vivo: baja con cada pago marcado ✓ (para saber cuánto queda sin abrir el banco)
+  {const ct=document.getElementById('cta-total'); if(ct)ct.textContent=pn(saldoVivo());
+   const cs=document.getElementById('cta-sub'); if(cs){const pg=saldoPagado();
+     if(pg>0.5){cs.style.display='';cs.innerHTML='de <b>'+pn(totalCuentas())+'</b> de arranque · ya pagaste <b>'+pn(pg)+'</b>';}else cs.style.display='none';}}
   const br=document.getElementById('banco-rec'), bc=document.getElementById('banco-cta');
   if(br&&bc){ const bx=bancoExtra();
     // Desglose: cada sol de tus cuentas cae en un cajón (comprometido / libre / reserva / sin trabajo).
@@ -1713,7 +1738,8 @@ app.addEventListener('input',e=>{const t=e.target;
   if(t.id==='fondo-inp'){fondo=parseFloat(t.value)||0;saveFondo();recompute();return;}
   if(t.dataset&&t.dataset.cta!==undefined){const i=+t.dataset.cta; // edición en vivo de una cuenta (sin re-render)
     if(cuentas[i]){cuentas[i][t.dataset.cf]=t.value;saveCuentas();
-      const tot=document.getElementById('cta-total');if(tot)tot.textContent=pn(totalCuentas());recompute();}return;}
+      d.bancoBase=ejecCash();save(); // re-ancla: el saldo que tipeas es tu saldo real AHORA (no descuenta lo ya pagado)
+      const tot=document.getElementById('cta-total');if(tot)tot.textContent=pn(saldoVivo());recompute();}return;}
   if(t.dataset&&t.dataset.loan!==undefined){const i=+t.dataset.loan,f=t.dataset.lf;if(debts[i]){debts[i][f]=t.value;saveDebts();recompute();}return;}
   if(t.dataset&&t.dataset.payday!==undefined){const yr=parseInt((t.value.split('-')[0])||'0',10);
     if(t.value && (yr<2000||yr>2100))return; // ignorar años absurdos hasta que la fecha esté completa
