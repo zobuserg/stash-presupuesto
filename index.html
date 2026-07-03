@@ -1264,13 +1264,9 @@ function cuentasH(){
   h+='<button class="add" data-ctaadd="1"><span class="p">+</span> Agregar cuenta</button>';
   return h;
 }
-// Salidas reales del banco este ciclo = pagos que SACAN plata de tu cuenta (gastos en efectivo + pagos
-// de deuda marcados ✓). El ahorro NO sale: queda apartado dentro de tus cuentas (es earmark, no salida).
-function ejecCash(){
-  const g=(typeof ejecutadoPorGrupo==='function')?ejecutadoPorGrupo():{nec:0,luj:0};
-  let debtPaid=0; if(d.paid)debts.filter(x=>!x.auto).forEach(x=>{if(d.paid[x.n])debtPaid+=(parseFloat(d.paidAmt&&d.paidAmt[x.n])||0);});
-  return (g.nec||0)+(g.luj||0)+debtPaid;
-}
+// Salidas del banco este ciclo = TODO lo marcado ✓ (gastos, deuda Y ahorro). Decisión de DD: lo que
+// marcas como pagado ya salió de tu cuenta (el ahorro también — se movió a tu alcancía/Reserva).
+function ejecCash(){return (typeof ejecutadoSum==='function')?ejecutadoSum():0;}
 // Total VIVO: el saldo entrado baja solo con cada pago marcado (para saber cuánto te queda sin abrir el
 // banco). bancoBase = las salidas que YA existían cuando confirmaste tu saldo → solo bajan los pagos
 // posteriores (así puedes tipear tu saldo real en cualquier momento y no se descuenta lo ya reflejado).
@@ -1280,9 +1276,10 @@ function bancoExtra(){ // null = sin cuentas · extra>0 plata sin trabajo · ext
   if(!hasCuentas())return null;
   const ejec=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
   let util=0;buckets.forEach(b=>{const g=b[0];let a=(g==='nec'||g==='luj')?sumCash(d[g]):sum(d[g]);if(g==='aho')a+=debtPaySum();util+=a;});
-  const pendiente=Math.max(util-ejec,0), libre=Math.max(lastSaldo||0,0), reserva=Math.max(fondo,0), total=saldoVivo();
-  // Total vivo (ya neto de lo pagado) − lo que aún debes pagar − libre − reserva = residuo sin trabajo.
-  return {extra:total-pendiente-libre-reserva, pendiente, libre, reserva, total};
+  const pendiente=Math.max(util-ejec,0), libre=Math.max(lastSaldo||0,0), total=saldoVivo();
+  // Total vivo (ya neto de TODO lo marcado ✓) − lo que aún debes pagar − libre = residuo sin trabajo.
+  // No se resta la Reserva: lo ahorrado ya salió del banco al marcarlo (no es un apartado del total).
+  return {extra:total-pendiente-libre, pendiente, libre, total};
 }
 function windfallPlan(extra){
   const props=[]; let resto=extra;
@@ -1684,11 +1681,11 @@ function recompute(){
   const br=document.getElementById('banco-rec'), bc=document.getElementById('banco-cta');
   if(br&&bc){ const bx=bancoExtra();
     // Desglose: cada sol de tus cuentas cae en un cajón (comprometido / libre / reserva / sin trabajo).
-    const claim=bx?('Comprometido <b>'+pe(bx.pendiente)+'</b> · libre <b>'+pe(bx.libre)+'</b>'+(bx.reserva>0.5?' · reserva <b>'+pe(bx.reserva)+'</b>':'')):'';
+    const claim=bx?('Comprometido <b>'+pe(bx.pendiente)+'</b> · libre <b>'+pe(bx.libre)+'</b>'):'';
     if(!bx){ br.innerHTML='Agrega tus cuentas y su saldo — te digo si cada sol tiene trabajo, y si te llegó plata extra te armo la jugada.'; bc.innerHTML=''; }
     else if(bx.extra>0.5){ br.innerHTML='De tus <b>'+pe(bx.total)+'</b>: '+claim+' → hay <b style="color:var(--ok)">'+pe(bx.extra)+'</b> sin trabajo ✨';
       bc.innerHTML='<button class="banco-cta" data-wfopen="1">Dale un trabajo a esos '+pe(bx.extra)+' →</button>'; }
-    else if(bx.extra<-0.5){ br.innerHTML='Tu plan reclama <b>'+pe(bx.pendiente+bx.libre+bx.reserva)+'</b> pero en tus cuentas hay <b style="color:var(--bad)">'+pe(bx.total)+'</b> — faltan <b style="color:var(--bad)">'+pe(-bx.extra)+'</b>. ¿Salió algo que no registraste, o reservaste de más? Anótalo como gasto (o ajusta).'; bc.innerHTML=''; }
+    else if(bx.extra<-0.5){ br.innerHTML='Tu plan reclama <b>'+pe(bx.pendiente+bx.libre)+'</b> pero en tus cuentas hay <b style="color:var(--bad)">'+pe(bx.total)+'</b> — faltan <b style="color:var(--bad)">'+pe(-bx.extra)+'</b>. ¿Salió algo que no registraste? Anótalo como gasto (o ajusta).'; bc.innerHTML=''; }
     else { br.innerHTML='✓ Cada sol de tus cuentas tiene trabajo — cuadra al centavo.'; bc.innerHTML=''; } }
   // Reparto 50/30/20: el chip "↻ 50/30/20" bajo Disponible enciende/apaga esto (showRollover).
   // Reparte el saldo libre ACTUAL en la columna "Repartido" de cada caja. Es la ÚNICA acción sobre
