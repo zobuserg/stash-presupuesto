@@ -1109,8 +1109,8 @@ function bucketH(g,name,pct,num){
       '<div class="ln-mg" id="mg-'+g+'" style="display:none"></div>'+
     '</div>'+
     '<div class="bucket-body"'+(col?' style="display:none"':'')+'>'+
+      (g==='aho'?ahoDebtBlockH():'')+ // Deuda arriba → las categorías nuevas caen ABAJO (al final)
       rows+
-      (g==='aho'?ahoDebtBlockH():'')+
       '<button class="add" data-add="'+g+'"><span class="p">+</span> Agregar categoría</button>'+ // también en Ahorro
     '</div>'+
     wizBtn+'</div>';
@@ -1418,6 +1418,14 @@ app.addEventListener('click',e=>{
     sel.forEach(n=>{ if(allPaid){delete d.paid[n];delete d.paidAmt[n];}
       else {const s=snapOf(n)||debts.find(z=>z.n===n)||{}; d.paid[n]=true; d.paidAmt[n]=debtAmt(s,(d.debtPay[n])||'min');} });
     save(); if(typeof renderDebts==='function')renderDebts(); render(); return;}
+  const kcl=e.target.closest('[data-kindclear]'); // × de Préstamo/Tarjeta: quita del ciclo las de ese tipo
+  if(kcl){const kind=kcl.dataset.kindclear;
+    const sel=Object.keys(d.debtPay||{}).filter(n=>{const x=debts.find(z=>z.n===n&&!z.auto);return x&&(kind==='card'?isCardDebt(x):isLoanDebt(x));});
+    if(!sel.length)return;
+    if(confirm('¿Quitar del ciclo '+sel.length+' '+(kind==='card'?'tarjeta(s)':'préstamo(s)')+'? Puedes volver a agregarlas (o Deshacer).')){
+      snapshot(); sel.forEach(n=>{delete d.debtPay[n]; if(d.debtSnap)delete d.debtSnap[n]; if(d.paid)delete d.paid[n]; if(d.paidAmt)delete d.paidAmt[n];});
+      save(); if(typeof renderDebts==='function')renderDebts(); render();}
+    return;}
   const al=e.target.closest('[data-addline]');
   if(al){const i=+al.dataset.addline;tjOpen=null;view='inicio';collapsed.aho=false;pickerOpen='card';debtForm={kind:'card',idx:i};render();const s=document.getElementById('sec-aho');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});return;}
   const b=e.target.closest('button');if(!b)return;
@@ -1838,7 +1846,7 @@ function ahoDebtBlockH(){
   const cards=debts.filter(x=>isCardDebt(x)&&sel[x.n]);
   const planned=debtPaySum();
   const paidS=(d.paid)?debts.filter(x=>!x.auto&&sel[x.n]&&d.paid[x.n]).reduce((t,x)=>t+debtAmt(snapOf(x.n)||x,sel[x.n]),0):0;
-  const folded=!!collapsed['deuda'];
+  const folded=('deuda' in collapsed)?!!collapsed['deuda']:true; // por defecto PLEGADA: solo el total
   const selNames=Object.keys(sel).filter(n=>debts.some(x=>x.n===n&&!x.auto));
   const allDebtsPaid=selNames.length>0 && selNames.every(n=>d.paid&&d.paid[n]); // el check padre refleja todas ✓
   // "Deuda" = fila cohesionada con las categorías de Ahorro: [chevron][Deuda][total en la columna del
@@ -1876,6 +1884,7 @@ function kindGroupH(kind,label,list,sel){
     '<span class="dsub-t kh-name">'+label+'</span>'+
     (list.length
       ? '<span class="a kh-total">'+pe(total)+'</span>'+
+        '<button class="rm" data-kindclear="'+kind+'" aria-label="Quitar del ciclo" title="Quitar del ciclo '+(kind==='card'?'las tarjetas':'los préstamos')+'">&times;</button>'+
         '<button class="pcheck pchk-paid'+(allPaid?' on':'')+'" data-kindallpaid="'+kind+'" title="Marcar/desmarcar todos los '+(kind==='card'?'pagos de tarjeta':'préstamos')+'">'+(allPaid?'✓':'')+'</button>'
       : '')+
   '</div>';
