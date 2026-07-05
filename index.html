@@ -1959,21 +1959,14 @@ app.addEventListener('click',e=>{
   else if(b.dataset.debtmode!==undefined){const nm=b.dataset.debtmode,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;save();render();}
   else if(b.dataset.debtpaid!==undefined){toggleDebtPaid(b.dataset.debtpaid);}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};
-    // ✓ en la caja AHORRO = "ya me lo pagué" → el monto viaja a tu Reserva AL INSTANTE, sin preguntas
-    // (modelo DD: el check solo baja/mueve el monto, simple). Destildar lo revierte exacto.
-    if(k.indexOf('aho-')===0){
-      if(!d.itemPaid[k]){ // marcando
-        const amt=ahoKeyAmount(k);
-        if(amt>0.5){
-          snapshot();
-          if(!d.ahoMoved)d.ahoMoved={}; d.ahoMoved[k]=amt;
-          fondo+=amt; saveFondo(); addResLog(amt,ahoKeyLabel(k));
-        }
-      } else { // destildando → la plata vuelve del Reserva (deshace el movimiento exacto)
-        const amt=(d.ahoMoved&&d.ahoMoved[k])||0;
-        if(amt>0.5){snapshot();fondo-=amt;saveFondo();addResLog(-amt,ahoKeyLabel(k)+' · deshecho');}
-        if(d.ahoMoved)delete d.ahoMoved[k];
-      }
+    // ✓ = "esta plata SALIÓ" y nada más (modelo DD). NO va sola a la Reserva: en Ahorro puede ser
+    // una deuda a alguien (CumpleFania) — esa plata desaparece. La Reserva solo crece cuando TÚ lo
+    // dices: editándola arriba o respondiendo "sí lo aparté" en el cierre.
+    if(k.indexOf('aho-')===0 && d.itemPaid[k]){
+      // destildando algo que SÍ había viajado a la Reserva (cierre o versión vieja) → la devuelve exacto
+      const amt=(d.ahoMoved&&d.ahoMoved[k])||0;
+      if(amt>0.5){snapshot();fondo-=amt;saveFondo();addResLog(-amt,ahoKeyLabel(k)+' · deshecho');}
+      if(d.ahoMoved)delete d.ahoMoved[k];
     }
     cashDelta(()=>{ // el toggle (y su cascada padre/subs) ajusta "Dinero que tienes ahora" al instante
       if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;
