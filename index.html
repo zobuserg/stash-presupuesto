@@ -1286,17 +1286,23 @@ function cuentasH(){
   const has=hasCuentas(), pagado=has?saldoPagado():0;
   let h='<div class="fondo-row"><span class="fondo-lbl">💰 Dinero que tienes ahora<span class="fondo-hint">toda tu plata junta — baja con cada pago que marcas ✓</span></span></div>';
   h+='<div class="cta-totalbox">S/ <input id="banco-total-inp" type="number" min="0" step="1" value="'+(bancoTotal===''?'':Math.round(saldoVivo()))+'" placeholder="0"></div>';
-  h+='<div class="cta-sub" id="cta-sub"'+(pagado>0.5?'':' style="display:none"')+'>de <b>'+pn(totalCuentas())+'</b> de arranque · ya pagaste <b>'+pn(pagado)+'</b></div>';
+  h+='<div class="cta-sub" id="cta-sub"'+(pagado>0.5?'':' style="display:none"')+'>ya pagaste <b>'+pn(pagado)+'</b> con tus ✓ desde tu último número</div>';
   return h;
 }
-// Salidas del banco este ciclo = TODO lo marcado ✓ (gastos, deuda Y ahorro). Decisión de DD: lo que
-// marcas como pagado ya salió de tu cuenta (el ahorro también — se movió a tu alcancía/Reserva).
-function ejecCash(){return (typeof ejecutadoSum==='function')?ejecutadoSum():0;}
-// Total VIVO: el saldo entrado baja solo con cada pago marcado (para saber cuánto te queda sin abrir el
-// banco). bancoBase = las salidas que YA existían cuando confirmaste tu saldo → solo bajan los pagos
-// posteriores (así puedes tipear tu saldo real en cualquier momento y no se descuenta lo ya reflejado).
-function saldoVivo(){const base=(d.bancoBase!=null)?d.bancoBase:ejecCash();return totalCuentas()-Math.max(ejecCash()-base,0);}
-function saldoPagado(){const base=(d.bancoBase!=null)?d.bancoBase:ejecCash();return Math.max(ejecCash()-base,0);}
+// Contador VIVO (modelo DD): "Dinero que tienes ahora" ES el número guardado — tú lo tipeas, y cada ✓
+// que marcas le resta su monto EN EL MOMENTO (desmarcar lo devuelve exacto). Sin anclas, sin recálculos
+// que dependan del orden. Re-tipear el número = nuevo punto de verdad y el contador "ya pagaste" arranca en 0.
+function cashDelta(fn){ // envuelve una mutación de pagos: ajusta el número por la diferencia exacta que causó
+  const antes=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
+  fn();
+  const dif=ejecutadoSum()-antes;
+  if(hasCuentas()&&Math.abs(dif)>0.005){
+    bancoTotal=(parseFloat(bancoTotal)||0)-dif;saveBancoTotal();
+    d.pagadoLive=Math.max((d.pagadoLive||0)+dif,0); // acumulado informativo "ya pagaste" desde tu último número
+  }
+}
+function saldoVivo(){return totalCuentas();} // el número guardado ya ES el saldo vivo
+function saldoPagado(){return (d.pagadoLive||0);}
 function bancoExtra(){ // null = sin cuentas · extra>0 plata sin trabajo · extra<0 fuga
   if(!hasCuentas())return null;
   const ejec=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
@@ -1415,7 +1421,7 @@ function asignaCancelar(){ if(!asigna)return; asigna=null; doUndo(); } // doUndo
     else if(b.dataset.wfgo){applyWindfall();}
     else if(b.dataset.wfopt){wfOption(b.dataset.wfopt);}
   });})();
-function snapshot(){history.push(JSON.stringify({d:d,debts:(typeof debts!=='undefined'?debts:[]),fondo:fondo}));if(history.length>50)history.shift();updateUndo();}
+function snapshot(){history.push(JSON.stringify({d:d,debts:(typeof debts!=='undefined'?debts:[]),fondo:fondo,banco:(typeof bancoTotal!=='undefined'?bancoTotal:'')}));if(history.length>50)history.shift();updateUndo();}
 function updateUndo(){const u=document.getElementById('undo');if(u)u.hidden=history.length===0;}
 const pe=n=>'S/ '+Math.round(n).toLocaleString('es-PE');
 // Sin "S/": para las celdas del macro/tríada (5 columnas) — el signo ya está grande en el hero de arriba.
@@ -1741,12 +1747,11 @@ function recompute(){
   if(fn){ const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0; const aRes=ti-real;
     fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Reserva</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso — tu Reserva puede cubrirlo)</span>':'')+'.'; }
   // Conciliación bancaria: ¿cada sol de tu cuenta tiene trabajo? (se actualiza en vivo, sin re-render)
-  if(d.bancoBase==null && hasCuentas())d.bancoBase=ejecCash(); // ancla inicial: de aquí en más, los pagos bajan el saldo
-  // Total vivo: baja con cada pago marcado ✓ (para saber cuánto queda sin abrir el banco)
+  // Contador vivo: el número guardado ya bajó/subió con cada ✓ en el momento (cashDelta) — solo se refleja.
   {const ct=document.getElementById('cta-total'); if(ct)ct.textContent=pn(saldoVivo());
-   const bti=document.getElementById('banco-total-inp'); if(bti&&document.activeElement!==bti)bti.value=(bancoTotal===''?'':Math.round(saldoVivo())); // el total único baja solo con cada ✓
+   const bti=document.getElementById('banco-total-inp'); if(bti&&document.activeElement!==bti)bti.value=(bancoTotal===''?'':Math.round(saldoVivo()));
    const cs=document.getElementById('cta-sub'); if(cs){const pg=saldoPagado();
-     if(pg>0.5){cs.style.display='';cs.innerHTML='de <b>'+pn(totalCuentas())+'</b> de arranque · ya pagaste <b>'+pn(pg)+'</b>';}else cs.style.display='none';}}
+     if(pg>0.5){cs.style.display='';cs.innerHTML='ya pagaste <b>'+pn(pg)+'</b> con tus ✓ desde tu último número';}else cs.style.display='none';}}
   const br=document.getElementById('banco-rec'), bc=document.getElementById('banco-cta');
   if(br&&bc){ const bx=bancoExtra();
     // Desglose: cada sol de tus cuentas cae en un cajón (comprometido / libre / reserva / sin trabajo).
@@ -1803,7 +1808,7 @@ const app=document.getElementById('app');
 app.addEventListener('input',e=>{const t=e.target;
   if(t.id==='fondo-inp'){fondo=parseFloat(t.value)||0;saveFondo();recompute();return;}
   if(t.id==='banco-total-inp'){bancoTotal=t.value===''?'':(parseFloat(t.value)||0);saveBancoTotal();
-    d.bancoBase=ejecCash();save();recompute();return;} // el número que tipeas es tu dinero AHORA (re-ancla)
+    d.pagadoLive=0;save();recompute();return;} // el número que tipeas es tu dinero AHORA — nuevo punto de verdad
   if(t.dataset&&t.dataset.loan!==undefined){const i=+t.dataset.loan,f=t.dataset.lf;if(debts[i]){debts[i][f]=t.value;saveDebts();recompute();}return;}
   if(t.dataset&&t.dataset.payday!==undefined){const yr=parseInt((t.value.split('-')[0])||'0',10);
     if(t.value && (yr<2000||yr>2100))return; // ignorar años absurdos hasta que la fecha esté completa
@@ -1820,13 +1825,15 @@ app.addEventListener('input',e=>{const t=e.target;
   const g=t.dataset.grp,i=+t.dataset.idx,f=t.dataset.f;
   if(t.dataset.sub!==undefined){
     const j=+t.dataset.sub;
-    d[g][i].sub[j][f]=t.value;
-    d[g][i].a=sum(d[g][i].sub);
+    cashDelta(()=>{ // si el ítem editado ya tiene ✓, corregir su monto ajusta el dinero vivo por la diferencia
+      d[g][i].sub[j][f]=t.value;
+      d[g][i].a=sum(d[g][i].sub);
+    });
     const pInput=app.querySelector('input.a[data-grp="'+g+'"][data-idx="'+i+'"]:not([data-sub])');
     if(pInput)pInput.value=d[g][i].a;
     recompute();save();
   }else{
-    d[g][i][f]=t.value;recompute();save();
+    cashDelta(()=>{d[g][i][f]=t.value;});recompute();save();
   }
 });
 app.addEventListener('click',e=>{
@@ -1851,14 +1858,14 @@ app.addEventListener('click',e=>{
   const dc=e.target.closest('[data-deudaclear]'); // × de "Deuda": quita del ciclo las deudas elegidas (reversible)
   if(dc){const sel=d.debtPay?Object.keys(d.debtPay):[]; if(!sel.length)return;
     if(confirm('¿Quitar las '+sel.length+' deuda(s) elegidas de este ciclo? Puedes volver a agregarlas del banco (o Deshacer).')){
-      snapshot(); d.debtPay={}; d.debtSnap={}; save(); render(); if(typeof renderDebts==='function')renderDebts();}
+      snapshot(); cashDelta(()=>{d.debtPay={}; d.debtSnap={}; if(d.paid)d.paid={}; if(d.paidAmt)d.paidAmt={};}); save(); render(); if(typeof renderDebts==='function')renderDebts();}
     return;}
   const dap=e.target.closest('[data-deudaallpaid]'); // check "Deuda": marca/desmarca TODAS las deudas del ciclo
   if(dap){const sel=Object.keys(d.debtPay||{}).filter(n=>debts.some(x=>x.n===n&&!x.auto)); if(!sel.length)return;
     const allPaid=sel.every(n=>d.paid&&d.paid[n]); snapshot();
     if(!d.paid)d.paid={}; if(!d.paidAmt)d.paidAmt={};
-    sel.forEach(n=>{ if(allPaid){delete d.paid[n];delete d.paidAmt[n];}
-      else {const s=snapOf(n)||debts.find(z=>z.n===n)||{}; d.paid[n]=true; d.paidAmt[n]=debtAmt(s,(d.debtPay[n])||'min');} });
+    cashDelta(()=>{sel.forEach(n=>{ if(allPaid){delete d.paid[n];delete d.paidAmt[n];}
+      else {const s=snapOf(n)||debts.find(z=>z.n===n)||{}; d.paid[n]=true; d.paidAmt[n]=debtAmt(s,(d.debtPay[n])||'min');} });});
     save(); if(typeof renderDebts==='function')renderDebts(); render(); return;}
   const kap=e.target.closest('[data-kindallpaid]'); // check de Préstamo/Tarjeta: marca/desmarca los de ESE tipo
   if(kap){const kind=kap.dataset.kindallpaid;
@@ -1866,15 +1873,15 @@ app.addEventListener('click',e=>{
     if(!sel.length)return;
     const allPaid=sel.every(n=>d.paid&&d.paid[n]); snapshot();
     if(!d.paid)d.paid={}; if(!d.paidAmt)d.paidAmt={};
-    sel.forEach(n=>{ if(allPaid){delete d.paid[n];delete d.paidAmt[n];}
-      else {const s=snapOf(n)||debts.find(z=>z.n===n)||{}; d.paid[n]=true; d.paidAmt[n]=debtAmt(s,(d.debtPay[n])||'min');} });
+    cashDelta(()=>{sel.forEach(n=>{ if(allPaid){delete d.paid[n];delete d.paidAmt[n];}
+      else {const s=snapOf(n)||debts.find(z=>z.n===n)||{}; d.paid[n]=true; d.paidAmt[n]=debtAmt(s,(d.debtPay[n])||'min');} });});
     save(); if(typeof renderDebts==='function')renderDebts(); render(); return;}
   const kcl=e.target.closest('[data-kindclear]'); // × de Préstamo/Tarjeta: quita del ciclo las de ese tipo
   if(kcl){const kind=kcl.dataset.kindclear;
     const sel=Object.keys(d.debtPay||{}).filter(n=>{const x=debts.find(z=>z.n===n&&!z.auto);return x&&(kind==='card'?isCardDebt(x):isLoanDebt(x));});
     if(!sel.length)return;
     if(confirm('¿Quitar del ciclo '+sel.length+' '+(kind==='card'?'tarjeta(s)':'préstamo(s)')+'? Puedes volver a agregarlas (o Deshacer).')){
-      snapshot(); sel.forEach(n=>{delete d.debtPay[n]; if(d.debtSnap)delete d.debtSnap[n]; if(d.paid)delete d.paid[n]; if(d.paidAmt)delete d.paidAmt[n];});
+      snapshot(); cashDelta(()=>{sel.forEach(n=>{delete d.debtPay[n]; if(d.debtSnap)delete d.debtSnap[n]; if(d.paid)delete d.paid[n]; if(d.paidAmt)delete d.paidAmt[n];});});
       save(); if(typeof renderDebts==='function')renderDebts(); render();}
     return;}
   const al=e.target.closest('[data-addline]');
@@ -1936,7 +1943,7 @@ app.addEventListener('click',e=>{
     if(!promptOtroMonto(nm,def))return; if(!d.debtPay)d.debtPay={};d.debtPay[nm]='otro';
     if(x){if(!d.debtSnap)d.debtSnap={};d.debtSnap[nm]=snapCapture(x);}save();render();}
   else if(b.dataset.loanamt!==undefined){if(promptOtroMonto(b.dataset.loanamt)){save();render();}}
-  else if(b.dataset.unpick!==undefined){const nm=b.dataset.unpick;if(d.debtPay)delete d.debtPay[nm];if(d.debtSnap)delete d.debtSnap[nm];if(d.paid)delete d.paid[nm];if(d.paidAmt)delete d.paidAmt[nm];save();render();}
+  else if(b.dataset.unpick!==undefined){const nm=b.dataset.unpick;cashDelta(()=>{if(d.debtPay)delete d.debtPay[nm];if(d.debtSnap)delete d.debtSnap[nm];if(d.paid)delete d.paid[nm];if(d.paidAmt)delete d.paidAmt[nm];});save();render();}
   else if(b.dataset.newdebt){debtForm={kind:b.dataset.newdebt,idx:'new'};render();}
   else if(b.dataset.editdebt!==undefined){debtForm={kind:b.dataset.kind,idx:+b.dataset.editdebt};render();}
   else if(b.dataset.debtformcancel){debtForm=null;render();}
@@ -1952,18 +1959,15 @@ app.addEventListener('click',e=>{
   else if(b.dataset.debtmode!==undefined){const nm=b.dataset.debtmode,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;save();render();}
   else if(b.dataset.debtpaid!==undefined){toggleDebtPaid(b.dataset.debtpaid);}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};
-    // ✓ en la caja AHORRO = "ya me lo pagué" → el monto viaja a tu Reserva AL INSTANTE (tiempo real).
-    // Pregunta dónde lo guardaste (esa pregunta ES la confirmación de que fue real). Destildar lo
-    // revierte exacto. En nec/luj el ✓ sigue siendo solo recordatorio; en deudas la verdad la tiene el banco.
+    // ✓ en la caja AHORRO = "ya me lo pagué" → el monto viaja a tu Reserva AL INSTANTE, sin preguntas
+    // (modelo DD: el check solo baja/mueve el monto, simple). Destildar lo revierte exacto.
     if(k.indexOf('aho-')===0){
       if(!d.itemPaid[k]){ // marcando
         const amt=ahoKeyAmount(k);
         if(amt>0.5){
-          const lugar=prompt('¿Dónde guardaste este dinero?\n(ej. alcancía virtual, cuenta aparte, bajo el colchón)','');
-          if(lugar===null)return; // canceló → no se marca
           snapshot();
           if(!d.ahoMoved)d.ahoMoved={}; d.ahoMoved[k]=amt;
-          fondo+=amt; saveFondo(); addResLog(amt,ahoKeyLabel(k)+(lugar?' · '+lugar:''));
+          fondo+=amt; saveFondo(); addResLog(amt,ahoKeyLabel(k));
         }
       } else { // destildando → la plata vuelve del Reserva (deshace el movimiento exacto)
         const amt=(d.ahoMoved&&d.ahoMoved[k])||0;
@@ -1971,12 +1975,14 @@ app.addEventListener('click',e=>{
         if(d.ahoMoved)delete d.ahoMoved[k];
       }
     }
-    if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;
-    // Si marqué una SUBcategoría (g-i-j): cuando TODAS las subs de la categoría quedan ✓, se marca
-    // sola la categoría padre; si desmarco una, se desmarca el padre.
-    const pp=k.split('-');
-    if(pp.length===3){const pk=pp[0]+'-'+pp[1], row=d[pp[0]]&&d[pp[0]][+pp[1]];
-      if(row&&hasSubs(row)){ if(row.sub.every((s,j)=>d.itemPaid[pk+'-'+j])) d.itemPaid[pk]=true; else delete d.itemPaid[pk]; }}
+    cashDelta(()=>{ // el toggle (y su cascada padre/subs) ajusta "Dinero que tienes ahora" al instante
+      if(d.itemPaid[k])delete d.itemPaid[k];else d.itemPaid[k]=true;
+      // Si marqué una SUBcategoría (g-i-j): cuando TODAS las subs de la categoría quedan ✓, se marca
+      // sola la categoría padre; si desmarco una, se desmarca el padre.
+      const pp=k.split('-');
+      if(pp.length===3){const pk=pp[0]+'-'+pp[1], row=d[pp[0]]&&d[pp[0]][+pp[1]];
+        if(row&&hasSubs(row)){ if(row.sub.every((s,j)=>d.itemPaid[pk+'-'+j])) d.itemPaid[pk]=true; else delete d.itemPaid[pk]; }}
+    });
     save();render();}
   else if(b.classList.contains('rm')){
     snapshot();
@@ -2001,7 +2007,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'){const t=e.target;
   else if(t.tagName!=='INPUT'&&t.tagName!=='TEXTAREA'&&t.tagName!=='BUTTON'){e.preventDefault();if(focusMode)focusGo(1);else wizGo(wizStep+1);/* 2do Enter: avanza escena */}
 }});
 document.addEventListener('focusout',e=>{const t=e.target;if(t.tagName==='INPUT'&&t.type==='number'){t.classList.add('saved');setTimeout(()=>t.classList.remove('saved'),550);}});
-function doUndo(){if(history.length){const s=JSON.parse(history.pop());if(s&&s.d){d=s.d;if(s.debts){debts=s.debts;saveDebts();}if(s.fondo!=null){fondo=s.fondo;saveFondo();}}else{d=s;}save();render();if(typeof renderDebts==='function')renderDebts();updateUndo();}}
+function doUndo(){if(history.length){const s=JSON.parse(history.pop());if(s&&s.d){d=s.d;if(s.debts){debts=s.debts;saveDebts();}if(s.fondo!=null){fondo=s.fondo;saveFondo();}if(s.banco!==undefined){bancoTotal=s.banco;saveBancoTotal();}}else{d=s;}save();render();if(typeof renderDebts==='function')renderDebts();updateUndo();}}
 document.getElementById('undo').addEventListener('click',doUndo);
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();doUndo();}});
 
@@ -2252,9 +2258,11 @@ function debtPaySum(){if(!d.debtPay)return 0;return debts.filter(x=>!x.auto).red
 function toggleDebtPaid(name){
   if(!d.paid)d.paid={}; if(!d.paidAmt)d.paidAmt={};
   snapshot();
-  if(d.paid[name]){ delete d.paid[name]; delete d.paidAmt[name]; }
-  else { const s=snapOf(name)||debts.find(z=>z.n===name)||{};
-    d.paid[name]=true; d.paidAmt[name]=debtAmt(s,(d.debtPay&&d.debtPay[name])||'min'); }
+  cashDelta(()=>{
+    if(d.paid[name]){ delete d.paid[name]; delete d.paidAmt[name]; }
+    else { const s=snapOf(name)||debts.find(z=>z.n===name)||{};
+      d.paid[name]=true; d.paidAmt[name]=debtAmt(s,(d.debtPay&&d.debtPay[name])||'min'); }
+  });
   save(); if(typeof renderDebts==='function')renderDebts(); render();
 }
 // Ejecutado/real POR CAJA: lo ya marcado como pagado. nec/luj/aho = categorías con ✓ (efectivo);
