@@ -1967,7 +1967,11 @@ app.addEventListener('click',e=>{
       if(!d.itemPaid[k]){ // marcando
         const amt=ahoKeyAmount(k);
         if(amt>0.5){
-          const guarda=confirm('✓ '+ahoKeyLabel(k)+' — S/ '+Math.round(amt)+'\n\n¿Dónde quedó esta plata?\n\nACEPTAR → En mi Reserva (me la guardé yo)\nCANCELAR → Se fue (pagué una deuda o a alguien)');
+          // Las categorías conocidas no preguntan (lógica DD): Ahorro/Inversión = plata tuya → Reserva
+          // directo. Solo las categorías que TÚ creaste preguntan, porque solo tú sabes a dónde fue.
+          const catLbl=((d.aho[+k.split('-')[1]]||{}).l||'').trim().toLowerCase();
+          const esPropio=/^(ahorro|inversi[oó]n)$/.test(catLbl);
+          const guarda=esPropio||confirm('✓ '+ahoKeyLabel(k)+' — S/ '+Math.round(amt)+'\n\n¿Dónde quedó esta plata?\n\nACEPTAR → En mi Reserva (me la guardé yo)\nCANCELAR → Se fue (pagué una deuda o a alguien)');
           if(guarda){
             snapshot();
             if(!d.ahoMoved)d.ahoMoved={}; d.ahoMoved[k]=amt;
