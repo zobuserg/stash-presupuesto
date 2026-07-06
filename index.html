@@ -1308,9 +1308,12 @@ function bancoExtra(){ // null = sin cuentas · extra>0 plata sin trabajo · ext
   const ejec=(typeof ejecutadoSum==='function')?ejecutadoSum():0;
   let util=0;buckets.forEach(b=>{const g=b[0];let a=(g==='nec'||g==='luj')?sumCash(d[g]):sum(d[g]);if(g==='aho')a+=debtPaySum();util+=a;});
   const pendiente=Math.max(util-ejec,0), libre=Math.max(lastSaldo||0,0), total=saldoVivo();
+  // Ingresos SIN ✓ = "por llegar" (cuentas por cobrar): plata que el plan espera pero aún no está
+  // en tus cuentas. No cuenta como tuya (extra) pero SÍ cubre el plan (evita el rojo mentiroso).
+  const porLlegar=(d.inc||[]).reduce((t,r,i)=>t+((d.itemPaid&&d.itemPaid['inc-'+i])?0:(parseFloat(r.a)||0)),0);
   // Total vivo (ya neto de TODO lo marcado ✓) − lo que aún debes pagar − libre = residuo sin trabajo.
   // No se resta la Reserva: lo ahorrado ya salió del banco al marcarlo (no es un apartado del total).
-  return {extra:total-pendiente-libre, pendiente, libre, total};
+  return {extra:total-pendiente-libre, pendiente, libre, total, porLlegar};
 }
 function windfallPlan(extra){
   const props=[]; let resto=extra;
@@ -1502,7 +1505,7 @@ function rowH(g,i,r){
     (asigna&&g!=='inc'?'<button class="asigna-btn" data-asignar="'+g+'-'+i+'" title="Mandar plata aquí">+ S/</button>':'')+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button>'+
-    (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="'+(g==='aho'?'Ya lo aparté — viaja a tu Reserva':'Ya pagué esto')+'">'+(paid?'✓':'')+'</button>':'')+'</div>';
+    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="'+(g==='inc'?'Ya me llegó esta plata':(g==='aho'?'Ya lo aparté':'Ya pagué esto'))+'">'+(paid?'✓':'')+'</button>'+'</div>';
   if(canTj && tjOpen===(g+'-'+i)) h+=tjPickerH(g,i,null,r);
   if(g!=='inc'){
     h+='<div class="subwrap"'+(folded?' style="display:none"':'')+'>';
@@ -1759,7 +1762,8 @@ function recompute(){
     if(!bx){ br.innerHTML='Agrega tus cuentas y su saldo — te digo si cada sol tiene trabajo, y si te llegó plata extra te armo la jugada.'; bc.innerHTML=''; }
     else if(bx.extra>0.5){ br.innerHTML='De tus <b>'+pe(bx.total)+'</b>: '+claim+' → hay <b style="color:var(--ok)">'+pe(bx.extra)+'</b> sin trabajo ✨';
       bc.innerHTML='<button class="banco-cta" data-wfopen="1">Dale un trabajo a esos '+pe(bx.extra)+' →</button>'; }
-    else if(bx.extra<-0.5){ br.innerHTML='Tu plan reclama <b>'+pe(bx.pendiente+bx.libre)+'</b> pero en tus cuentas hay <b style="color:var(--bad)">'+pe(bx.total)+'</b> — faltan <b style="color:var(--bad)">'+pe(-bx.extra)+'</b>. ¿Salió algo que no registraste? Anótalo como gasto (o ajusta).'; bc.innerHTML=''; }
+    else if(bx.extra<-0.5 && bx.extra+bx.porLlegar>=-0.5){ br.innerHTML='Tienes <b>'+pe(bx.total)+'</b> y esperas <b style="color:var(--accent)">'+pe(bx.porLlegar)+'</b> por llegar (ingresos sin ✓) → tu plan queda cubierto. Cuando te caiga la plata, marca su ✓ y entra sola.'; bc.innerHTML=''; }
+    else if(bx.extra<-0.5){ br.innerHTML='Tu plan reclama <b>'+pe(bx.pendiente+bx.libre)+'</b>; tienes <b>'+pe(bx.total)+'</b>'+(bx.porLlegar>0.5?' + <b>'+pe(bx.porLlegar)+'</b> por llegar':'')+' — ni así alcanza: faltan <b style="color:var(--bad)">'+pe(-(bx.extra+bx.porLlegar))+'</b>. ¿Salió algo que no registraste? Anótalo como gasto (o ajusta el plan).'; bc.innerHTML=''; }
     else { br.innerHTML='✓ Cada sol de tus cuentas tiene trabajo — cuadra al centavo.'; bc.innerHTML=''; } }
   // Reparto 50/30/20: el chip "↻ 50/30/20" bajo Disponible enciende/apaga esto (showRollover).
   // Reparte el saldo libre ACTUAL en la columna "Repartido" de cada caja. Es la ÚNICA acción sobre
@@ -1959,6 +1963,23 @@ app.addEventListener('click',e=>{
   else if(b.dataset.debtmode!==undefined){const nm=b.dataset.debtmode,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;save();render();}
   else if(b.dataset.debtpaid!==undefined){toggleDebtPaid(b.dataset.debtpaid);}
   else if(b.dataset.itempaid!==undefined){const k=b.dataset.itempaid;if(!d.itemPaid)d.itemPaid={};
+    // ✓ en INGRESO = "ya me llegó" → SUBE el contador vivo (simetría exacta con los gastos: ellos
+    // restan al salir, esto suma al entrar). Sin ✓ = "por llegar" — la conciliación lo cuenta en
+    // camino en vez de gritar rojo. Destildar revierte el monto exacto que entró (d.incGot).
+    if(k.indexOf('inc-')===0){
+      const row=d.inc[+k.split('-')[1]]||{};
+      if(!d.itemPaid[k]){ // marcando: ya entró
+        const amt=parseFloat(row.a)||0;
+        d.itemPaid[k]=true;
+        if(hasCuentas()&&amt>0.5){if(!d.incGot)d.incGot={};d.incGot[k]=amt;
+          bancoTotal=(parseFloat(bancoTotal)||0)+amt;saveBancoTotal();}
+      } else { // destildando: aún no llegaba
+        delete d.itemPaid[k];
+        const got=(d.incGot&&d.incGot[k])||0;
+        if(hasCuentas()&&got>0.5){bancoTotal=(parseFloat(bancoTotal)||0)-got;saveBancoTotal();}
+        if(d.incGot)delete d.incGot[k];
+      }
+      save();render();return;}
     // ✓ en categoría libre de AHORRO: la plata SALIÓ de tus cuentas sí o sí (baja el contador vivo),
     // pero la caja no puede adivinar A DÓNDE — Ahorro alberga los 4 inquilinos del 20 (deuda a alguien
     // se ESFUMA; pagarte a ti se MUDA a la Reserva, tu alcancía aparte). Decisión DD (5 jul): preguntar
