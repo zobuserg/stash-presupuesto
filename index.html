@@ -214,6 +214,7 @@ body.focuson .reset{display:none}
 .hi-chip-btn.ok{background:var(--ok)}
 .hi-chip-btn:hover{filter:brightness(1.08)}
 .hi-chip-warn{font-size:11.5px; color:var(--bad); font-weight:600; background:var(--line2); border-radius:10px; padding:.4rem .7rem; line-height:1.4}
+.hi-chip-plan{font-size:11.5px; color:var(--accent); font-weight:600; background:var(--line2); border-radius:10px; padding:.4rem .7rem; line-height:1.4}
 .ce-cerrar{width:100%; margin-top:.5rem; font:inherit; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.55rem; cursor:pointer}
 .hi-sub{font-size:12.5px; color:var(--tx2); margin-top:.45rem}
 .hi-sub b{color:var(--accent); font-weight:600}
@@ -859,6 +860,16 @@ migrateCycleDates();
 let activeQ = localStorage.getItem('midas_active_cycle') || cycles[0].id; // id del ciclo activo
 if(!cycles.find(c=>c.id===activeQ)) activeQ=cycles[0].id;
 const cycleOf=id=>cycles.find(c=>c.id===id)||cycles[0];
+// Estado de un ciclo respecto a HOY: 'cerrado' (ya pasaste la página) · 'vencido' (terminó, sin cerrar) ·
+// 'encurso' (hoy cae dentro) · 'futuro' (aún no empieza). SOLO 'encurso' es dueño de tu caja/conciliación.
+function cycleStatusOf(id){const c=cycleOf(id);let x;try{x=(id===activeQ&&typeof d!=='undefined')?d:JSON.parse(localStorage.getItem(keyFor(id)));}catch(e){}
+  if(x&&x.closed)return 'cerrado';
+  const hoy=isoToday();
+  if(c.start&&c.start>hoy)return 'futuro';
+  if(c.end&&c.end<hoy)return 'vencido';
+  return 'encurso';}
+function isFutureActive(){const c=cycleOf(activeQ);return !!(c.start&&c.start>isoToday()&&!(typeof d!=='undefined'&&d.closed));}
+const CYC_BADGE={cerrado:'✅',vencido:'📅',encurso:'🔵',futuro:'🔮'};
 // Fechas del ciclo: etiqueta (Julio · Quincena 1) y "cubre entre X y Y", derivadas de start/end.
 const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
@@ -892,7 +903,7 @@ function renderCycleBar(){
   bar.innerHTML=
     '<div class="cyc-main">'+
       '<button class="cyc-nav" data-cycnav="-1"'+(idx<=0?' disabled':'')+'>‹</button>'+
-      '<span class="cyc-cur">'+esc(cycleLabel(cyc))+'</span>'+
+      '<span class="cyc-cur"><span class="cyc-badge" title="'+cycleStatusOf(activeQ)+'">'+(CYC_BADGE[cycleStatusOf(activeQ)]||'')+'</span> '+esc(cycleLabel(cyc))+'</span>'+
       '<button class="cyc-nav" data-cycnav="1"'+(idx>=cycles.length-1?' disabled':'')+'>›</button>'+
       '<button class="cyc-edit'+(cycEdit?' on':'')+'" data-cycedit="1" title="Editar fechas de este ciclo">✎</button>'+
     '</div>'+
@@ -1049,6 +1060,9 @@ function createCycleForToday(type){
 (function resolveByDate(){
   const hoy=isoToday(), cur=cycleOf(activeQ);
   const isClosed=id=>{try{const x=JSON.parse(localStorage.getItem(keyFor(id)));return !!(x&&x.closed);}catch(e){return false;}};
+  // La fecha es un empujón hacia ADELANTE, nunca una correa hacia atrás: si te paraste en un ciclo
+  // FUTURO a propósito (a planificar) y no lo cerraste, te respeta ahí — no te jala al presente.
+  if(cur.start&&cur.start>hoy&&!isClosed(activeQ))return;
   if(cur.start&&cur.end&&cur.start<=hoy&&hoy<=cur.end&&!isClosed(activeQ))return; // el guardado sigue vigente
   let id=cycleForToday();
   // Si el ciclo de hoy ya se CERRÓ, tu presente es el siguiente sin cerrar (cerrar = pasar la página;
@@ -1215,7 +1229,8 @@ function openCierre(){
   });
   const debtPend=Object.keys(d.debtPay||{}).filter(n=>debts.some(x=>x.n===n&&!x.auto)&&!(d.paid&&d.paid[n]))
     .map(n=>({n,amt:debtAmt(snapOf(n)||debts.find(z=>z.n===n)||{},d.debtPay[n]||'min'),carry:true}));
-  cierre={ing,ahoPend,debtPend,destino:null,defTrato:null};
+  const cyc=cycleOf(activeQ), anticipado=!!(cyc.end&&isoToday()<cyc.end);
+  cierre={ing,ahoPend,debtPend,destino:null,defTrato:null,anticipado,arrancaHoy:anticipado};
   renderCierre();
   const ov=document.getElementById('cierre-ovl'); if(ov)ov.hidden=false;
 }
@@ -1258,6 +1273,11 @@ function renderCierre(){
   } else {
     h+='<div class="ci-sec"><div class="ci-q">Cerraste al centavo ✨ El siguiente ciclo arranca limpio.</div></div>';
   }
+  // Cierre anticipado: ofrece que el siguiente ciclo arranque HOY (sin días de tierra de nadie).
+  if(c.anticipado){
+    h+='<div class="ci-sec"><button class="ci-tog'+(c.arrancaHoy?' on':'')+'" data-cihoy="1" style="width:100%;text-align:left">'+(c.arrancaHoy?'✓ ':'')+'El siguiente ciclo arranca HOY ('+fmtFecha(isoToday())+')</button>'+
+      '<div class="ci-note">Estás cerrando antes de tiempo. Actívalo para que el próximo ciclo cubra desde hoy y las fechas cuadren con tu realidad.</div></div>';
+  }
   const need=(res>0.5&&!c.destino)||(resto>0.5&&!c.defTrato);
   h+='<div class="ci-btns"><button class="ci-cancel" data-cicancel="1">Cancelar</button><button class="ci-go" data-cigo="1"'+(need?' disabled':'')+'>Cerrar ciclo →</button></div>';
   el.innerHTML=h;
@@ -1297,8 +1317,15 @@ function commitCierre(){
     if(d.debtPay&&d.debtPay[n]==='otro'){if(!nx.otroMonto)nx.otroMonto={};nx.otroMonto[n]=d.otroMonto&&d.otroMonto[n];}
     const s=d.debtSnap&&d.debtSnap[n]; if(s){if(!nx.debtSnap)nx.debtSnap={};nx.debtSnap[n]=JSON.parse(JSON.stringify(s));}
     if(!nx.carried)nx.carried={}; nx.carried[n]=miLabel; });
-  if(res>0.5&&c.destino==='ciclo')nx.inc.push({l:'Sobrante del ciclo anterior',a:Math.round(res)});
+  if(res>0.5&&c.destino==='ciclo'){nx.inc.push({l:'Sobrante del ciclo anterior',a:Math.round(res)});
+    // El sobrante YA está en tu mano (viene de este ciclo) → nace RECIBIDO. Si quedara sin ✓, la
+    // conciliación lo contaría dos veces (en el total y como "por llegar").
+    const k='inc-'+(nx.inc.length-1); if(!nx.itemPaid)nx.itemPaid={}; nx.itemPaid[k]=true;
+    if(!nx.incGot)nx.incGot={}; nx.incGot[k]=Math.round(res);}
   if(resto>0.5&&c.defTrato==='desc')nx.inc.push({l:'Déficit del ciclo anterior',a:-Math.round(resto)});
+  // Punto 5: si al cerrar dijiste "el siguiente arranca hoy", el ciclo entrante cubre desde HOY
+  // (cierre anticipado = el próximo nace temprano; sin días de tierra de nadie con fechas que mienten).
+  if(c.arrancaHoy){const nc=cycleOf(nid); if(nc){nc.start=isoToday(); if(nc.end&&nc.end<nc.start)nc.end=nc.start; saveCycles();}}
   localStorage.setItem(keyFor(nid),JSON.stringify(nx));
   cierre=null; const ov=document.getElementById('cierre-ovl'); if(ov)ov.hidden=true;
   switchCycle(nid);
@@ -1310,6 +1337,7 @@ function commitCierre(){
     else if(b.dataset.cicarry!==undefined){const x=cierre.debtPend[+b.dataset.cicarry];if(x)x.carry=!x.carry;renderCierre();}
     else if(b.dataset.cidest){cierre.destino=b.dataset.cidest;renderCierre();}
     else if(b.dataset.cidef){cierre.defTrato=b.dataset.cidef;renderCierre();}
+    else if(b.dataset.cihoy){cierre.arrancaHoy=!cierre.arrancaHoy;renderCierre();}
     else if(b.dataset.cicancel){cierre=null;ov.hidden=true;}
     else if(b.dataset.cigo){commitCierre();}
   });})();
@@ -1516,6 +1544,7 @@ function injectPlata(monto){monto=Math.round(monto);if(monto<=0)return;
   if(!d.incGot)d.incGot={}; d.incGot[k]=(parseFloat(d.incGot[k])||0)+monto;}
 function closeWf(){wf=null;const ov=document.getElementById('wf-ovl');if(ov)ov.hidden=true;}
 function openWindfall(){
+  if(isFutureActive())return; // en un ciclo futuro no se reparte plata en mano — pertenece al presente
   const bx=bancoExtra(); if(!bx||bx.extra<=0.5)return;
   wf={extra:Math.round(bx.extra),plan:windfallPlan(bx.extra)};
   const el=document.getElementById('wf-card'); if(!el)return;
@@ -1932,10 +1961,14 @@ function recompute(){
   // hay noticia (plata sin trabajo o una fuga) — cero ruido cuando todo cuadra (management by exception).
   {const bti=document.getElementById('banco-total-inp'); if(bti&&document.activeElement!==bti)bti.value=(bancoTotal===''?'':Math.round(saldoVivo()));}
   {const cam=document.getElementById('hi-camino'), bc=document.getElementById('banco-cta'); const bx=bancoExtra();
+   const fut=isFutureActive();
     if(cam)cam.innerHTML=(bx&&bx.porLlegar>0.5)?' · en camino S/ '+pn(bx.porLlegar):'';
     if(bc){
-      if(!bx){bc.innerHTML='';}
-      else if(bx.extra>0.5){bc.innerHTML=d.closed?'':'<button class="hi-chip-btn ok" data-wfopen="1">✨ S/ '+pn(bx.extra)+' sin trabajo — dale un destino →</button>';}
+      // El presente es exclusivo: solo el ciclo EN CURSO reclama tu plata. En un futuro estás planificando.
+      if(fut){bc.innerHTML='<div class="hi-chip-plan">🔮 Estás planificando un ciclo futuro — tu plata en mano se concilia en el ciclo en curso.</div>';}
+      else if(d.closed){bc.innerHTML='';}
+      else if(!bx){bc.innerHTML='';}
+      else if(bx.extra>0.5){bc.innerHTML='<button class="hi-chip-btn ok" data-wfopen="1">✨ S/ '+pn(bx.extra)+' sin trabajo — dale un destino →</button>';}
       else if(bx.extra<-0.5){bc.innerHTML='<div class="hi-chip-warn">⚠ Te faltan S/ '+pn(-bx.extra)+' para tu plan. ¿Un gasto sin registrar, o un ingreso que aún no marcas?</div>';}
       else {bc.innerHTML='';}
     }}
