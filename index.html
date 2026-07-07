@@ -202,7 +202,19 @@ body.focuson .reset{display:none}
 .tabbtn:hover{color:var(--tx)}
 /* Ingreso hero (lo primero y más grande del home) */
 .hero-inc{text-align:center; padding:.4rem 0 1.1rem}
+.hi-lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--tx3); margin-bottom:.15rem}
 .hi-num{font-size:42px; font-weight:800; letter-spacing:-.03em; line-height:1; color:var(--tx); font-variant-numeric:tabular-nums}
+/* La realidad en el hero: en mano (editable) + en camino + chip contextual */
+.hi-mano{margin-top:.7rem; font-size:14px; font-weight:600; color:var(--tx2); display:inline-flex; align-items:center; gap:.15rem; flex-wrap:wrap; justify-content:center}
+.hi-mano input{width:88px; font:inherit; font-size:18px; font-weight:800; color:var(--tx); text-align:right; background:transparent; border:none; border-bottom:1.5px dashed var(--line); padding:0 2px}
+.hi-mano input:focus{outline:none; border-bottom-color:var(--accent)}
+.hi-camino{color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums}
+.hi-chip{margin-top:.55rem}
+.hi-chip-btn{font:inherit; font-size:12.5px; font-weight:700; border:none; border-radius:999px; padding:.4rem .9rem; cursor:pointer; color:#fff}
+.hi-chip-btn.ok{background:var(--ok)}
+.hi-chip-btn:hover{filter:brightness(1.08)}
+.hi-chip-warn{font-size:11.5px; color:var(--bad); font-weight:600; background:var(--line2); border-radius:10px; padding:.4rem .7rem; line-height:1.4}
+.ce-cerrar{width:100%; margin-top:.5rem; font:inherit; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.55rem; cursor:pointer}
 .hi-sub{font-size:12.5px; color:var(--tx2); margin-top:.45rem}
 .hi-sub b{color:var(--accent); font-weight:600}
 .hi-phrase{font-size:11.5px; color:var(--tx3); margin-top:.3rem; font-style:italic}
@@ -900,6 +912,8 @@ function cycEditH(c){
       '<label class="ce-l">Desde<input type="date" data-cycdate="start" value="'+(c.start||'')+'"></label>'+
       '<label class="ce-l">Hasta<input type="date" data-cycdate="end" value="'+(c.end||'')+'"></label>'+
     '</div>'+
+    // Cerrar el ciclo vive acá (operación DEL ciclo). El caso normal ya lo trae el banner automático al vencer.
+    (c.id===activeQ?'<button class="ce-cerrar" data-cerrar="1">'+(d.closed?'✅ Ciclo cerrado — reabrir/revisar':'Cerrar este ciclo y pasar al siguiente →')+'</button>':'')+
     '<button class="ce-done" data-cyceditdone="1">Listo</button>'+
   '</div>';
 }
@@ -1676,9 +1690,9 @@ function bucketH(g,name,pct,num){
     // Solo en la vista desplegada (no en la compacta). El Disponible negativo ya cuenta la historia sola.
     (col?'':'<div class="ln-red sec-in" id="in-'+g+'" style="display:none"></div>')+
     '<div class="triad">'+
-      '<span class="tr"><i>Presup.</i><b id="tg-'+g+'">&mdash;</b></span>'+
-      '<span class="tr"><i>Utilizado</i><b class="tr-util" id="sm-'+g+'">&mdash;</b></span>'+
-      '<span class="tr"><i>Disponible</i><b id="disp-'+g+'">&mdash;</b></span>'+
+      '<span class="tr"><i>Meta</i><b id="tg-'+g+'">&mdash;</b></span>'+
+      '<span class="tr"><i>Asignado</i><b class="tr-util" id="sm-'+g+'">&mdash;</b></span>'+
+      '<span class="tr"><i>Por asignar</i><b id="disp-'+g+'">&mdash;</b></span>'+
       '<span class="tr"><i>Repartido</i><b id="repto-'+g+'" style="color:var(--ok)">&mdash;</b></span>'+
       '<span class="tr tr-tap" data-openchecks="'+g+'" title="Ver qué falta pagar aquí"><i>✓ Pagado</i><b id="done-'+g+'">&mdash;</b></span>'+
     '</div>'+
@@ -1718,10 +1732,13 @@ function render(){
   document.getElementById('app').innerHTML= bannersH +
     '<div class="sec" id="sec-inc" style="margin-top:.5rem">'+
       '<div class="hero-inc">'+
+        '<div class="hi-lbl">presupuesto del ciclo</div>'+
         '<div class="hi-num" id="hi-num">—</div>'+
         '<div class="hi-sub"><b id="hi-cycle"></b></div>'+
-        '<div class="hi-phrase">"No ahorres lo que te queda después de gastar; gasta lo que te queda después de ahorrar." — Warren Buffett</div>'+
-        '<button class="hi-edit" data-incedit="1">'+(incEdit?'▲ cerrar':'✎ editar')+'</button>'+
+        // La REALIDAD, siempre visible: tu plata en mano (editable) + lo que viene en camino.
+        '<div class="hi-mano">💰 En mano S/ <input id="banco-total-inp" type="number" min="0" step="1" value="'+(bancoTotal===''?'':Math.round(saldoVivo()))+'" placeholder="0"><span class="hi-camino" id="hi-camino"></span></div>'+
+        '<div id="banco-cta" class="hi-chip"></div>'+
+        '<button class="hi-edit" data-incedit="1">'+(incEdit?'▲ cerrar':'✎ editar ingresos')+'</button>'+
       '</div>'+
       '<div id="inc-detail"'+(incEdit?'':' style="display:none"')+'>'+
         '<div class="sec-note" style="margin-top:.6rem">Agrega el pago que cubrirá este plazo.</div>'+
@@ -1732,12 +1749,13 @@ function render(){
       '</div>'+
     '</div>'+
     '<div class="heart macro-card" id="heart">'+
-      '<div class="macro">'+ // 5 columnas, ALINEADAS con la tríada de cada caja (mismo orden y color)
-        '<div class="mc"><span class="mc-l">Presup.</span><span class="mc-v" id="mc-pres">&mdash;</span></div>'+
-        '<div class="mc"><span class="mc-l">Utilizado</span><span class="mc-v tr-util" id="mc-util">&mdash;</span></div>'+
-        '<div class="mc"><span class="mc-l">Disponible</span><span class="mc-v" id="mc-disp">&mdash;</span></div>'+
+      '<div class="macro">'+ // 5 columnas, ALINEADAS con la tríada de cada caja. Nombres honestos: es PLAN,
+        // no realidad — "Meta" (ideal 20/50/30), "Asignado" (lo que nombraste), "Por asignar" (espacio del plan).
+        '<div class="mc"><span class="mc-l">Meta</span><span class="mc-v" id="mc-pres">&mdash;</span></div>'+
+        '<div class="mc"><span class="mc-l">Asignado</span><span class="mc-v tr-util" id="mc-util">&mdash;</span></div>'+
+        '<div class="mc"><span class="mc-l">Por asignar</span><span class="mc-v" id="mc-disp">&mdash;</span></div>'+
         '<div class="mc mc-roll">'+
-          '<button class="mc-rollchip'+(showRollover?' on':'')+'" data-toggleroll="1" title="Repartir el disponible 50/30/20 en las 3 cajas">Repartir<br>disponible<br><span class="mrc-r">&#8635; 50/30/20</span></button>'+
+          '<button class="mc-rollchip'+(showRollover?' on':'')+'" data-toggleroll="1" title="Repartir lo que falta por asignar, 50/30/20 en las 3 cajas">Repartir<br>lo libre<br><span class="mrc-r">&#8635; 50/30/20</span></button>'+
         '</div>'+
         '<div class="mc"><span class="mc-l">&#10003; Pagado</span><span class="mc-v" id="mc-done">&mdash;</span></div>'+
       '</div>'+
@@ -1747,22 +1765,8 @@ function render(){
       '<div class="paybar-l" id="paybar-l" style="display:none"><span class="pbl-paid" id="pbl-paid"></span><span class="pbl-rest" id="pbl-rest"></span></div>'+
     '</div>'+
     buckets.map((b,i)=>bucketH(b[0],b[1],b[2],i+1)).join('')+
-    '<div class="sec'+(collapsed.balance?' is-collapsed':'')+'" id="sec-balance">'+
-      '<div class="sec-h tappable" data-collapse="balance" title="Balance"><span class="tw"><span class="t" style="font-size:14px">Balance</span></span><span class="sec-r"><span class="chev">'+(collapsed.balance?'▸':'▾')+'</span></span></div>'+
-      '<div class="bucket-body"'+(collapsed.balance?' style="display:none"':'')+'>'+
-        // 1) Tu plata (arriba) — el total vivo que baja con cada pago
-        '<div class="banco-box" id="banco-box">'+cuentasH()+'</div>'+
-        // 2) ¿Qué hacer con tu plata? (debajo) — la lectura + la jugada de plata extra
-        '<div class="banco-box" id="advisor-box">'+
-          '<div class="fondo-row"><span class="fondo-lbl">🧭 ¿Qué hacer con tu plata?<span class="fondo-hint">si cada sol tiene trabajo, y qué hacer con lo que sobra</span></span></div>'+
-          '<div class="fondo-note" id="banco-rec"></div><div id="banco-cta"></div>'+
-        '</div>'+
-        '<div class="fondo-box">'+
-          '<div class="fondo-note" id="fondo-note"></div>'+
-          '<button class="fondo-close" data-cerrar="1">Cerrar quincena y pasar a la siguiente →</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
+    // (Sección Balance eliminada: "en mano" vive en el hero, el asesor es un chip contextual ahí mismo,
+    //  y "Cerrar ciclo" se mudó al editor del ciclo — el lápiz ✎ de la barra.)
     '<div class="sec" id="sec-informe"><div class="sec-h"><span class="t">📊 Informe del ciclo</span></div><div id="informe-body"></div></div>'+
     '<button class="reset" data-reset="1">Reiniciar esta quincena</button>'+
     templatesH()+
@@ -1923,21 +1927,18 @@ function recompute(){
   const fn=document.getElementById('fondo-note');
   if(fn){ const real=(typeof ejecutadoSum==='function')?ejecutadoSum():0; const aRes=ti-real;
     fn.innerHTML='Al cerrar: gastaste <b>'+pe(real)+'</b> de verdad (lo marcado ✓). Lo no usado (<b>'+pe(aRes)+'</b>) lo mandas a tu <b>Reserva</b> o al siguiente ciclo — eliges al cerrar'+(aRes<-0.5?' <span style="color:var(--bad)">(gastaste más que tu ingreso — tu Reserva puede cubrirlo)</span>':'')+'.'; }
-  // Conciliación bancaria: ¿cada sol de tu cuenta tiene trabajo? (se actualiza en vivo, sin re-render)
-  // Contador vivo: el número guardado ya bajó/subió con cada ✓ en el momento (cashDelta) — solo se refleja.
-  {const ct=document.getElementById('cta-total'); if(ct)ct.textContent=pn(saldoVivo());
-   const bti=document.getElementById('banco-total-inp'); if(bti&&document.activeElement!==bti)bti.value=(bancoTotal===''?'':Math.round(saldoVivo()));
-   const cs=document.getElementById('cta-sub'); if(cs){const pg=saldoPagado();
-     if(pg>0.5){cs.style.display='';cs.innerHTML='ya pagaste <b>'+pn(pg)+'</b> con tus ✓ desde tu último número';}else cs.style.display='none';}}
-  const br=document.getElementById('banco-rec'), bc=document.getElementById('banco-cta');
-  if(br&&bc){ const bx=bancoExtra();
-    // Ecuación visible: en mano + por llegar = plan pendiente (+ libre) + sin trabajo.
-    const mano=bx?('Tienes <b>'+pe(bx.total)+'</b> en mano'+(bx.porLlegar>0.5?' + <b style="color:var(--accent)">'+pe(bx.porLlegar)+'</b> por llegar':'')+' · el plan aún necesita <b>'+pe(bx.pendiente)+'</b>'+(bx.libre>0.5?' · libre <b>'+pe(bx.libre)+'</b>':'')):'';
-    if(!bx){ br.innerHTML='Pon tu dinero y te digo si cada sol tiene trabajo — y si tienes plata suelta, te armo la jugada.'; bc.innerHTML=''; }
-    else if(bx.extra>0.5){ br.innerHTML=mano+' → hay <b style="color:var(--ok)">'+pe(bx.extra)+'</b> sin trabajo ✨';
-      bc.innerHTML=d.closed?'':'<button class="banco-cta" data-wfopen="1">Dale un trabajo a esos '+pe(bx.extra)+' →</button>'; }
-    else if(bx.extra<-0.5){ br.innerHTML=mano+' → faltan <b style="color:var(--bad)">'+pe(-bx.extra)+'</b>. ¿Salió algo que no registraste? Anótalo como gasto (o ajusta el plan).'; bc.innerHTML=''; }
-    else { br.innerHTML=mano+' → <b style="color:var(--ok)">✓ cuadra al centavo</b>'+(bx.porLlegar>0.5?'. Cuando te caiga el ingreso, márcale su ✓ y entra solo a tu dinero.':'.'); bc.innerHTML=''; } }
+  // Realidad en el hero: el input "En mano" (contador vivo) + "en camino" + el chip contextual.
+  // El número ya subió/bajó con cada ✓ (cashDelta); acá solo se refleja. El chip aparece SOLO cuando
+  // hay noticia (plata sin trabajo o una fuga) — cero ruido cuando todo cuadra (management by exception).
+  {const bti=document.getElementById('banco-total-inp'); if(bti&&document.activeElement!==bti)bti.value=(bancoTotal===''?'':Math.round(saldoVivo()));}
+  {const cam=document.getElementById('hi-camino'), bc=document.getElementById('banco-cta'); const bx=bancoExtra();
+    if(cam)cam.innerHTML=(bx&&bx.porLlegar>0.5)?' · en camino S/ '+pn(bx.porLlegar):'';
+    if(bc){
+      if(!bx){bc.innerHTML='';}
+      else if(bx.extra>0.5){bc.innerHTML=d.closed?'':'<button class="hi-chip-btn ok" data-wfopen="1">✨ S/ '+pn(bx.extra)+' sin trabajo — dale un destino →</button>';}
+      else if(bx.extra<-0.5){bc.innerHTML='<div class="hi-chip-warn">⚠ Te faltan S/ '+pn(-bx.extra)+' para tu plan. ¿Un gasto sin registrar, o un ingreso que aún no marcas?</div>';}
+      else {bc.innerHTML='';}
+    }}
   // Reparto 50/30/20: el chip "↻ 50/30/20" bajo Disponible enciende/apaga esto (showRollover).
   // Reparte el saldo libre ACTUAL en la columna "Repartido" de cada caja. Es la ÚNICA acción sobre
   // lo disponible — en envelope budgeting, disponible solo se asigna a los sobres. La deuda vive en
@@ -1972,6 +1973,7 @@ document.getElementById('cyclebar').addEventListener('click',e=>{const b=e.targe
   else if(b.dataset.cycedit){cycEdit=!cycEdit;renderCycleBar();}
   else if(b.dataset.cyctype){const c=cycleOf(activeQ);c.type=b.dataset.cyctype;saveCycles();renderCycleBar();recompute();}
   else if(b.dataset.cyceditdone){cycEdit=false;renderCycleBar();recompute();}
+  else if(b.dataset.cerrar){cycEdit=false;renderCycleBar();openCierre();} // Cerrar ciclo desde el editor
 });
 // Editar fechas del ciclo en vivo (no re-render completo para no perder foco del input de fecha).
 document.getElementById('cyclebar').addEventListener('input',e=>{const t=e.target;
