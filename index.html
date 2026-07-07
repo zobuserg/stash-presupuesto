@@ -554,6 +554,15 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .aho-opt b{display:block; font-size:14px; color:var(--tx); font-weight:700}
 .aho-opt span{display:block; font-size:11px; color:var(--tx3); margin-top:.25rem; line-height:1.3}
 .aho-cancel{display:block; width:100%; text-align:center}
+/* Gasto suelto (quick capture): botón flotante + modal de 2 taps */
+.fab-gasto{position:fixed; right:1rem; bottom:4.4rem; z-index:60; font:inherit; font-size:13.5px; font-weight:800; color:#fff; background:var(--accent); border:none; border-radius:999px; padding:.75rem 1.05rem; box-shadow:0 4px 14px rgba(0,0,0,.25); cursor:pointer}
+.fab-gasto:active{transform:scale(.96)}
+.gs-amt{display:flex; align-items:center; gap:.4rem; margin:.6rem 0 .8rem; font-size:22px; font-weight:800; color:var(--tx)}
+.gs-amt input{flex:1; font:inherit; font-size:26px; font-weight:800; color:var(--tx); background:var(--line2); border:1.5px solid var(--line); border-radius:12px; padding:.55rem .7rem; width:100%; min-width:0}
+.gs-boxes{display:flex; gap:.5rem; margin-bottom:.7rem}
+.gs-box{flex:1; font:inherit; font-size:13px; font-weight:700; border:1.5px solid var(--line); background:transparent; color:var(--tx); border-radius:10px; padding:.6rem .5rem; cursor:pointer}
+.gs-box.on{border-color:var(--accent); background:var(--accent); color:#fff}
+.gs-name{width:100%; font:inherit; font-size:13px; color:var(--tx); background:transparent; border:1.5px solid var(--line); border-radius:10px; padding:.55rem .7rem; margin-bottom:.9rem}
 /* Modo reparto ("a un lugar específico"): banner + botón +S/ en cada categoría */
 .asigna-banner{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; background:var(--accent); color:#fff; border-radius:var(--rad-sm); padding:.6rem .85rem; margin:.4rem 0 .2rem; font-size:12.5px; font-weight:600; box-shadow:var(--shadow)}
 .asigna-banner b{font-variant-numeric:tabular-nums}
@@ -770,6 +779,8 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 <div id="cierre-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="cierre-card"></div></div>
 <div id="wf-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="wf-card"></div></div>
 <div id="aho-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="aho-card"></div></div>
+<div id="gasto-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="gasto-card"></div></div>
+<button id="fab-gasto" class="fab-gasto" title="Anotar un gasto suelto">+ Gasto</button>
 <!-- 3 tabs = el balance general: Inicio (flujo del ciclo) · Deudas (pasivos) · Reserva (activos).
      Invertir vive DENTRO de Reserva (piso 3 de la escalera); Resumen se fundió en Deudas. -->
 <nav class="tabbar">
@@ -973,6 +984,7 @@ function applyView(){
   setD('debts-mgmt', view==='deudas');
   setD('sec-invertir', view==='fondo');
   setD('sec-fondo', view==='fondo');
+  setD('fab-gasto', inicio); // quick capture de gastos sueltos: solo en Inicio
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
 }
 function focusGo(delta){const scenes=focusScenes();
@@ -1387,6 +1399,53 @@ function askAhoDestino(k,amt){
     if(dest==='reserva'){ snapshot(); if(!d.ahoMoved)d.ahoMoved={}; d.ahoMoved[p.k]=p.amt;
       fondo+=p.amt; saveFondo(); addResLog(p.amt,ahoKeyLabel(p.k)); }
     commitItemPaid(p.k);
+  });
+})();
+// ===== Gasto suelto (quick capture) — el flujo manual de DD ("Sueltos" + sub con fecha + ✓)
+// automatizado en 2 taps: monto → Anotar. Nace presupuestado Y ejecutado a la vez (con ✓) →
+// la cascada absorbe el consumo y el contador vivo baja al instante.
+let gastoBox=localStorage.getItem('midas_gasto_box')||'nec'; // recuerda la última caja usada
+function gsFecha(){const M=['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];const t=new Date();return t.getDate()+' '+M[t.getMonth()];}
+function openGasto(){
+  const el=document.getElementById('gasto-card'); if(!el)return;
+  el.innerHTML='<div class="ci-h">💸 Gasto suelto</div>'+
+    '<div class="ci-sub">Anótalo y listo: queda en "Sueltos" con su ✓ y baja de tu plata.</div>'+
+    '<div class="gs-amt">S/ <input id="gs-amt-inp" type="number" inputmode="decimal" min="0" step="0.5" placeholder="0"></div>'+
+    '<div class="gs-boxes">'+
+      '<button class="gs-box'+(gastoBox==='nec'?' on':'')+'" data-gsbox="nec">🧺 Necesidades</button>'+
+      '<button class="gs-box'+(gastoBox==='luj'?' on':'')+'" data-gsbox="luj">🎈 Gustos</button>'+
+    '</div>'+
+    '<input class="gs-name" id="gs-name-inp" value="Suelto · '+gsFecha()+'" placeholder="¿En qué fue?">'+
+    '<div class="ci-btns"><button class="ci-cancel" data-gscancel="1">Cancelar</button>'+
+    '<button class="ci-go" data-gsgo="1">✓ Anotar</button></div>';
+  const ov=document.getElementById('gasto-ovl'); if(ov)ov.hidden=false;
+  setTimeout(()=>{const i=document.getElementById('gs-amt-inp');if(i)i.focus();},60);
+}
+(function(){
+  const fab=document.getElementById('fab-gasto'); if(fab)fab.addEventListener('click',openGasto);
+  const ov=document.getElementById('gasto-ovl'); if(!ov)return;
+  ov.addEventListener('click',e=>{
+    const bx=e.target.closest('[data-gsbox]');
+    if(bx){gastoBox=bx.dataset.gsbox;localStorage.setItem('midas_gasto_box',gastoBox);
+      ov.querySelectorAll('.gs-box').forEach(b=>b.classList.toggle('on',b.dataset.gsbox===gastoBox));return;}
+    if(e.target.closest('[data-gscancel]')||e.target===ov){ov.hidden=true;return;}
+    if(!e.target.closest('[data-gsgo]'))return;
+    const amt=parseFloat((document.getElementById('gs-amt-inp')||{}).value)||0;
+    if(amt<=0){const i=document.getElementById('gs-amt-inp');if(i)i.focus();return;} // sin monto no hay gasto
+    const name=((document.getElementById('gs-name-inp')||{}).value||'').trim()||('Suelto · '+gsFecha());
+    const g=gastoBox;
+    snapshot();
+    // busca (o crea) la categoría "Sueltos" de esa caja
+    let ci=(d[g]||[]).findIndex(r=>/^sueltos?$/i.test((r.l||'').trim()));
+    if(ci<0){d[g].push({l:'Sueltos',a:0,sub:[]});ci=d[g].length-1;}
+    const cat=d[g][ci];
+    if(!cat.sub)cat.sub=[];
+    // si "Sueltos" tenía monto plano sin subs, se preserva como primera sub (a pasará a ser sum(sub))
+    if(cat.sub.length===0&&(parseFloat(cat.a)||0)>0)cat.sub.push({l:'Anterior',a:cat.a});
+    cat.sub.push({l:name,a:amt});
+    cat.a=sum(cat.sub);
+    ov.hidden=true;
+    commitItemPaid(g+'-'+ci+'-'+(cat.sub.length-1)); // nace con ✓ → cascada + contador vivo, y re-render
   });
 })();
 let asigna=null; // modo "mándalo a un lugar específico": {pool, orig} mientras repartes en las cajas
