@@ -1146,7 +1146,7 @@ function importData(file){
 function loadTemplates(){try{const x=JSON.parse(localStorage.getItem('midas_templates'));return Array.isArray(x)?x:[];}catch(e){return [];}}
 function saveTpls(t){localStorage.setItem('midas_templates',JSON.stringify(t));}
 function saveAsTemplate(){
-  const name=(prompt('Nombre de la plantilla (ej. "Quincena 1-15", "Mensual"):')||'').trim();
+  const name=(prompt(tx('Nombre de la plantilla (ej. "Quincena 1-15", "Mensual"):','Template name (e.g. "1st–15th", "Monthly"):'))||'').trim();
   if(!name)return;
   const t=loadTemplates();
   const snap={nec:JSON.parse(JSON.stringify(d.nec||[])),luj:JSON.parse(JSON.stringify(d.luj||[])),aho:JSON.parse(JSON.stringify(d.aho||[]))};
@@ -1165,9 +1165,9 @@ function templatesH(){
   const t=loadTemplates();
   let h='<div class="tpl"><button class="tpl-h tpl-toggle" data-tpltoggle="1">📋 '+tx('Plantillas','Templates')+' '+(tplOpen?'▾':'▸')+'</button>';
   if(tplOpen){
-    if(t.length) h+='<div class="tpl-list">'+t.map(x=>'<span class="tpl-item"><button class="tpl-load" data-loadtpl="'+esc(x.name)+'">'+esc(x.name)+'</button><button class="tpl-del" data-deltpl="'+esc(x.name)+'" aria-label="Borrar">&times;</button></span>').join('')+'</div>';
-    else h+='<div class="tpl-empty">Arma una quincena y guárdala como plantilla para reusar su estructura en las siguientes.</div>';
-    h+='<button class="bk-btn" data-savetpl="1">💾 Guardar esta quincena como plantilla</button>';
+    if(t.length) h+='<div class="tpl-list">'+t.map(x=>'<span class="tpl-item"><button class="tpl-load" data-loadtpl="'+esc(x.name)+'">'+esc(x.name)+'</button><button class="tpl-del" data-deltpl="'+esc(x.name)+'" aria-label="'+tx('Borrar','Delete')+'">&times;</button></span>').join('')+'</div>';
+    else h+='<div class="tpl-empty">'+tx('Arma una quincena y guárdala como plantilla para reusar su estructura en las siguientes.','Build one cycle and save it as a template to reuse its structure in the next ones.')+'</div>';
+    h+='<button class="bk-btn" data-savetpl="1">💾 '+tx('Guardar esta quincena como plantilla','Save this cycle as a template')+'</button>';
   }
   h+='</div>';
   return h;
@@ -1212,19 +1212,19 @@ function fondoH(){
   // Estado de cuenta del CICLO: qué le pasó a la Reserva en este ciclo (aportes en vivo, cierre).
   let movs=[];try{movs=(JSON.parse(localStorage.getItem('midas_reslog'))||[]).filter(m=>m.q===activeQ);}catch(e){}
   const movSum=movs.reduce((t,m)=>t+(m.a||0),0);
-  return '<div class="sec-h"><span class="t">🔒 Reserva</span></div>'+
+  return '<div class="sec-h"><span class="t">🔒 '+tx('Reserva','Reserve')+'</span></div>'+
     '<div class="fondo-tab">'+
-      '<div class="ft-total"><span class="ft-l">Tu Reserva<span class="ft-hint">un apartado de tu dinero — parte de tus cuentas que no gastas este ciclo</span></span><span class="ft-v">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
-      (hasCuentas()?'<div class="ft-of">de tus <b>'+pe(totalCuentas())+'</b> en cuentas'+(fondo>totalCuentas()+0.5?' — <span class="neg">reservaste más de lo que tienes</span>':'')+'</div>':'')+
-      (movs.length?'<div class="ft-mov"><div class="ftm-h">Este ciclo: '+(movSum>=0?'+ ':'− ')+pe(Math.abs(movSum))+'</div>'+
+      '<div class="ft-total"><span class="ft-l">'+tx('Tu Reserva','Your Reserve')+'<span class="ft-hint">'+tx('un apartado de tu dinero — parte de tus cuentas que no gastas este ciclo','money set aside — the part of your accounts you don\'t spend this cycle')+'</span></span><span class="ft-v">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
+      (hasCuentas()?'<div class="ft-of">'+tx('de tus','of your')+' <b>'+pe(totalCuentas())+'</b> '+tx('en cuentas','in accounts')+(fondo>totalCuentas()+0.5?' — <span class="neg">'+tx('reservaste más de lo que tienes','you set aside more than you have')+'</span>':'')+'</div>':'')+
+      (movs.length?'<div class="ft-mov"><div class="ftm-h">'+tx('Este ciclo:','This cycle:')+' '+(movSum>=0?'+ ':'− ')+pe(Math.abs(movSum))+'</div>'+
         movs.slice(-6).reverse().map(m=>'<div class="ftm-r"><span>'+esc(m.n||'')+'</span><b class="'+((m.a||0)>=0?'ok':'neg')+'">'+((m.a||0)>=0?'+':'−')+' '+pe(Math.abs(m.a||0))+'</b></div>').join('')+'</div>'
-        :'<div class="ft-mov"><div class="ftm-h">Este ciclo: sin movimientos aún</div><div class="ftm-r" style="color:var(--tx3)">Marca ✓ tu ahorro en Inicio y verás el aporte llegar aquí solo.</div></div>')+
-      '<div class="ft-piso"><span class="ftp-n">1</span> Colchón <span class="ft-hint">tu red de emergencia — lo que no está en una meta</span></div>'+
+        :'<div class="ft-mov"><div class="ftm-h">'+tx('Este ciclo: sin movimientos aún','This cycle: no movements yet')+'</div><div class="ftm-r" style="color:var(--tx3)">'+tx('Marca ✓ tu ahorro en Inicio y verás el aporte llegar aquí solo.','Check ✓ your savings on Home and the deposit shows up here on its own.')+'</div></div>')+
+      '<div class="ft-piso"><span class="ftp-n">1</span> '+tx('Colchón','Cushion')+' <span class="ft-hint">'+tx('tu red de emergencia — lo que no está en una meta','your safety net — whatever isn\'t in a goal')+'</span></div>'+
       '<div class="ftc-bar"><div class="ftc-fill" style="width:'+pctC+'%"></div></div>'+
-      '<div class="ftc-l">'+pe(Math.max(sin,0))+(target>0?' de '+pe(target)+' <span style="color:var(--tx3)">(≈3 meses de tus necesidades)</span>':'')+(sin<-0.5?' — <span class="neg">asignaste a metas más de lo que tienes</span>':'')+'</div>'+
-      '<div class="ft-piso"><span class="ftp-n">2</span> Metas <span class="ft-hint">sueños con nombre — la cuota de esperanza</span></div>'+
-      fondoCats.map((c,i)=>'<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="Ej. Emergencia, Auto, Viaje"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="Quitar">&times;</button></div>').join('')+
-      '<button class="add" data-ftadd="1"><span class="p">+</span> Agregar meta</button>'+
+      '<div class="ftc-l">'+pe(Math.max(sin,0))+(target>0?' '+tx('de','of')+' '+pe(target)+' <span style="color:var(--tx3)">'+tx('(≈3 meses de tus necesidades)','(≈3 months of your needs)')+'</span>':'')+(sin<-0.5?' — <span class="neg">'+tx('asignaste a metas más de lo que tienes','you assigned more to goals than you have')+'</span>':'')+'</div>'+
+      '<div class="ft-piso"><span class="ftp-n">2</span> '+tx('Metas','Goals')+' <span class="ft-hint">'+tx('sueños con nombre — la cuota de esperanza','dreams with a name — the hope installment')+'</span></div>'+
+      fondoCats.map((c,i)=>'<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="'+tx('Ej. Emergencia, Auto, Viaje','E.g. Emergency, Car, Trip')+'"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="'+tx('Quitar','Remove')+'">&times;</button></div>').join('')+
+      '<button class="add" data-ftadd="1"><span class="p">+</span> '+tx('Agregar meta','Add goal')+'</button>'+
     '</div>';
 }
 function refreshFondo(){const e=document.getElementById('sec-fondo');if(e)e.innerHTML=fondoH();}
@@ -1234,7 +1234,7 @@ function refreshSinAsignar(){ // actualiza el Colchón (piso 1) en vivo sin re-r
   const fill=document.querySelector('#sec-fondo .ftc-fill');
   if(fill)fill.style.width=(target>0?Math.min(Math.max(sin,0)/target*100,100):0)+'%';
   const l=document.querySelector('#sec-fondo .ftc-l');
-  if(l)l.innerHTML=pe(Math.max(sin,0))+(target>0?' de '+pe(target)+' <span style="color:var(--tx3)">(≈3 meses de tus necesidades)</span>':'')+(sin<-0.5?' — <span class="neg">asignaste a metas más de lo que tienes</span>':'');}
+  if(l)l.innerHTML=pe(Math.max(sin,0))+(target>0?' '+tx('de','of')+' '+pe(target)+' <span style="color:var(--tx3)">'+tx('(≈3 meses de tus necesidades)','(≈3 months of your needs)')+'</span>':'')+(sin<-0.5?' — <span class="neg">'+tx('asignaste a metas más de lo que tienes','you assigned more to goals than you have')+'</span>':'');}
 (function(){const sf=document.getElementById('sec-fondo');if(!sf)return;
   sf.addEventListener('input',e=>{const t=e.target;
     if(t.id==='fondo-inp'){fondo=parseFloat(t.value)||0;saveFondo();refreshSinAsignar();recompute();return;} // recompute: la Reserva es una reclamación del total → refresca la conciliación
@@ -1289,44 +1289,44 @@ function renderCierre(){
   const ejec=ejecBase+extra, res=c.ing-ejec;
   const D=res<-0.5?-res:0, usa=Math.min(fondo,D), resto=D-usa;
   const presup=c.ing-(lastSaldo||0);
-  let h='<div class="ci-h">Cerrar '+cycleLabel(cycleOf(activeQ))+'</div>'+
-    '<div class="ci-sub">'+(cycleCubre(cycleOf(activeQ))||'el único momento donde todo se vuelve definitivo')+'</div>'+
-    '<div class="ci-nums"><div class="ci-num"><i>Entró</i><b>'+pe(c.ing)+'</b></div>'+
-    '<div class="ci-num"><i>Real (✓)</i><b>'+pe(ejec)+'</b></div>'+
-    '<div class="ci-num"><i>Resultado</i><b style="color:'+(res>=-0.5?'var(--ok)':'var(--bad)')+'">'+(res>=0?'+ ':'− ')+pe(Math.abs(res))+'</b></div></div>';
+  let h='<div class="ci-h">'+tx('Cerrar ','Close ')+cycleLabel(cycleOf(activeQ))+'</div>'+
+    '<div class="ci-sub">'+(cycleCubre(cycleOf(activeQ))||tx('el único momento donde todo se vuelve definitivo','the one moment where everything becomes final'))+'</div>'+
+    '<div class="ci-nums"><div class="ci-num"><i>'+tx('Entró','In')+'</i><b>'+pe(c.ing)+'</b></div>'+
+    '<div class="ci-num"><i>'+tx('Real (✓)','Actual (✓)')+'</i><b>'+pe(ejec)+'</b></div>'+
+    '<div class="ci-num"><i>'+tx('Resultado','Result')+'</i><b style="color:'+(res>=-0.5?'var(--ok)':'var(--bad)')+'">'+(res>=0?'+ ':'− ')+pe(Math.abs(res))+'</b></div></div>';
   if(presup>50&&ejec<presup*0.5&&res>presup*0.3)
-    h+='<div class="ci-warn">⚠ Marcaste ✓ solo '+pe(ejec)+' de '+pe(presup)+' presupuestado. Si de verdad gastaste tu quincena, cancela y marca ✓ lo pagado — si no, este "sobrante" es falso.</div>';
+    h+='<div class="ci-warn">⚠ '+tx('Marcaste ✓ solo','You only checked ✓')+' '+pe(ejec)+' '+tx('de','of')+' '+pe(presup)+' '+tx('presupuestado. Si de verdad gastaste tu quincena, cancela y marca ✓ lo pagado — si no, este "sobrante" es falso.','budgeted. If you really spent your cycle, cancel and check ✓ what you paid — otherwise this "surplus" is fake.')+'</div>';
   if(c.ahoPend.length){
-    h+='<div class="ci-sec"><div class="ci-sec-h">Ahorro presupuestado sin marcar</div>';
-    c.ahoPend.forEach((x,i)=>{h+='<div class="ci-row"><span>'+esc(x.label)+'</span><span class="cr-a">'+pe(x.amt)+'</span><button class="ci-tog'+(x.yes?' on':'')+'" data-ciaho="'+i+'">'+(x.yes?'✓ Sí lo aparté':'¿Lo apartaste?')+'</button></div>';});
-    h+='<div class="ci-note">Lo que marques "sí" viaja AHORA a tu Reserva. Lo que no, simplemente no se ahorró este ciclo — no pasa nada, no es deuda.</div></div>';
+    h+='<div class="ci-sec"><div class="ci-sec-h">'+tx('Ahorro presupuestado sin marcar','Budgeted savings left unchecked')+'</div>';
+    c.ahoPend.forEach((x,i)=>{h+='<div class="ci-row"><span>'+esc(x.label)+'</span><span class="cr-a">'+pe(x.amt)+'</span><button class="ci-tog'+(x.yes?' on':'')+'" data-ciaho="'+i+'">'+(x.yes?tx('✓ Sí lo aparté','✓ Yes, set aside'):tx('¿Lo apartaste?','Did you set it aside?'))+'</button></div>';});
+    h+='<div class="ci-note">'+tx('Lo que marques "sí" viaja AHORA a tu Reserva. Lo que no, simplemente no se ahorró este ciclo — no pasa nada, no es deuda.','Whatever you mark "yes" moves to your Reserve NOW. Whatever you don\'t simply wasn\'t saved this cycle — no harm, it\'s not debt.')+'</div></div>';
   }
   if(c.debtPend.length){
-    h+='<div class="ci-sec"><div class="ci-sec-h">Deudas del ciclo que quedaron sin pagar</div>';
-    c.debtPend.forEach((x,i)=>{h+='<div class="ci-row"><span>'+esc(x.n)+'</span><span class="cr-a">'+pe(x.amt)+'</span><button class="ci-tog'+(x.carry?' on':'')+'" data-cicarry="'+i+'">'+(x.carry?'→ pasa al siguiente':'se queda aquí')+'</button></div>';});
-    h+='<div class="ci-note">Estas siguen vivas (y pueden generar intereses). Si las pasas, el siguiente ciclo las muestra como "arrastrada". La deuda real sigue en tu tab Deudas de todos modos.</div></div>';
+    h+='<div class="ci-sec"><div class="ci-sec-h">'+tx('Deudas del ciclo que quedaron sin pagar','Cycle debts left unpaid')+'</div>';
+    c.debtPend.forEach((x,i)=>{h+='<div class="ci-row"><span>'+esc(x.n)+'</span><span class="cr-a">'+pe(x.amt)+'</span><button class="ci-tog'+(x.carry?' on':'')+'" data-cicarry="'+i+'">'+(x.carry?tx('→ pasa al siguiente','→ carries over'):tx('se queda aquí','stays here'))+'</button></div>';});
+    h+='<div class="ci-note">'+tx('Estas siguen vivas (y pueden generar intereses). Si las pasas, el siguiente ciclo las muestra como "arrastrada". La deuda real sigue en tu tab Deudas de todos modos.','These are still alive (and may accrue interest). If you carry them, the next cycle shows them as "carried over". The real debt stays in your Debts tab either way.')+'</div></div>';
   }
   if(res>0.5){
-    h+='<div class="ci-sec"><div class="ci-q">Te sobraron <b>'+pe(res)+'</b> 🎉 ¿Qué hacemos con eso?</div><div class="ci-opts">'+
-      '<button class="ci-opt'+(c.destino==='fondo'?' on':'')+'" data-cidest="fondo">🔒 A mi Reserva<br><span style="font-size:10.5px;opacity:.75">tu caja fuerte crece</span></button>'+
-      '<button class="ci-opt'+(c.destino==='ciclo'?' on':'')+'" data-cidest="ciclo">→ Al siguiente ciclo<br><span style="font-size:10.5px;opacity:.75">más presupuesto el próximo</span></button></div></div>';
+    h+='<div class="ci-sec"><div class="ci-q">'+tx('Te sobraron','You have')+' <b>'+pe(res)+'</b> '+tx('🎉 ¿Qué hacemos con eso?','left over 🎉 What do we do with it?')+'</div><div class="ci-opts">'+
+      '<button class="ci-opt'+(c.destino==='fondo'?' on':'')+'" data-cidest="fondo">🔒 '+tx('A mi Reserva','To my Reserve')+'<br><span style="font-size:10.5px;opacity:.75">'+tx('tu caja fuerte crece','your safe grows')+'</span></button>'+
+      '<button class="ci-opt'+(c.destino==='ciclo'?' on':'')+'" data-cidest="ciclo">→ '+tx('Al siguiente ciclo','To the next cycle')+'<br><span style="font-size:10.5px;opacity:.75">'+tx('más presupuesto el próximo','more budget next time')+'</span></button></div></div>';
   } else if(D>0.5){
-    h+='<div class="ci-sec"><div class="ci-q">Gastaste <b>'+pe(D)+'</b> más de lo que entró.</div>';
-    if(usa>0.5) h+='<div class="ci-abs">🔒 Tu Reserva cubre <b>'+pe(usa)+'</b>'+(resto<=0.5?' — para eso está 💪. Te quedará <b>'+pe(fondo-usa)+'</b>.':', queda en S/ 0, y aún faltan <b>'+pe(resto)+'</b>.')+'</div>';
-    if(resto>0.5){h+='<div class="ci-q" style="margin-top:.6rem">Los <b>'+pe(resto)+'</b> que nada cubre:</div><div class="ci-opts">'+
-      '<button class="ci-opt'+(c.defTrato==='desc'?' on':'')+'" data-cidef="desc">− Descontar del siguiente<br><span style="font-size:10.5px;opacity:.75">el próximo arranca con menos</span></button>'+
-      '<button class="ci-opt'+(c.defTrato==='cero'?' on':'')+'" data-cidef="cero">Empezar de cero<br><span style="font-size:10.5px;opacity:.75">queda registrado, no castiga</span></button></div>';}
+    h+='<div class="ci-sec"><div class="ci-q">'+tx('Gastaste','You spent')+' <b>'+pe(D)+'</b> '+tx('más de lo que entró.','more than came in.')+'</div>';
+    if(usa>0.5) h+='<div class="ci-abs">🔒 '+tx('Tu Reserva cubre','Your Reserve covers')+' <b>'+pe(usa)+'</b>'+(resto<=0.5?tx(' — para eso está 💪. Te quedará ',' — that\'s what it\'s for 💪. You\'ll have ')+'<b>'+pe(fondo-usa)+'</b>.':tx(', queda en S/ 0, y aún faltan ',', it drops to S/ 0, and you\'re still short ')+'<b>'+pe(resto)+'</b>.')+'</div>';
+    if(resto>0.5){h+='<div class="ci-q" style="margin-top:.6rem">'+tx('Los','The')+' <b>'+pe(resto)+'</b> '+tx('que nada cubre:','nothing covers:')+'</div><div class="ci-opts">'+
+      '<button class="ci-opt'+(c.defTrato==='desc'?' on':'')+'" data-cidef="desc">− '+tx('Descontar del siguiente','Deduct from the next')+'<br><span style="font-size:10.5px;opacity:.75">'+tx('el próximo arranca con menos','the next one starts with less')+'</span></button>'+
+      '<button class="ci-opt'+(c.defTrato==='cero'?' on':'')+'" data-cidef="cero">'+tx('Empezar de cero','Start fresh')+'<br><span style="font-size:10.5px;opacity:.75">'+tx('queda registrado, no castiga','it\'s on record, no punishment')+'</span></button></div>';}
     h+='</div>';
   } else {
-    h+='<div class="ci-sec"><div class="ci-q">Cerraste al centavo ✨ El siguiente ciclo arranca limpio.</div></div>';
+    h+='<div class="ci-sec"><div class="ci-q">'+tx('Cerraste al centavo ✨ El siguiente ciclo arranca limpio.','You closed to the cent ✨ The next cycle starts clean.')+'</div></div>';
   }
   // Cierre anticipado: ofrece que el siguiente ciclo arranque HOY (sin días de tierra de nadie).
   if(c.anticipado){
-    h+='<div class="ci-sec"><button class="ci-tog'+(c.arrancaHoy?' on':'')+'" data-cihoy="1" style="width:100%;text-align:left">'+(c.arrancaHoy?'✓ ':'')+'El siguiente ciclo arranca HOY ('+fmtFecha(isoToday())+')</button>'+
-      '<div class="ci-note">Estás cerrando antes de tiempo. Actívalo para que el próximo ciclo cubra desde hoy y las fechas cuadren con tu realidad.</div></div>';
+    h+='<div class="ci-sec"><button class="ci-tog'+(c.arrancaHoy?' on':'')+'" data-cihoy="1" style="width:100%;text-align:left">'+(c.arrancaHoy?'✓ ':'')+tx('El siguiente ciclo arranca HOY','The next cycle starts TODAY')+' ('+fmtFecha(isoToday())+')</button>'+
+      '<div class="ci-note">'+tx('Estás cerrando antes de tiempo. Actívalo para que el próximo ciclo cubra desde hoy y las fechas cuadren con tu realidad.','You\'re closing early. Turn this on so the next cycle covers from today and the dates match your reality.')+'</div></div>';
   }
   const need=(res>0.5&&!c.destino)||(resto>0.5&&!c.defTrato);
-  h+='<div class="ci-btns"><button class="ci-cancel" data-cicancel="1">Cancelar</button><button class="ci-go" data-cigo="1"'+(need?' disabled':'')+'>Cerrar ciclo →</button></div>';
+  h+='<div class="ci-btns"><button class="ci-cancel" data-cicancel="1">'+tx('Cancelar','Cancel')+'</button><button class="ci-go" data-cigo="1"'+(need?' disabled':'')+'>'+tx('Cerrar ciclo →','Close cycle →')+'</button></div>';
   el.innerHTML=h;
 }
 function commitCierre(){
@@ -1346,8 +1346,8 @@ function commitCierre(){
     fondo+=x.amt; addResLog(x.amt,x.label+' (al cerrar)'); });
   // 2) resultado del ciclo
   let destino='limpio';
-  if(res>0.5){ if(c.destino==='fondo'){fondo+=res;addResLog(res,'Sobrante de '+miLabel);destino='fondo';} else destino='ciclo'; }
-  else if(D>0.5){ if(usa>0.5){fondo-=usa;addResLog(-usa,'Cubrió el déficit de '+miLabel);}
+  if(res>0.5){ if(c.destino==='fondo'){fondo+=res;addResLog(res,tx('Sobrante de ','Surplus from ')+miLabel);destino='fondo';} else destino='ciclo'; }
+  else if(D>0.5){ if(usa>0.5){fondo-=usa;addResLog(-usa,tx('Cubrió el déficit de ','Covered the deficit of ')+miLabel);}
     destino=resto>0.5?(c.defTrato==='desc'?'descuento':'cero'):'reserva'; }
   saveFondo();
   // 3) asiento de cierre (closing entry) — la memoria del ciclo, para el historial y comparaciones
@@ -1364,12 +1364,12 @@ function commitCierre(){
     if(d.debtPay&&d.debtPay[n]==='otro'){if(!nx.otroMonto)nx.otroMonto={};nx.otroMonto[n]=d.otroMonto&&d.otroMonto[n];}
     const s=d.debtSnap&&d.debtSnap[n]; if(s){if(!nx.debtSnap)nx.debtSnap={};nx.debtSnap[n]=JSON.parse(JSON.stringify(s));}
     if(!nx.carried)nx.carried={}; nx.carried[n]=miLabel; });
-  if(res>0.5&&c.destino==='ciclo'){nx.inc.push({l:'Sobrante del ciclo anterior',a:Math.round(res)});
+  if(res>0.5&&c.destino==='ciclo'){nx.inc.push({l:tx('Sobrante del ciclo anterior','Surplus from previous cycle'),a:Math.round(res)});
     // El sobrante YA está en tu mano (viene de este ciclo) → nace RECIBIDO. Si quedara sin ✓, la
     // conciliación lo contaría dos veces (en el total y como "por llegar").
     const k='inc-'+(nx.inc.length-1); if(!nx.itemPaid)nx.itemPaid={}; nx.itemPaid[k]=true;
     if(!nx.incGot)nx.incGot={}; nx.incGot[k]=Math.round(res);}
-  if(resto>0.5&&c.defTrato==='desc')nx.inc.push({l:'Déficit del ciclo anterior',a:-Math.round(resto)});
+  if(resto>0.5&&c.defTrato==='desc')nx.inc.push({l:tx('Déficit del ciclo anterior','Deficit from previous cycle'),a:-Math.round(resto)});
   // Punto 5: si al cerrar dijiste "el siguiente arranca hoy", el ciclo entrante cubre desde HOY
   // (cierre anticipado = el próximo nace temprano; sin días de tierra de nadie con fechas que mienten).
   if(c.arrancaHoy){const nc=cycleOf(nid); if(nc){nc.start=isoToday(); if(nc.end&&nc.end<nc.start)nc.end=nc.start; saveCycles();}}
@@ -1438,14 +1438,14 @@ function windfallPlan(extra){
   vivas.filter(x=>isCardDebt(x)&&(parseFloat(x.limite)||0)>0&&(parseFloat(x.total)||0)>(parseFloat(x.limite)||0)+0.5).forEach(x=>{
     if(resto<=0.5)return;
     const total=parseFloat(x.total)||0, monto=Math.min(resto,total);
-    props.push({n:x.n,monto:Math.round(monto),ic:'🚨',why:monto>=total-0.5?'estaba SOBRE EL TOPE y la borras entera':'está SOBRE EL TOPE — bajarla corta multas y daño a tu historial'});
+    props.push({n:x.n,monto:Math.round(monto),ic:'🚨',why:monto>=total-0.5?tx('estaba SOBRE EL TOPE y la borras entera','it was OVER THE LIMIT and you wipe it out entirely'):tx('está SOBRE EL TOPE — bajarla corta multas y daño a tu historial','it\'s OVER THE LIMIT — paying it down stops fees and credit damage')});
     resto-=monto;
   });
   // 2) victorias completas: matar deudas ENTERAS, de la más chica a la más grande (bola de nieve)
   vivas.filter(x=>!props.some(p=>p.n===x.n)).sort((a,b)=>(parseFloat(a.total)||0)-(parseFloat(b.total)||0)).forEach(x=>{
     const total=parseFloat(x.total)||0;
     if(total>0.5&&total<=resto+0.5){const lib=parseFloat(x.min)||0;
-      props.push({n:x.n,monto:Math.round(total),ic:'💥',why:'la matas ENTERA'+(lib>0?' y liberas '+pe(lib)+' de mínimo cada ciclo':'')});
+      props.push({n:x.n,monto:Math.round(total),ic:'💥',why:tx('la matas ENTERA','you kill it ENTIRELY')+(lib>0?tx(' y liberas ',' and free up ')+pe(lib)+tx(' de mínimo cada ciclo',' of minimum every cycle'):'')});
       resto-=total;}
   });
   // 3) el resto: colchón si está flaco (< medio mes de necesidades), si no abono a la más urgente
@@ -1511,12 +1511,12 @@ function askAhoDestino(k,amt){
   const el=document.getElementById('aho-card');
   if(!el){commitItemPaid(k);return;} // sin overlay (fallback): solo marca (se fue)
   el.innerHTML='<div class="ci-h">✓ '+esc(ahoKeyLabel(k))+' — '+pe(amt)+'</div>'+
-    '<div class="ci-sub">¿Esta plata se pagó o se quedó en tu Reserva?</div>'+
+    '<div class="ci-sub">'+tx('¿Esta plata se pagó o se quedó en tu Reserva?','Did this money get paid out, or did it stay in your Reserve?')+'</div>'+
     '<div class="aho-opts">'+
-      '<button class="aho-opt" data-ahodest="pago"><b>💸 Se pagó</b><span>salió a alguien o a una deuda</span></button>'+
-      '<button class="aho-opt" data-ahodest="reserva"><b>🔒 A mi Reserva</b><span>me lo guardé yo</span></button>'+
+      '<button class="aho-opt" data-ahodest="pago"><b>💸 '+tx('Se pagó','It was paid')+'</b><span>'+tx('salió a alguien o a una deuda','it went to someone or a debt')+'</span></button>'+
+      '<button class="aho-opt" data-ahodest="reserva"><b>🔒 '+tx('A mi Reserva','To my Reserve')+'</b><span>'+tx('me lo guardé yo','I kept it for myself')+'</span></button>'+
     '</div>'+
-    '<button class="ci-cancel aho-cancel" data-ahodest="cancel">Cancelar</button>';
+    '<button class="ci-cancel aho-cancel" data-ahodest="cancel">'+tx('Cancelar','Cancel')+'</button>';
   const ov=document.getElementById('aho-ovl'); if(ov)ov.hidden=false;
 }
 (function(){const ov=document.getElementById('aho-ovl'); if(!ov)return;
@@ -1537,16 +1537,16 @@ let gastoBox=localStorage.getItem('midas_gasto_box')||'nec'; // recuerda la últ
 function gsFecha(){const M=['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];const t=new Date();return t.getDate()+' '+M[t.getMonth()];}
 function openGasto(){
   const el=document.getElementById('gasto-card'); if(!el)return;
-  el.innerHTML='<div class="ci-h">💸 Gasto suelto</div>'+
-    '<div class="ci-sub">Anótalo y listo: queda en "Sueltos" con su ✓ y baja de tu plata.</div>'+
+  el.innerHTML='<div class="ci-h">💸 '+tx('Gasto suelto','Quick expense')+'</div>'+
+    '<div class="ci-sub">'+tx('Anótalo y listo: queda en "Sueltos" con su ✓ y baja de tu plata.','Jot it down and done: it lands in "Loose" with its ✓ and comes off your money.')+'</div>'+
     '<div class="gs-amt">S/ <input id="gs-amt-inp" type="number" inputmode="decimal" min="0" step="0.5" placeholder="0"></div>'+
     '<div class="gs-boxes">'+
-      '<button class="gs-box'+(gastoBox==='nec'?' on':'')+'" data-gsbox="nec">🧺 Necesidades</button>'+
-      '<button class="gs-box'+(gastoBox==='luj'?' on':'')+'" data-gsbox="luj">🎈 Gustos</button>'+
+      '<button class="gs-box'+(gastoBox==='nec'?' on':'')+'" data-gsbox="nec">🧺 '+tx('Necesidades','Needs')+'</button>'+
+      '<button class="gs-box'+(gastoBox==='luj'?' on':'')+'" data-gsbox="luj">🎈 '+tx('Gustos','Wants')+'</button>'+
     '</div>'+
-    '<input class="gs-name" id="gs-name-inp" value="Suelto · '+gsFecha()+'" placeholder="¿En qué fue?">'+
-    '<div class="ci-btns"><button class="ci-cancel" data-gscancel="1">Cancelar</button>'+
-    '<button class="ci-go" data-gsgo="1">✓ Anotar</button></div>';
+    '<input class="gs-name" id="gs-name-inp" value="'+tx('Suelto','Loose')+' · '+gsFecha()+'" placeholder="'+tx('¿En qué fue?','What was it for?')+'">'+
+    '<div class="ci-btns"><button class="ci-cancel" data-gscancel="1">'+tx('Cancelar','Cancel')+'</button>'+
+    '<button class="ci-go" data-gsgo="1">✓ '+tx('Anotar','Log it')+'</button></div>';
   const ov=document.getElementById('gasto-ovl'); if(ov)ov.hidden=false;
   setTimeout(()=>{const i=document.getElementById('gs-amt-inp');if(i)i.focus();},60);
 }
@@ -1561,12 +1561,12 @@ function openGasto(){
     if(!e.target.closest('[data-gsgo]'))return;
     const amt=parseFloat((document.getElementById('gs-amt-inp')||{}).value)||0;
     if(amt<=0){const i=document.getElementById('gs-amt-inp');if(i)i.focus();return;} // sin monto no hay gasto
-    const name=((document.getElementById('gs-name-inp')||{}).value||'').trim()||('Suelto · '+gsFecha());
+    const name=((document.getElementById('gs-name-inp')||{}).value||'').trim()||(tx('Suelto','Loose')+' · '+gsFecha());
     const g=gastoBox;
     snapshot();
-    // busca (o crea) la categoría "Sueltos" de esa caja
-    let ci=(d[g]||[]).findIndex(r=>/^sueltos?$/i.test((r.l||'').trim()));
-    if(ci<0){d[g].push({l:'Sueltos',a:0,sub:[]});ci=d[g].length-1;}
+    // busca (o crea) la categoría "Sueltos"/"Loose" de esa caja
+    let ci=(d[g]||[]).findIndex(r=>/^(sueltos?|loose)$/i.test((r.l||'').trim()));
+    if(ci<0){d[g].push({l:tx('Sueltos','Loose'),a:0,sub:[]});ci=d[g].length-1;}
     const cat=d[g][ci];
     if(!cat.sub)cat.sub=[];
     // si "Sueltos" tenía monto plano sin subs, se preserva como primera sub (a pasará a ser sum(sub))
@@ -1584,7 +1584,7 @@ function wfDeficit(){const ti=sum(d.inc);let gas=0;buckets.forEach(b=>{const g=b
 // dinero real — solo le da un trabajo; el dinero baja recién cuando pagas (marcas ✓).
 function injectPlata(monto){monto=Math.round(monto);if(monto<=0)return;
   let idx=(d.inc||[]).findIndex(r=>r.fromPlata);
-  if(idx>=0){d.inc[idx].a=(parseFloat(d.inc[idx].a)||0)+monto;} else {d.inc.push({l:'De tu plata',a:monto,fromPlata:true});idx=d.inc.length-1;}
+  if(idx>=0){d.inc[idx].a=(parseFloat(d.inc[idx].a)||0)+monto;} else {d.inc.push({l:tx('De tu plata','From your money'),a:monto,fromPlata:true});idx=d.inc.length-1;}
   // Nace MARCADA como recibida: esta plata YA está en tu mano (no es "por llegar" — contarla ahí
   // la duplicaría). No toca el contador de "Dinero que tienes": la plata ya vive en ese número.
   const k='inc-'+idx; if(!d.itemPaid)d.itemPaid={}; d.itemPaid[k]=true;
@@ -1596,24 +1596,24 @@ function openWindfall(){
   wf={extra:Math.round(bx.extra),plan:windfallPlan(bx.extra)};
   const el=document.getElementById('wf-card'); if(!el)return;
   const p=wf.plan, def=wfDeficit();
-  let h='<div class="ci-h">'+pe(wf.extra)+' sin trabajo ✨</div>'+
-    '<div class="ci-sub">Tienes más plata de la que tu plan explica. Dale un trabajo — la app te sugiere, tú decides.</div>';
+  let h='<div class="ci-h">'+pe(wf.extra)+' '+tx('sin trabajo ✨','with no job ✨')+'</div>'+
+    '<div class="ci-sub">'+tx('Tienes más plata de la que tu plan explica. Dale un trabajo — la app te sugiere, tú decides.','You have more money than your plan explains. Give it a job — the app suggests, you decide.')+'</div>';
   // Jugada recomendada (el asesor inteligente) — arriba, con su botón
   if(p.props.length||p.abono||p.colchon>0){
-    h+='<div class="ci-sec"><div class="ci-sec-h">🧠 Jugada recomendada</div>';
+    h+='<div class="ci-sec"><div class="ci-sec-h">🧠 '+tx('Jugada recomendada','Recommended play')+'</div>';
     p.props.forEach(x=>{h+='<div class="ci-row"><span>'+x.ic+' <b>'+esc(x.n)+'</b><br><span style="font-size:11px;color:var(--tx3)">'+x.why+'</span></span><span class="cr-a">'+pe(x.monto)+'</span></div>';});
-    if(p.abono)h+='<div class="ci-row"><span>→ Abono a <b>'+esc(p.abono.n)+'</b><br><span style="font-size:11px;color:var(--tx3)">tu deuda más urgente</span></span><span class="cr-a">'+pe(p.abono.monto)+'</span></div>';
-    if(p.colchon>0)h+='<div class="ci-row"><span>🔒 <b>Colchón</b><br><span style="font-size:11px;color:var(--tx3)">semilla de tu red de emergencia</span></span><span class="cr-a">'+pe(p.colchon)+'</span></div>';
-    h+='<button class="wf-apply" data-wfgo="1">✓ Aplicar la jugada</button></div>';
+    if(p.abono)h+='<div class="ci-row"><span>→ '+tx('Abono a','Payment to')+' <b>'+esc(p.abono.n)+'</b><br><span style="font-size:11px;color:var(--tx3)">'+tx('tu deuda más urgente','your most urgent debt')+'</span></span><span class="cr-a">'+pe(p.abono.monto)+'</span></div>';
+    if(p.colchon>0)h+='<div class="ci-row"><span>🔒 <b>'+tx('Colchón','Cushion')+'</b><br><span style="font-size:11px;color:var(--tx3)">'+tx('semilla de tu red de emergencia','seed of your emergency net')+'</span></span><span class="cr-a">'+pe(p.colchon)+'</span></div>';
+    h+='<button class="wf-apply" data-wfgo="1">✓ '+tx('Aplicar la jugada','Apply the play')+'</button></div>';
   }
   // Las 4 opciones manuales — abajo, tú mandas
-  h+='<div class="ci-sec"><div class="ci-sec-h">O decide tú</div><div class="wf-opts">';
-  if(def>0.5) h+='<button class="wf-opt" data-wfopt="deficit"><b>🩹 Cubre tu déficit</b><span>faltan '+pe(def)+' — cuadra tu presupuesto</span></button>';
-  h+='<button class="wf-opt" data-wfopt="ciclo"><b>➕ Todo a este ciclo</b><span>entra como ingreso ('+pe(wf.extra)+')</span></button>'+
-     '<button class="wf-opt" data-wfopt="lugar"><b>🎯 A un lugar específico</b><span>reparte tú en las cajas</span></button>'+
-     '<button class="wf-opt" data-wfopt="reserva"><b>🔒 A tu Reserva</b><span>tu caja fuerte</span></button>';
+  h+='<div class="ci-sec"><div class="ci-sec-h">'+tx('O decide tú','Or you decide')+'</div><div class="wf-opts">';
+  if(def>0.5) h+='<button class="wf-opt" data-wfopt="deficit"><b>🩹 '+tx('Cubre tu déficit','Cover your deficit')+'</b><span>'+tx('faltan','short')+' '+pe(def)+' — '+tx('cuadra tu presupuesto','squares your budget')+'</span></button>';
+  h+='<button class="wf-opt" data-wfopt="ciclo"><b>➕ '+tx('Todo a este ciclo','All into this cycle')+'</b><span>'+tx('entra como ingreso','comes in as income')+' ('+pe(wf.extra)+')</span></button>'+
+     '<button class="wf-opt" data-wfopt="lugar"><b>🎯 '+tx('A un lugar específico','To a specific place')+'</b><span>'+tx('reparte tú en las cajas','you split it across the boxes')+'</span></button>'+
+     '<button class="wf-opt" data-wfopt="reserva"><b>🔒 '+tx('A tu Reserva','To your Reserve')+'</b><span>'+tx('tu caja fuerte','your safe')+'</span></button>';
   h+='</div></div>';
-  h+='<div class="ci-btns"><button class="ci-cancel" data-wfcancel="1">Cerrar</button></div>';
+  h+='<div class="ci-btns"><button class="ci-cancel" data-wfcancel="1">'+tx('Cerrar','Close')+'</button></div>';
   el.innerHTML=h;
   const ov=document.getElementById('wf-ovl'); if(ov)ov.hidden=false;
 }
@@ -1626,7 +1626,7 @@ function applyWindfall(){ // aplica la jugada recomendada (deudas + colchón)
   wf.plan.props.forEach(asignaDebt);
   if(wf.plan.abono)asignaDebt(wf.plan.abono);
   if(wf.plan.colchon>0){const row=(d.aho||[]).find(r=>/^colch[oó]n$/i.test((r.l||'').trim())&&!hasSubs(r));
-    if(row)row.a=(parseFloat(row.a)||0)+wf.plan.colchon; else d.aho.push({l:'Colchón',a:wf.plan.colchon});}
+    if(row)row.a=(parseFloat(row.a)||0)+wf.plan.colchon; else d.aho.push({l:tx('Colchón','Cushion'),a:wf.plan.colchon});}
   closeWf(); save();render();renderDebts();
 }
 function wfOption(opt){
@@ -1685,7 +1685,7 @@ function subRowH(g,i,j,s){const canTj=(g==='nec'||g==='luj');
   '<input class="a" type="number" min="0" step="1" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" data-f="a" value="'+s.a+'" placeholder="0">'+
   (canTj?'<button class="tjt'+(s.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" title="'+(s.tj?'En tarjeta: '+esc(s.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
   '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" data-sub="'+j+'" aria-label="Eliminar">&times;</button>'+
-  (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'-'+j+'" title="'+(g==='aho'?'Ya lo aparté — viaja a tu Reserva':'Ya pagué esto')+'">'+(paid?'✓':'')+'</button>':'')+'</div>';
+  (g!=='inc'?'<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'-'+j+'" title="'+(g==='aho'?tx('Ya lo aparté — viaja a tu Reserva','Set aside — moves to your Reserve'):tx('Ya pagué esto','I paid this'))+'">'+(paid?'✓':'')+'</button>':'')+'</div>';
   if(canTj && tjOpen===(g+'-'+i+'-'+j)) h+=tjPickerH(g,i,j,s);
   return h;}
 
@@ -1745,7 +1745,7 @@ function rowH(g,i,r){
     (asigna&&g!=='inc'?'<button class="asigna-btn" data-asignar="'+g+'-'+i+'" title="Mandar plata aquí">+ S/</button>':'')+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button>'+
-    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="'+(g==='inc'?'Ya me llegó esta plata':(g==='aho'?'Ya lo aparté':'Ya pagué esto'))+'">'+(paid?'✓':'')+'</button>'+'</div>';
+    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-itempaid="'+g+'-'+i+'" title="'+(g==='inc'?tx('Ya me llegó esta plata','This money arrived'):(g==='aho'?tx('Ya lo aparté','Set aside'):tx('Ya pagué esto','I paid this')))+'">'+(paid?'✓':'')+'</button>'+'</div>';
   if(canTj && tjOpen===(g+'-'+i)) h+=tjPickerH(g,i,null,r);
   if(g!=='inc'){
     h+='<div class="subwrap"'+(folded?' style="display:none"':'')+'>';
@@ -1805,8 +1805,8 @@ function render(){
     (asigna?'<div class="asigna-banner">🎯 Reparte tu plata en las cajas (toca <b>+ S/</b>) · te queda <b>'+pe(asigna.pool)+'</b><span class="ab-btns"><button class="ab-cancel" data-asignacancel="1">Cancelar</button><button class="ab-done" data-asignalisto="1">Listo</button></span></div>':'')+
     (d.closed?'<div class="closed-banner">✅ Ciclo cerrado'+(d.closeLog?' el '+fmtFecha(d.closeLog.fecha)+' · '+(d.closeLog.resultado>=0?'sobró <b>'+pe(d.closeLog.resultado)+'</b>':'faltó <b>'+pe(-d.closeLog.resultado)+'</b>')+(d.closeLog.destino==='fondo'?' → a tu Reserva':d.closeLog.destino==='ciclo'?' → al siguiente ciclo':d.closeLog.destino==='reserva'?' · lo cubrió tu Reserva':''):'')+'</div>':'')+
     (pcyc?(pcyc.id===activeQ
-      ?'<div class="close-banner">📅 Este ciclo terminó'+(pcyc.end?' el '+fmtFecha(pcyc.end):'')+'. Ciérralo para pasar su resultado al siguiente.<button class="cb-btn" data-gocierre="'+pcyc.id+'">Cerrar ciclo →</button></div>'
-      :'<div class="close-banner">📅 <b>'+cycleLabel(pcyc)+'</b> terminó'+(pcyc.end?' el '+fmtFecha(pcyc.end):'')+' y sigue sin cerrar.<button class="cb-btn" data-gocierre="'+pcyc.id+'">Revisar y cerrar →</button></div>'):'');
+      ?'<div class="close-banner">📅 '+tx('Este ciclo terminó','This cycle ended')+(pcyc.end?' '+tx('el ','on ')+fmtFecha(pcyc.end):'')+'. '+tx('Ciérralo para pasar su resultado al siguiente.','Close it to carry its result into the next one.')+'<button class="cb-btn" data-gocierre="'+pcyc.id+'">'+tx('Cerrar ciclo →','Close cycle →')+'</button></div>'
+      :'<div class="close-banner">📅 <b>'+cycleLabel(pcyc)+'</b> '+tx('terminó','ended')+(pcyc.end?' '+tx('el ','on ')+fmtFecha(pcyc.end):'')+' '+tx('y sigue sin cerrar.','and is still open.')+'<button class="cb-btn" data-gocierre="'+pcyc.id+'">'+tx('Revisar y cerrar →','Review & close →')+'</button></div>'):'');
   document.getElementById('app').innerHTML= bannersH +
     '<div class="sec" id="sec-inc" style="margin-top:.5rem">'+
       '<div class="hero-inc">'+
@@ -1886,22 +1886,22 @@ function informeH(){
   const salido=e.nec+e.luj+deuda;        // lo que dejó tus cuentas
   const movido=salido+ahorro;            // + lo que apartaste a tu Reserva
   const cargas=sumTj(d.nec)+sumTj(d.luj); // deuda NUEVA: lo que va a tarjeta este ciclo
-  let h='<div class="inf-h">Lo que hiciste este ciclo <span style="color:var(--tx3);font-weight:400">(lo marcado ✓)</span></div>';
+  let h='<div class="inf-h">'+tx('Lo que hiciste este ciclo','What you did this cycle')+' <span style="color:var(--tx3);font-weight:400">'+tx('(lo marcado ✓)','(what you checked ✓)')+'</span></div>';
   if(movido<0.5 && cargas<0.5){
-    return h+'<div class="dnote">Aún no marcaste nada como pagado este ciclo. Ve marcando ✓ lo que pagas y aquí verás tu estado de cuenta real.</div>';
+    return h+'<div class="dnote">'+tx('Aún no marcaste nada como pagado este ciclo. Ve marcando ✓ lo que pagas y aquí verás tu estado de cuenta real.','Nothing checked as paid this cycle yet. Check ✓ things as you pay them and your real statement shows up here.')+'</div>';
   }
   const pct=v=>movido>0?Math.round(v/movido*100):0;
   const bar=(label,v,cls)=> v>0.5?'<div class="inf-row"><span class="inf-l">'+label+'</span><span class="inf-track"><span class="inf-fill '+cls+'" style="width:'+Math.min(pct(v),100)+'%"></span></span><span class="inf-v">'+pe(v)+' <i>'+pct(v)+'%</i></span></div>':'';
-  h+=bar('Necesidades',e.nec,'c-nec');
-  h+=bar('Gustos',e.luj,'c-luj');
-  h+=bar('Ahorro (a tu Reserva)',ahorro,'c-aho');
-  h+=bar('Deuda pagada',deuda,'c-deu');
-  h+='<div class="inf-tot">Moviste <b>'+pe(movido)+'</b>'+(salido>0.5?' — de eso <b>'+pe(salido)+'</b> salió de tus cuentas':'')+(ahorro>0.5?' y <b>'+pe(ahorro)+'</b> quedó en tu Reserva':'')+'.</div>';
-  h+='<div class="inf-h" style="margin-top:1.3rem">Tu deuda: ¿bajó o creció?</div>';
-  h+='<div class="inf-deu"><div>Pagaste a tus deudas <span>'+pe(deuda)+'</span></div><div>Cargaste <b>nuevo</b> a tarjeta <span>'+pe(cargas)+'</span></div></div>';
-  if(deuda>=cargas+0.5) h+='<div class="inf-verdict ok">✅ Pagaste <b>'+pe(deuda-cargas)+'</b> más de lo que cargaste — tu deuda <b>bajó</b> este ciclo.</div>';
-  else if(cargas>deuda+0.5) h+='<div class="inf-verdict bad">⚠️ Cargaste <b>'+pe(cargas-deuda)+'</b> más de lo que pagaste — tu deuda <b>creció</b>. Tarjetea menos o abona más.</div>';
-  else h+='<div class="inf-verdict neutral">➖ Pagaste casi lo mismo que cargaste — tu deuda se mantuvo.</div>';
+  h+=bar(tx('Necesidades','Needs'),e.nec,'c-nec');
+  h+=bar(tx('Gustos','Wants'),e.luj,'c-luj');
+  h+=bar(tx('Ahorro (a tu Reserva)','Savings (to your Reserve)'),ahorro,'c-aho');
+  h+=bar(tx('Deuda pagada','Debt paid'),deuda,'c-deu');
+  h+='<div class="inf-tot">'+tx('Moviste','You moved')+' <b>'+pe(movido)+'</b>'+(salido>0.5?' — '+tx('de eso','of that')+' <b>'+pe(salido)+'</b> '+tx('salió de tus cuentas','left your accounts'):'')+(ahorro>0.5?' '+tx('y','and')+' <b>'+pe(ahorro)+'</b> '+tx('quedó en tu Reserva','stayed in your Reserve'):'')+'.</div>';
+  h+='<div class="inf-h" style="margin-top:1.3rem">'+tx('Tu deuda: ¿bajó o creció?','Your debt: down or up?')+'</div>';
+  h+='<div class="inf-deu"><div>'+tx('Pagaste a tus deudas','You paid toward debts')+' <span>'+pe(deuda)+'</span></div><div>'+tx('Cargaste <b>nuevo</b> a tarjeta','<b>New</b> card charges')+' <span>'+pe(cargas)+'</span></div></div>';
+  if(deuda>=cargas+0.5) h+='<div class="inf-verdict ok">✅ '+tx('Pagaste','You paid')+' <b>'+pe(deuda-cargas)+'</b> '+tx('más de lo que cargaste — tu deuda <b>bajó</b> este ciclo.','more than you charged — your debt went <b>down</b> this cycle.')+'</div>';
+  else if(cargas>deuda+0.5) h+='<div class="inf-verdict bad">⚠️ '+tx('Cargaste','You charged')+' <b>'+pe(cargas-deuda)+'</b> '+tx('más de lo que pagaste — tu deuda <b>creció</b>. Tarjetea menos o abona más.','more than you paid — your debt <b>grew</b>. Charge less or pay more.')+'</div>';
+  else h+='<div class="inf-verdict neutral">➖ '+tx('Pagaste casi lo mismo que cargaste — tu deuda se mantuvo.','You paid about as much as you charged — your debt held steady.')+'</div>';
   return h;
 }
 function refreshInforme(){const el=document.getElementById('informe-body');if(el)el.innerHTML=informeH();}
@@ -2011,14 +2011,14 @@ function recompute(){
   {const bti=document.getElementById('banco-total-inp'); if(bti&&document.activeElement!==bti)bti.value=(bancoTotal===''?'':Math.round(saldoVivo()));}
   {const cam=document.getElementById('hi-camino'), bc=document.getElementById('banco-cta'); const bx=bancoExtra();
    const fut=isFutureActive();
-    if(cam)cam.innerHTML=(bx&&bx.porLlegar>0.5)?' · en camino S/ '+pn(bx.porLlegar):'';
+    if(cam)cam.innerHTML=(bx&&bx.porLlegar>0.5)?' · '+tx('en camino','incoming')+' S/ '+pn(bx.porLlegar):'';
     if(bc){
       // El presente es exclusivo: solo el ciclo EN CURSO reclama tu plata. En un futuro estás planificando.
-      if(fut){bc.innerHTML='<div class="hi-chip-plan">🔮 Estás planificando un ciclo futuro — tu plata real se concilia en el ciclo en curso.</div>';}
+      if(fut){bc.innerHTML='<div class="hi-chip-plan">🔮 '+tx('Estás planificando un ciclo futuro — tu plata real se concilia en el ciclo en curso.','You\'re planning a future cycle — your actual money reconciles in the current one.')+'</div>';}
       else if(d.closed){bc.innerHTML='';}
       else if(!bx){bc.innerHTML='';}
-      else if(bx.extra>0.5){bc.innerHTML='<button class="hi-chip-btn ok" data-wfopen="1">✨ S/ '+pn(bx.extra)+' sin trabajo — dale un destino →</button>';}
-      else if(bx.extra<-0.5){bc.innerHTML='<div class="hi-chip-warn">⚠ Te faltan S/ '+pn(-bx.extra)+' para tu plan. ¿Un gasto sin registrar, o un ingreso que aún no marcas?</div>';}
+      else if(bx.extra>0.5){bc.innerHTML='<button class="hi-chip-btn ok" data-wfopen="1">✨ S/ '+pn(bx.extra)+' '+tx('sin trabajo — dale un destino →','with no job — give it one →')+'</button>';}
+      else if(bx.extra<-0.5){bc.innerHTML='<div class="hi-chip-warn">⚠ '+tx('Te faltan','You\'re short')+' S/ '+pn(-bx.extra)+' '+tx('para tu plan. ¿Un gasto sin registrar, o un ingreso que aún no marcas?','for your plan. An unlogged expense, or income you haven\'t checked yet?')+'</div>';}
       else {bc.innerHTML='';}
     }}
   // Reparto 50/30/20: el chip "↻ 50/30/20" bajo Disponible enciende/apaga esto (showRollover).
@@ -2038,12 +2038,12 @@ function recompute(){
   // Split-preview en la escena de Sueldo: el 50/30/20 al instante + el aval.
   const sp=document.getElementById('split-preview');
   if(sp)sp.innerHTML = ti>0
-    ? '<div class="sp-h">Tu reparto 20/50/30</div>'+
-      '<div class="sp-grid"><div class="sp-c"><span>Ahorro</span><b>'+pe(ti*.2)+'</b><i>20%</i></div>'+
-      '<div class="sp-c"><span>Necesidades</span><b>'+pe(ti*.5)+'</b><i>50%</i></div>'+
-      '<div class="sp-c"><span>Gustos</span><b>'+pe(ti*.3)+'</b><i>30%</i></div></div>'+
-      '<div class="sp-note">Regla popularizada por Elizabeth Warren (<i>All Your Worth</i>) — simple y sostenible. Y lo primero: <b>págate primero</b>, ahorrar antes de gastar (<i>El hombre más rico de Babilonia</i>).</div>'
-    : '<div class="sp-note">Pon tu sueldo arriba y verás el reparto 20/50/30 al instante.</div>';
+    ? '<div class="sp-h">'+tx('Tu reparto 20/50/30','Your 20/50/30 split')+'</div>'+
+      '<div class="sp-grid"><div class="sp-c"><span>'+tx('Ahorro','Savings')+'</span><b>'+pe(ti*.2)+'</b><i>20%</i></div>'+
+      '<div class="sp-c"><span>'+tx('Necesidades','Needs')+'</span><b>'+pe(ti*.5)+'</b><i>50%</i></div>'+
+      '<div class="sp-c"><span>'+tx('Gustos','Wants')+'</span><b>'+pe(ti*.3)+'</b><i>30%</i></div></div>'+
+      '<div class="sp-note">'+tx('Regla popularizada por Elizabeth Warren (<i>All Your Worth</i>) — simple y sostenible. Y lo primero: <b>págate primero</b>, ahorrar antes de gastar (<i>El hombre más rico de Babilonia</i>).','Rule popularized by Elizabeth Warren (<i>All Your Worth</i>) — simple and sustainable. And first things first: <b>pay yourself first</b>, save before you spend (<i>The Richest Man in Babylon</i>).')+'</div>'
+    : '<div class="sp-note">'+tx('Pon tu sueldo arriba y verás el reparto 20/50/30 al instante.','Enter your paycheck above and see the 20/50/30 split instantly.')+'</div>';
   if(typeof applyView==='function')applyView();
 }
 
@@ -2162,7 +2162,7 @@ app.addEventListener('click',e=>{
     save();render();
   }
   else if(b.dataset.add){snapshot();const g=b.dataset.add;
-    d[g].push(g==='inc'?{l:'Nuevo ingreso',a:0}:{l:'Nueva categoría',a:0});
+    d[g].push(g==='inc'?{l:tx('Nuevo ingreso','New income'),a:0}:{l:tx('Nueva categoría','New category'),a:0});
     const newIdx=d[g].length-1; save();render();
     // Autoenfoca el nombre de la categoría recién creada con el texto YA SELECCIONADO — el primer
     // tecleo lo reemplaza directo, sin tener que borrar "Nueva categoría" a mano.
@@ -2186,8 +2186,8 @@ app.addEventListener('click',e=>{
   else if(b.dataset.export){exportData();}
   else if(b.dataset.savetpl){saveAsTemplate();}
   else if(b.dataset.tpltoggle!==undefined){tplOpen=!tplOpen;render();}
-  else if(b.dataset.loadtpl!==undefined){const n=b.dataset.loadtpl;const tiene=(d.nec&&d.nec.some(r=>(parseFloat(r.a)||0)>0||(r.sub&&r.sub.length)))||(d.inc&&sum(d.inc)>0);if(!tiene||confirm('¿Cargar la plantilla "'+n+'"? Reemplaza las categorías de esta quincena.'))applyTemplate(n);}
-  else if(b.dataset.deltpl!==undefined){const n=b.dataset.deltpl;if(confirm('¿Borrar la plantilla "'+n+'"?')){saveTpls(loadTemplates().filter(x=>x.name!==n));render();}}
+  else if(b.dataset.loadtpl!==undefined){const n=b.dataset.loadtpl;const tiene=(d.nec&&d.nec.some(r=>(parseFloat(r.a)||0)>0||(r.sub&&r.sub.length)))||(d.inc&&sum(d.inc)>0);if(!tiene||confirm(tx('¿Cargar la plantilla "'+n+'"? Reemplaza las categorías de esta quincena.','Load template "'+n+'"? It replaces this cycle\'s categories.')))applyTemplate(n);}
+  else if(b.dataset.deltpl!==undefined){const n=b.dataset.deltpl;if(confirm(tx('¿Borrar la plantilla "'+n+'"?','Delete template "'+n+'"?'))){saveTpls(loadTemplates().filter(x=>x.name!==n));render();}}
   else if(b.dataset.import){const fi=document.getElementById('importfile');if(fi)fi.click();}
   else if(b.dataset.cerrar){openCierre();}
   else if(b.dataset.wfopen){openWindfall();}
@@ -2197,7 +2197,7 @@ app.addEventListener('click',e=>{
   else if(b.dataset.gocierre){const id=b.dataset.gocierre;
     if(id!==activeQ)switchCycle(id);
     openCierre();} // la ceremonia ES la revisión (muestra lo pendiente); Cancelar te deja en el ciclo
-  else if(b.dataset.reset){if(confirm('¿Reiniciar esta quincena? Se borran los montos actuales.')){snapshot();d=def();save();render();}}
+  else if(b.dataset.reset){if(confirm(tx('¿Reiniciar esta quincena? Se borran los montos actuales.','Reset this cycle? Current amounts will be erased.'))){snapshot();d=def();save();render();}}
   else if(b.dataset.openpicker){pickerOpen=b.dataset.openpicker;debtForm=null;render();}
   else if(b.dataset.pickerclose){pickerOpen=null;debtForm=null;render();}
   else if(b.dataset.pickdebt!==undefined){const nm=b.dataset.pickdebt,mo=b.dataset.m;if(mo==='otro'&&!promptOtroMonto(nm))return;if(!d.debtPay)d.debtPay={};d.debtPay[nm]=mo;
@@ -2324,8 +2324,8 @@ function reconcileTjDebts(){
 function autoDebtsH(){
   const auto=debts.filter(x=>x.auto);
   if(!auto.length)return '';
-  return '<div class="autohd">Cuotas de tarjeteo · automáticas desde tu presupuesto</div>'+
-    auto.map(x=>'<div class="arow"><span class="anm">'+esc(x.n)+'</span><span class="aamt">'+pe(x.total)+'/mes</span><span class="adue">'+(x.vence?dueLabel(x.vence):'sin fecha')+'</span></div>').join('');
+  return '<div class="autohd">'+tx('Cuotas de tarjeteo · automáticas desde tu presupuesto','Card installments · automatic from your budget')+'</div>'+
+    auto.map(x=>'<div class="arow"><span class="anm">'+esc(x.n)+'</span><span class="aamt">'+pe(x.total)+tx('/mes','/mo')+'</span><span class="adue">'+(x.vence?dueLabel(x.vence):tx('sin fecha','no date'))+'</span></div>').join('');
 }
 function refreshAutoDebts(){const el=document.getElementById('autodebts');if(el)el.innerHTML=autoDebtsH();}
 function cuotasCountH(){const n=debts.filter(x=>x.auto).length;return n?' <span class="cc">'+n+'</span>':'';}
@@ -2456,8 +2456,8 @@ function refreshPlan(){const b=document.getElementById('planbox');if(b)b.innerHT
 function ahoDebtSubsH(){
   // Solo las deudas que vencen en ESTE ciclo (las que el plan paga), no todas con ceros.
   const p=computePlan();
-  if(!p.perQ) return '<div class="row sub"><input class="l" value="Pon tu fecha de pago (✎ editar ingreso) para ver las deudas de este ciclo" readonly style="color:var(--tx3)"></div>';
-  if(!p.rows.length) return '<div class="row sub"><input class="l" value="Ninguna deuda vence en este ciclo" readonly style="color:var(--tx3)"></div>';
+  if(!p.perQ) return '<div class="row sub"><input class="l" value="'+tx('Pon tu fecha de pago (✎ editar ingreso) para ver las deudas de este ciclo','Set your payday (✎ edit income) to see this cycle\'s debts')+'" readonly style="color:var(--tx3)"></div>';
+  if(!p.rows.length) return '<div class="row sub"><input class="l" value="'+tx('Ninguna deuda vence en este ciclo','No debt is due this cycle')+'" readonly style="color:var(--tx3)"></div>';
   return p.rows.map(r=>'<div class="row sub'+(r.paid?' is-paid':'')+'"><input class="l" value="'+esc(r.n)+'" readonly style="color:var(--tx2)"><input class="a" value="'+Math.round(r.pay)+'" readonly style="color:var(--tx2)"><button class="pcheck'+(r.paid?' on':'')+'" data-paid="'+esc(r.n)+'" title="'+(r.paid?'Pagado — clic para desmarcar':'Marcar como pagado')+'">'+(r.paid?'✓':'')+'</button></div>').join('');
 }
 function isCardDebt(x){return !x.auto && (x.kind==='card' || (x.kind!=='loan' && !/pr[eé]stamo|colegio/i.test(x.n||'')));}
@@ -2472,13 +2472,13 @@ function debtFormH(){
   const c=isNew?{}:(debts[debtForm.idx]||{});
   const v=k=>esc(c[k]!=null?c[k]:'');
   const f=(lbl,key,ph)=>'<label class="cf-l">'+lbl+'<input class="cf-i" data-cf="'+key+'" type="number" min="0" step="1" value="'+v(key)+'" placeholder="'+ph+'"></label>';
-  let h='<div class="cardform"><div class="cf-h">'+(isNew?(isCard?'Nueva tarjeta':'Nuevo préstamo'):'Editar')+'</div>'+
-    '<label class="cf-l">Nombre<input class="cf-i" data-cf="n" type="text" value="'+v('n')+'" placeholder="'+(isCard?'Ej. Visa BCP':'Ej. Préstamo auto')+'"></label>';
-  if(isCard) h+=f('Línea de crédito','limite','3000')+f('Monto usado (lo que debes)','total','1200')+f('Monto disponible (lo que el banco te deja usar)','disp','1800')+f('Tasa de interés anual % — TCEA (opcional)','tcea','75');
-  else h+=f('Monto total de la deuda','total','5000');
-  h+=f('Pago mensual','mes','300')+f('Pago mínimo','min','150')+
-    '<label class="cf-l">Fecha de pago<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>'+
-    '<div class="cf-btns"><button class="cf-cancel" data-debtformcancel="1">Cancelar</button><button class="cf-save" data-debtformsave="1">Guardar en el banco</button></div></div>';
+  let h='<div class="cardform"><div class="cf-h">'+(isNew?(isCard?tx('Nueva tarjeta','New card'):tx('Nuevo préstamo','New loan')):tx('Editar','Edit'))+'</div>'+
+    '<label class="cf-l">'+tx('Nombre','Name')+'<input class="cf-i" data-cf="n" type="text" value="'+v('n')+'" placeholder="'+(isCard?tx('Ej. Visa BCP','E.g. Visa card'):tx('Ej. Préstamo auto','E.g. Car loan'))+'"></label>';
+  if(isCard) h+=f(tx('Línea de crédito','Credit limit'),'limite','3000')+f(tx('Monto usado (lo que debes)','Amount used (what you owe)'),'total','1200')+f(tx('Monto disponible (lo que el banco te deja usar)','Available (what the bank still lets you use)'),'disp','1800')+f(tx('Tasa de interés anual % — TCEA (opcional)','Yearly interest % — APR (optional)'),'tcea','75');
+  else h+=f(tx('Monto total de la deuda','Total debt amount'),'total','5000');
+  h+=f(tx('Pago mensual','Monthly payment'),'mes','300')+f(tx('Pago mínimo','Minimum payment'),'min','150')+
+    '<label class="cf-l">'+tx('Fecha de pago','Due date')+'<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>'+
+    '<div class="cf-btns"><button class="cf-cancel" data-debtformcancel="1">'+tx('Cancelar','Cancel')+'</button><button class="cf-save" data-debtformsave="1">'+tx('Guardar en el banco','Save to bank')+'</button></div></div>';
   return h;
 }
 // "otro": monto libre que el usuario tipea para ESTE ciclo (ej. pagó más de lo presupuestado porque
@@ -2500,7 +2500,7 @@ function debtAmtLabel(x,mode){
 // Al elegir "Otro" / monto de préstamo: pregunta el monto (precargado) y lo guarda. false = canceló.
 function promptOtroMonto(name,def){
   const cur=(d.otroMonto&&d.otroMonto[name])!=null&&d.otroMonto[name]!==''?d.otroMonto[name]:(def!=null?def:'');
-  const inp=prompt('¿Qué monto pagas a "'+name+'" esta quincena?',cur||'');
+  const inp=prompt(tx('¿Qué monto pagas a "'+name+'" esta quincena?','How much are you paying "'+name+'" this cycle?'),cur||'');
   if(inp===null)return false;
   const v=parseFloat(inp); if(isNaN(v)||v<0)return false;
   if(!d.otroMonto)d.otroMonto={};
@@ -2569,7 +2569,7 @@ function modeToggleH(x){
   }
   const m=(d.debtPay&&d.debtPay[x.n])||'min';
   const opt=(mode,lbl)=>'<button class="dmode'+(m===mode?' on':'')+'" data-debtmode="'+esc(x.n)+'" data-m="'+mode+'">'+lbl+' '+debtAmtLabel(s,mode)+'</button>';
-  return '<div class="dmodes">'+opt('min','Mín')+opt('mes','Mes')+opt('total','Total')+opt('otro','Otro')+'</div>';
+  return '<div class="dmodes">'+opt('min',tx('Mín','Min'))+opt('mes',tx('Mes','Month'))+opt('total','Total')+opt('otro',tx('Otro','Other'))+'</div>';
 }
 function debtPickerH(kind){
   if(pickerOpen!==kind) return '';
@@ -2580,28 +2580,28 @@ function debtPickerH(kind){
     const mb=(m,lbl)=>'<button class="pk-m" data-pickdebt="'+esc(x.n)+'" data-m="'+m+'">'+lbl+' '+debtAmtLabel(x,m)+'</button>';
     const star=(x.n===recommendedDebt())?' <span class="drec">⭐</span>':'';
     return '<div class="pkrow"><div class="pk-top"><span class="pk-n">'+esc(x.n)+star+'</span>'+
-      '<span class="pk-act"><button class="pk-edit" data-editdebt="'+i+'" data-kind="'+kind+'" title="Editar">&#9998;</button>'+
-      '<button class="pk-del" data-deldebt="'+i+'" title="Quitar del banco">&times;</button></span></div>'+
-      '<div class="pk-info">'+(x.vence?'vence '+dueLabel(x.vence):'sin fecha')+(isCard?' · disp '+pe(cardAvail(x)):' · debes '+pe(parseFloat(x.total)||0))+'</div>'+
+      '<span class="pk-act"><button class="pk-edit" data-editdebt="'+i+'" data-kind="'+kind+'" title="'+tx('Editar','Edit')+'">&#9998;</button>'+
+      '<button class="pk-del" data-deldebt="'+i+'" title="'+tx('Quitar del banco','Remove from bank')+'">&times;</button></span></div>'+
+      '<div class="pk-info">'+(x.vence?tx('vence ','due ')+dueLabel(x.vence):tx('sin fecha','no date'))+(isCard?' · '+tx('disp','avail')+' '+pe(cardAvail(x)):' · '+tx('debes','you owe')+' '+pe(parseFloat(x.total)||0))+'</div>'+
       '<div class="pk-modes">'+(isCard
-        ? mb('min','Mín')+mb('mes','Mes')+mb('total','Total')+mb('otro','Otro')
-        : '<button class="pk-m" data-pickloan="'+esc(x.n)+'">Elegir monto</button>')+'</div></div>';
+        ? mb('min',tx('Mín','Min'))+mb('mes',tx('Mes','Month'))+mb('total','Total')+mb('otro',tx('Otro','Other'))
+        : '<button class="pk-m" data-pickloan="'+esc(x.n)+'">'+tx('Elegir monto','Choose amount')+'</button>')+'</div></div>';
   }).join('');
-  if(!list.length) rows='<div class="pk-empty">No te queda '+(isCard?'ninguna tarjeta':'ningún préstamo')+' por elegir. Agrega '+(isCard?'una':'uno')+' al banco abajo.</div>';
-  return '<div class="debtpicker"><div class="pk-h">¿Cuál pagas esta quincena?'+(isCard?' Toca el monto (Mín / Mes / Total / Otro).':' Pon el monto a pagar.')+'</div>'+rows+
-    '<button class="pk-new" data-newdebt="'+kind+'"><span class="p">+</span> Agregar '+(isCard?'tarjeta':'préstamo')+' al banco</button>'+
+  if(!list.length) rows='<div class="pk-empty">'+(isCard?tx('No te queda ninguna tarjeta por elegir. Agrega una al banco abajo.','No cards left to choose. Add one to the bank below.'):tx('No te queda ningún préstamo por elegir. Agrega uno al banco abajo.','No loans left to choose. Add one to the bank below.'))+'</div>';
+  return '<div class="debtpicker"><div class="pk-h">'+tx('¿Cuál pagas esta quincena?','Which one are you paying this cycle?')+(isCard?tx(' Toca el monto (Mín / Mes / Total / Otro).',' Tap the amount (Min / Month / Total / Other).'):tx(' Pon el monto a pagar.',' Set the amount to pay.'))+'</div>'+rows+
+    '<button class="pk-new" data-newdebt="'+kind+'"><span class="p">+</span> '+(isCard?tx('Agregar tarjeta al banco','Add card to bank'):tx('Agregar préstamo al banco','Add loan to bank'))+'</button>'+
     debtFormH()+
-    '<button class="pk-done" data-pickerclose="1">Listo</button></div>';
+    '<button class="pk-done" data-pickerclose="1">'+tx('Listo','Done')+'</button></div>';
 }
 function selectedDebtRowH(x,kind){
   const paid=!!(d.paid&&d.paid[x.n]);
   const s=snapOf(x.n)||x; // FOTO congelada: el disponible se muestra tal cual estaba al presupuestar
   const icon=kind==='card'?'<span class="dd-ic">'+TJ_SVG+'</span>':'';
   return '<div class="row sub'+(paid?' is-paid':'')+'">'+icon+
-    '<span class="dd-n">'+esc(x.n)+(d.carried&&d.carried[x.n]?'<span class="dd-carried">arrastrada · '+esc(d.carried[x.n])+'</span>':'')+'</span>'+
-    (kind==='card'?'<span class="dd-d">disp '+pe(cardAvail(s))+'</span>':'')+
-    '<button class="rm" data-unpick="'+esc(x.n)+'" title="Quitar de esta quincena">&times;</button>'+
-    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="Ya pagué esto">'+(paid?'✓':'')+'</button></div>'+
+    '<span class="dd-n">'+esc(x.n)+(d.carried&&d.carried[x.n]?'<span class="dd-carried">'+tx('arrastrada','carried over')+' · '+esc(d.carried[x.n])+'</span>':'')+'</span>'+
+    (kind==='card'?'<span class="dd-d">'+tx('disp','avail')+' '+pe(cardAvail(s))+'</span>':'')+
+    '<button class="rm" data-unpick="'+esc(x.n)+'" title="'+tx('Quitar de esta quincena','Remove from this cycle')+'">&times;</button>'+
+    '<button class="pcheck pchk-paid'+(paid?' on':'')+'" data-debtpaid="'+esc(x.n)+'" title="'+tx('Ya pagué esto','I paid this')+'">'+(paid?'✓':'')+'</button></div>'+
     modeToggleH(x);
 }
 function ahoDebtBlockH(){
@@ -2616,19 +2616,19 @@ function ahoDebtBlockH(){
   // "Deuda" = fila cohesionada con las categorías de Ahorro: [chevron][Deuda][total en la columna del
   // monto][× quitar deudas del ciclo][check que marca/desmarca TODAS]. Mismas posiciones que "Ahorro".
   return '<div class="dgroup">'+
-    '<div class="row dg-fold" title="Plegar/desplegar deudas">'+
+    '<div class="row dg-fold" title="'+tx('Plegar/desplegar deudas','Collapse/expand debts')+'">'+
       '<button class="subtoggle" data-deudafold="1">'+(folded?'▸':'▾')+'</button>'+
-      '<span class="l dd-name" data-deudafold="1">Deuda</span>'+
+      '<span class="l dd-name" data-deudafold="1">'+tx('Deuda','Debt')+'</span>'+
       '<span class="a dg-total">'+pe(planned)+'</span>'+
-      '<button class="rm" data-deudaclear="1" aria-label="Quitar deudas del ciclo" title="Quitar del ciclo las deudas elegidas">&times;</button>'+
-      '<button class="pcheck pchk-paid'+(allDebtsPaid?' on':'')+'" data-deudaallpaid="1" title="Marcar/desmarcar todas las deudas del ciclo">'+(allDebtsPaid?'✓':'')+'</button>'+
+      '<button class="rm" data-deudaclear="1" aria-label="'+tx('Quitar deudas del ciclo','Remove debts from cycle')+'" title="'+tx('Quitar del ciclo las deudas elegidas','Remove the chosen debts from this cycle')+'">&times;</button>'+
+      '<button class="pcheck pchk-paid'+(allDebtsPaid?' on':'')+'" data-deudaallpaid="1" title="'+tx('Marcar/desmarcar todas las deudas del ciclo','Check/uncheck every debt this cycle')+'">'+(allDebtsPaid?'✓':'')+'</button>'+
     '</div>'+
     (folded?'':
-      '<div class="dlegend">Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>azul</b> cuando ya lo pagaste.</div>'+
+      '<div class="dlegend">'+tx('Toca <b>+</b> para elegir del banco qué pagar esta quincena. Marca el check <b>azul</b> cuando ya lo pagaste.','Tap <b>+</b> to choose from your bank what to pay this cycle. Hit the <b>blue</b> check once you\'ve paid it.')+'</div>'+
       '<div class="subwrap">'+
-        kindGroupH('loan','Préstamo',loans,sel)+
-        kindGroupH('card','Tarjeta de crédito',cards,sel)+
-        (planned>0?'<div class="dtotal">Pagas este ciclo: <b>'+pe(planned)+'</b>'+(paidS>0?' · ya pagaste <b>'+pe(paidS)+'</b> · falta <b>'+pe(planned-paidS)+'</b>':'')+' <span style="color:var(--tx3)">— sale de tu ahorro</span></div>':'')+
+        kindGroupH('loan',tx('Préstamo','Loan'),loans,sel)+
+        kindGroupH('card',tx('Tarjeta de crédito','Credit card'),cards,sel)+
+        (planned>0?'<div class="dtotal">'+tx('Pagas este ciclo:','You pay this cycle:')+' <b>'+pe(planned)+'</b>'+(paidS>0?' · '+tx('ya pagaste','already paid')+' <b>'+pe(paidS)+'</b> · '+tx('falta','left')+' <b>'+pe(planned-paidS)+'</b>':'')+' <span style="color:var(--tx3)">— '+tx('sale de tu ahorro','comes out of your savings')+'</span></div>':'')+
       '</div>'
     )+
   '</div>';
@@ -2648,8 +2648,8 @@ function kindGroupH(kind,label,list,sel){
     '<span class="dsub-t kh-name">'+label+'</span>'+
     (list.length
       ? '<span class="a kh-total">'+pe(total)+'</span>'+
-        '<button class="rm" data-kindclear="'+kind+'" aria-label="Quitar del ciclo" title="Quitar del ciclo '+(kind==='card'?'las tarjetas':'los préstamos')+'">&times;</button>'+
-        '<button class="pcheck pchk-paid'+(allPaid?' on':'')+'" data-kindallpaid="'+kind+'" title="Marcar/desmarcar todos los '+(kind==='card'?'pagos de tarjeta':'préstamos')+'">'+(allPaid?'✓':'')+'</button>'
+        '<button class="rm" data-kindclear="'+kind+'" aria-label="'+tx('Quitar del ciclo','Remove from cycle')+'" title="'+tx('Quitar del ciclo ','Remove from this cycle ')+(kind==='card'?tx('las tarjetas','the cards'):tx('los préstamos','the loans'))+'">&times;</button>'+
+        '<button class="pcheck pchk-paid'+(allPaid?' on':'')+'" data-kindallpaid="'+kind+'" title="'+tx('Marcar/desmarcar todos los ','Check/uncheck all ')+(kind==='card'?tx('pagos de tarjeta','card payments'):tx('préstamos','loans'))+'">'+(allPaid?'✓':'')+'</button>'
       : '')+
   '</div>';
   const body=folded?'':
@@ -2672,15 +2672,15 @@ function tjCompute(){
 }
 function tjInner(){
   const r=tjCompute();
-  return '<div class="plan-h">Simulador de tarjeteo</div>'+
-    '<div class="dnote" style="margin:.4rem 0 .9rem">Cargar un gasto a una tarjeta con línea libre y partirlo en cuotas. Te da aire esta quincena; el costo es el arrastre de los próximos meses.</div>'+
+  return '<div class="plan-h">'+tx('Simulador de tarjeteo','Card-charge simulator')+'</div>'+
+    '<div class="dnote" style="margin:.4rem 0 .9rem">'+tx('Cargar un gasto a una tarjeta con línea libre y partirlo en cuotas. Te da aire esta quincena; el costo es el arrastre de los próximos meses.','Put an expense on a card with free credit and split it into installments. It buys you air this cycle; the cost is the drag over the coming months.')+'</div>'+
     '<div class="tjgrid">'+
-      '<label>Monto a tarjetear<input data-tj="monto" type="number" step="1" value="'+(tj.monto||'')+'" placeholder="900"></label>'+
-      '<label># cuotas<input data-tj="cuotas" type="number" step="1" value="'+(tj.cuotas||'')+'" placeholder="3"></label>'+
-      '<label>Cuota real (opcional)<input data-tj="cuotaReal" type="number" step="1" value="'+(tj.cuotaReal||'')+'" placeholder="auto"></label>'+
+      '<label>'+tx('Monto a tarjetear','Amount to charge')+'<input data-tj="monto" type="number" step="1" value="'+(tj.monto||'')+'" placeholder="900"></label>'+
+      '<label>'+tx('# cuotas','# installments')+'<input data-tj="cuotas" type="number" step="1" value="'+(tj.cuotas||'')+'" placeholder="3"></label>'+
+      '<label>'+tx('Cuota real (opcional)','Actual installment (optional)')+'<input data-tj="cuotaReal" type="number" step="1" value="'+(tj.cuotaReal||'')+'" placeholder="auto"></label>'+
     '</div>'+
-    (r.monto>0?'<div class="plan-sum" style="margin-top:1rem">Liberas <b style="color:var(--ok)">'+pe(r.monto)+'</b> de liquidez ahora · Arrastras <b>'+pe(r.cuota)+'/mes</b> × '+r.cuotas+
-      (r.sobre>0.5?' · Sobrecosto <b style="color:var(--bad)">'+pe(r.sobre)+'</b>':' · <b style="color:var(--ok)">sin sobrecosto</b>')+'</div>':'');
+    (r.monto>0?'<div class="plan-sum" style="margin-top:1rem">'+tx('Liberas','You free up')+' <b style="color:var(--ok)">'+pe(r.monto)+'</b> '+tx('de liquidez ahora · Arrastras','of cash now · You carry')+' <b>'+pe(r.cuota)+tx('/mes','/mo')+'</b> × '+r.cuotas+
+      (r.sobre>0.5?' · '+tx('Sobrecosto','Extra cost')+' <b style="color:var(--bad)">'+pe(r.sobre)+'</b>':' · <b style="color:var(--ok)">'+tx('sin sobrecosto','no extra cost')+'</b>')+'</div>':'');
 }
 function refreshTJ(){const b=document.getElementById('tjbox');if(b)b.innerHTML=tjInner();}
 function saludH(){
@@ -2694,10 +2694,10 @@ function saludH(){
   const rows=cards.map(c=>{const u=util(c);
     return '<div class="sa-row"><span class="sa-n">'+esc(c.n)+'</span><span class="sa-bar"><span class="sa-fill '+cls(u)+'" style="width:'+(u==null?0:Math.min(u*100,100))+'%"></span></span><span class="sa-pct '+cls(u)+'">'+(u==null?'sin línea':Math.round(u*100)+'%')+'</span></div>';
   }).join('');
-  const verdict= totU>1?'🔴 Debes más crédito del que tienes. Lo urgente: bajar deuda, no sumar más a tarjeta.'
-    : totU>0.7?'🔴 Uso muy alto ('+Math.round(totU*100)+'%). Cada compra a tarjeta es deuda cara — paga en efectivo y abona.'
-    : totU>0.3?'🟡 Uso medio ('+Math.round(totU*100)+'%). Ojo con sumar más a tarjeta.'
-    : '🟢 Uso sano ('+Math.round(totU*100)+'%). Vas bien.';
+  const verdict= totU>1?tx('🔴 Debes más crédito del que tienes. Lo urgente: bajar deuda, no sumar más a tarjeta.','🔴 You owe more credit than you have. Priority: pay debt down, don\'t add more to cards.')
+    : totU>0.7?'🔴 '+tx('Uso muy alto','Very high usage')+' ('+Math.round(totU*100)+'%). '+tx('Cada compra a tarjeta es deuda cara — paga en efectivo y abona.','Every card purchase is expensive debt — pay cash and pay it down.')
+    : totU>0.3?'🟡 '+tx('Uso medio','Medium usage')+' ('+Math.round(totU*100)+'%). '+tx('Ojo con sumar más a tarjeta.','Careful adding more to cards.')
+    : '🟢 '+tx('Uso sano','Healthy usage')+' ('+Math.round(totU*100)+'%). '+tx('Vas bien.','You\'re doing fine.');
   const ranked=cards.filter(c=>util(c)!=null).sort((a,b)=>{
     const ua=util(a),ub=util(b),oa=ua>1?1:0,ob=ub>1?1:0;
     if(oa!==ob)return ob-oa;
@@ -2705,11 +2705,11 @@ function saludH(){
     const ta=parseFloat(a.tcea)||0,tb=parseFloat(b.tcea)||0; if(ta!==tb)return tb-ta;
     return dateVal(a.vence)-dateVal(b.vence);
   });
-  const prio=ranked.length?'<div class="sa-prio"><b>Paga primero:</b> '+ranked.slice(0,3).map((c,k)=>(k+1)+') '+esc(c.n)+(util(c)>1?' (¡sobre el tope!)':' ('+Math.round(util(c)*100)+'%)')).join('  ·  ')+'</div>':'';
-  return '<div class="salud"><div class="sa-h">💳 Salud de tus tarjetas · usado vs línea (sano &lt;30%)</div>'+rows+'<div class="sa-verdict">'+verdict+'</div>'+prio+'</div>';
+  const prio=ranked.length?'<div class="sa-prio"><b>'+tx('Paga primero:','Pay first:')+'</b> '+ranked.slice(0,3).map((c,k)=>(k+1)+') '+esc(c.n)+(util(c)>1?tx(' (¡sobre el tope!)',' (over the limit!)'):' ('+Math.round(util(c)*100)+'%)')).join('  ·  ')+'</div>':'';
+  return '<div class="salud"><div class="sa-h">💳 '+tx('Salud de tus tarjetas · usado vs línea (sano &lt;30%)','Card health · used vs limit (healthy &lt;30%)')+'</div>'+rows+'<div class="sa-verdict">'+verdict+'</div>'+prio+'</div>';
 }
 function allToCash(){
-  if(!confirm('¿Pasar TODOS tus gastos a efectivo (quitar el tarjeteo en todas las quincenas)? Las cuotas futuras de esos gastos desaparecen.'))return;
+  if(!confirm(tx('¿Pasar TODOS tus gastos a efectivo (quitar el tarjeteo en todas las quincenas)? Las cuotas futuras de esos gastos desaparecen.','Move ALL your expenses to cash (remove card charges in every cycle)? Their future installments disappear.')))return;
   cycles.forEach(c=>{const x=(c.id===activeQ)?d:load(c.id);
     ['nec','luj'].forEach(g=>{(x[g]||[]).forEach(cat=>{
       if(cat.tj){cat.tj=false;delete cat.tjCard;delete cat.tjCuotas;}
@@ -2786,39 +2786,39 @@ function invSimOut(){
   const m=parseFloat(invSim.m)||0, y=parseFloat(invSim.y)||0, r=(parseFloat(invSim.r)||0)/100;
   const n=Math.round(y*12), i=r/12;
   const fv=i>0?m*((Math.pow(1+i,n)-1)/i):m*n; const inv=m*n;
-  if(inv<=0)return 'Pon un aporte y unos años — mira lo que hace el tiempo.';
-  return 'Aportas <b>'+pe(inv)+'</b> en '+y+' años → tendrías <b style="color:var(--ok)">'+pe(fv)+'</b> · el interés compuesto puso <b>'+pe(fv-inv)+'</b> solo';
+  if(inv<=0)return tx('Pon un aporte y unos años — mira lo que hace el tiempo.','Enter a monthly amount and some years — watch what time does.');
+  return tx('Aportas','You put in')+' <b>'+pe(inv)+'</b> '+tx('en','over')+' '+y+' '+tx('años → tendrías','years → you\'d have')+' <b style="color:var(--ok)">'+pe(fv)+'</b> · '+tx('el interés compuesto puso','compound interest added')+' <b>'+pe(fv-inv)+'</b> '+tx('solo','on its own');
 }
 function invertirH(){
   const conSaldo=debts.filter(x=>!x.auto&&(parseFloat(x.total)||0)>0);
   const caras=conSaldo.filter(esDeudaCara);
   const ahoMeta=sum(d.inc)*0.2;
-  let h='<div class="sec-h"><span class="t">📈 Inversiones <span class="secpct">· piso 3</span></span></div><div class="inv-body">';
+  let h='<div class="sec-h"><span class="t">📈 '+tx('Inversiones','Investing')+' <span class="secpct">· '+tx('piso 3','floor 3')+'</span></span></div><div class="inv-body">';
   if(caras.length){ // consejo con matemática adentro — la sección sigue ABIERTA debajo
-    h+='<div class="inv-lock"><div class="il-h">💡 Antes de invertir: tu deuda cara rinde más</div>'+
-      '<div class="il-txt">Pagar esta deuda <b>ES tu mejor inversión hoy</b>: te "rinde" su tasa, garantizado — ninguna inversión normal le gana.</div>'+
-      '<div class="il-list">'+caras.map(x=>{const t=parseFloat(x.tcea)||0;return '<div class="il-row"><span>'+esc(x.n)+'</span><span class="il-r">'+(t>0?Math.round(t)+'%/año':'tarjeta · tasa alta')+'</span><span class="il-d">debes '+pe(parseFloat(x.total)||0)+'</span></div>';}).join('')+'</div>'+
-      '<div class="il-foot">Puedes explorar y simular abajo igual — tú mandas. Solo recuerda: cada sol invertido mientras debes a esas tasas, pierde contra pagarlas. ¿Una deuda sin tasa? Ponle su TCEA en <b>Deudas</b>.</div></div>';
+    h+='<div class="inv-lock"><div class="il-h">💡 '+tx('Antes de invertir: tu deuda cara rinde más','Before investing: your expensive debt pays more')+'</div>'+
+      '<div class="il-txt">'+tx('Pagar esta deuda <b>ES tu mejor inversión hoy</b>: te "rinde" su tasa, garantizado — ninguna inversión normal le gana.','Paying this debt <b>IS your best investment today</b>: it "yields" its rate, guaranteed — no normal investment beats it.')+'</div>'+
+      '<div class="il-list">'+caras.map(x=>{const t=parseFloat(x.tcea)||0;return '<div class="il-row"><span>'+esc(x.n)+'</span><span class="il-r">'+(t>0?Math.round(t)+tx('%/año','%/yr'):tx('tarjeta · tasa alta','card · high rate'))+'</span><span class="il-d">'+tx('debes','you owe')+' '+pe(parseFloat(x.total)||0)+'</span></div>';}).join('')+'</div>'+
+      '<div class="il-foot">'+tx('Puedes explorar y simular abajo igual — tú mandas. Solo recuerda: cada sol invertido mientras debes a esas tasas, pierde contra pagarlas. ¿Una deuda sin tasa? Ponle su TCEA en <b>Deudas</b>.','You can still explore and simulate below — you\'re in charge. Just remember: every sol invested while you owe at those rates loses to paying them off. Debt with no rate set? Add its APR in <b>Debts</b>.')+'</div></div>';
   }
   h+='<div class="inv-open">'+
-    '<div class="io-meta">Tu meta de ahorro/inversión: <b>'+pe(ahoMeta)+'/mes</b> <span class="io-sub">(el 20% de tu ingreso)</span></div>'+
-    '<div class="io-h">La escalera (orden sano)</div>'+
+    '<div class="io-meta">'+tx('Tu meta de ahorro/inversión:','Your savings/investing target:')+' <b>'+pe(ahoMeta)+tx('/mes','/mo')+'</b> <span class="io-sub">'+tx('(el 20% de tu ingreso)','(20% of your income)')+'</span></div>'+
+    '<div class="io-h">'+tx('La escalera (orden sano)','The ladder (healthy order)')+'</div>'+
     '<ol class="io-steps">'+
-      '<li><b>Colchón primero</b> — 3 a 6 meses de tus gastos, líquido y seguro (piso 1 de tu Reserva). Es tu red, no tu inversión.</li>'+
-      '<li><b>Ya con la red, diversifica:</b>'+
-        '<div class="io-div"><div class="iod"><span class="iod-t">Renta fija</span><span class="iod-d">cajas / depósitos a plazo (Lima). Seguro, retorno bajo (~4–7%). Para estabilidad.</span></div>'+
-        '<div class="iod"><span class="iod-t">Renta variable</span><span class="iod-d">S&amp;P 500 / ETF global. Más riesgo, más retorno a largo plazo (~10% histórico). Para crecer.</span></div></div>'+
-        '<div class="io-mix">Mezcla por horizonte (regla clásica: "110 − tu edad" en renta variable): mientras más lejos tu meta, más variable aguanta.</div></li>'+
-      '<li><b>¿Tienes deuda barata?</b> (ej. hipoteca &lt;'+UMBRAL_CARA+'%) Puedes invertir <b>en paralelo</b> — el mercado suele rendir más que esa tasa. El tiempo compuesto es lo más valioso que tienes.</li>'+
+      '<li><b>'+tx('Colchón primero','Cushion first')+'</b>'+tx(' — 3 a 6 meses de tus gastos, líquido y seguro (piso 1 de tu Reserva). Es tu red, no tu inversión.',' — 3 to 6 months of expenses, liquid and safe (floor 1 of your Reserve). It\'s your net, not your investment.')+'</li>'+
+      '<li><b>'+tx('Ya con la red, diversifica:','With the net in place, diversify:')+'</b>'+
+        '<div class="io-div"><div class="iod"><span class="iod-t">'+tx('Renta fija','Fixed income')+'</span><span class="iod-d">'+tx('cajas / depósitos a plazo (Lima). Seguro, retorno bajo (~4–7%). Para estabilidad.','term deposits / CDs. Safe, low return (~4–7%). For stability.')+'</span></div>'+
+        '<div class="iod"><span class="iod-t">'+tx('Renta variable','Stocks')+'</span><span class="iod-d">'+tx('S&amp;P 500 / ETF global. Más riesgo, más retorno a largo plazo (~10% histórico). Para crecer.','S&amp;P 500 / global ETF. More risk, more long-term return (~10% historical). For growth.')+'</span></div></div>'+
+        '<div class="io-mix">'+tx('Mezcla por horizonte (regla clásica: "110 − tu edad" en renta variable): mientras más lejos tu meta, más variable aguanta.','Mix by horizon (classic rule: "110 − your age" in stocks): the further your goal, the more stocks it can take.')+'</div></li>'+
+      '<li><b>'+tx('¿Tienes deuda barata?','Cheap debt?')+'</b> '+tx('(ej. hipoteca &lt;'+UMBRAL_CARA+'%) Puedes invertir <b>en paralelo</b> — el mercado suele rendir más que esa tasa. El tiempo compuesto es lo más valioso que tienes.','(e.g. mortgage &lt;'+UMBRAL_CARA+'%) You can invest <b>in parallel</b> — the market usually beats that rate. Compound time is the most valuable thing you have.')+'</li>'+
     '</ol>'+
-    '<div class="io-h" style="margin-top:1.1rem">Juega: el interés compuesto en acción</div>'+
+    '<div class="io-h" style="margin-top:1.1rem">'+tx('Juega: el interés compuesto en acción','Play: compound interest in action')+'</div>'+
     '<div class="tjgrid">'+
-      '<label>Al mes S/<input data-invsim="m" type="number" step="1" value="'+esc(invSim.m)+'" placeholder="200"></label>'+
-      '<label>Años<input data-invsim="y" type="number" step="1" value="'+esc(invSim.y)+'" placeholder="10"></label>'+
-      '<label>Tasa % anual<input data-invsim="r" type="number" step="0.5" value="'+esc(invSim.r)+'" placeholder="8"></label>'+
+      '<label>'+tx('Al mes','Monthly')+' S/<input data-invsim="m" type="number" step="1" value="'+esc(invSim.m)+'" placeholder="200"></label>'+
+      '<label>'+tx('Años','Years')+'<input data-invsim="y" type="number" step="1" value="'+esc(invSim.y)+'" placeholder="10"></label>'+
+      '<label>'+tx('Tasa % anual','Yearly rate %')+'<input data-invsim="r" type="number" step="0.5" value="'+esc(invSim.r)+'" placeholder="8"></label>'+
     '</div>'+
     '<div class="plan-sum" id="invsim-out" style="margin-top:.8rem">'+invSimOut()+'</div>'+
-    '<div class="io-disc">ℹ️ Información educativa, no recomendación de un producto puntual. Las tasas cambian — contrasta con fuentes actuales antes de decidir.</div>'+
+    '<div class="io-disc">ℹ️ '+tx('Información educativa, no recomendación de un producto puntual. Las tasas cambian — contrasta con fuentes actuales antes de decidir.','Educational info, not a recommendation of any specific product. Rates change — check current sources before deciding.')+'</div>'+
   '</div>';
   return h+'</div>';
 }
