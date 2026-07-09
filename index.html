@@ -525,6 +525,9 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .ft-piso .ft-hint{font-weight:400; display:inline; margin-left:.15rem}
 .ftp-n{width:18px; height:18px; border-radius:50%; background:var(--accent); color:#fff; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; flex:none}
 .ftc-bar{height:8px; background:var(--line2); border-radius:99px; overflow:hidden}
+.ft-goalbar{height:5px; margin:-.15rem 0 .2rem}
+.ft-goal{font-size:11.5px; color:var(--tx3); margin:0 0 .6rem; line-height:1.4}
+.ft-goal b{color:var(--accent)}
 .ftc-fill{height:100%; background:var(--ok); border-radius:99px; transition:width .25s}
 .ftc-l{font-size:11.5px; color:var(--tx2); margin-top:.3rem}
 .ftc-l .neg,.ftm-r .neg{color:var(--bad)}
@@ -804,6 +807,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 <div id="wf-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="wf-card"></div></div>
 <div id="aho-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="aho-card"></div></div>
 <div id="gasto-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="gasto-card"></div></div>
+<div id="meta-ovl" class="cierre-ovl" hidden><div class="cierre-card" id="meta-card"></div></div>
 <button id="fab-gasto" class="fab-gasto" title="Anotar un gasto suelto">+ Gasto</button>
 <!-- 3 tabs = el balance general: Inicio (flujo del ciclo) · Deudas (pasivos) · Reserva (activos).
      Invertir vive DENTRO de Reserva (piso 3 de la escalera); Resumen se fundió en Deudas. -->
@@ -811,6 +815,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
   <button class="tabbtn active" data-view="inicio"><span class="ti">🏠</span><span>Inicio</span></button>
   <button class="tabbtn" data-view="deudas"><span class="ti">💳</span><span>Deudas</span></button>
   <button class="tabbtn" data-view="fondo"><span class="ti">🔒</span><span>Reserva</span></button>
+  <button class="tabbtn" data-view="informe"><span class="ti">📊</span><span>Informe</span></button>
 </nav>
 <script>
 // ===== Tema claro/oscuro: manual con el botón ☀️/🌙; sin elección guardada, sigue al sistema =====
@@ -845,6 +850,7 @@ function applyLang(){
   q('[data-view="inicio"] span:last-child',tx('Inicio','Home'));
   q('[data-view="deudas"] span:last-child',tx('Deudas','Debts'));
   q('[data-view="fondo"] span:last-child',tx('Reserva','Reserve'));
+  q('[data-view="informe"] span:last-child',tx('Informe','Report'));
   q('#fab-gasto',tx('+ Gasto','+ Expense'));
   q('#undo','↰ '+tx('Deshacer','Undo'));
   const td=document.getElementById('today');if(td)td.textContent=fmtFechaLarga(isoToday())+(lang==='en'?', ':' ')+new Date().getFullYear();
@@ -999,7 +1005,9 @@ function createCycle(type){
     base=isoOf(dt);}
   const id='c'+Date.now(), n=cycles.filter(c=>c.type===type).length+1;
   cycles.push({id,type,start,end,label:(type==='m'?'Mes ':type==='q'?'Quincena ':'Periodo ')+n});saveCycles();
-  const nd=def();nd.payday=base;localStorage.setItem(keyFor(id),JSON.stringify(nd));
+  const nd=def();nd.payday=base;
+  if(typeof seedMetaQuotas==='function')seedMetaQuotas(nd); // metas con fecha: su cuota nace en cada ciclo nuevo
+  localStorage.setItem(keyFor(id),JSON.stringify(nd));
   return id;
 }
 function addCycle(type){switchCycle(createCycle(type));}
@@ -1044,10 +1052,9 @@ function applyView(){
   const reset=document.querySelector('.reset');if(reset)reset.style.display=inicio?'':'none';
   const tpl=document.querySelector('.tpl');if(tpl)tpl.style.display=inicio?'':'none';       // plantillas y backup
   const bk=document.querySelector('.backup');if(bk)bk.style.display=inicio?'':'none';       // son cosas de Inicio
-  // El informe es del CICLO, no de las deudas → vive en Inicio (al final). Un usuario sin deudas
-  // jamás lo vería si estuviera en la tab Deudas. Deudas queda puro: gestión de deudas (el banco).
-  // Reserva = activos (colchón + metas) con Inversiones como piso 3 adentro.
-  setD('sec-informe', inicio);
+  // El informe es la LECTURA del ciclo (lo ejecutado real) → tab propio: al fondo de Inicio nadie
+  // lo veía. Deudas queda puro (gestión); Reserva = activos con Inversiones como piso 3 adentro.
+  setD('sec-informe', view==='informe');
   setD('debts', view==='deudas');
   setD('debts-mgmt', view==='deudas');
   setD('sec-invertir', view==='fondo');
@@ -1098,7 +1105,8 @@ function createCycleForToday(type){
   else{ if(dd<=15){start=y+'-'+pad2(m)+'-01';end=y+'-'+pad2(m)+'-15';} else {start=y+'-'+pad2(m)+'-16';end=y+'-'+pad2(m)+'-'+pad2(lastDay(y,m));} }
   const id='c'+Date.now(), n=cycles.filter(c=>c.type===type).length+1;
   cycles.push({id,type,start,end,label:(type==='m'?'Mes ':type==='q'?'Quincena ':'Periodo ')+n});saveCycles();
-  localStorage.setItem(keyFor(id),JSON.stringify(def()));
+  const nd=def();if(typeof seedMetaQuotas==='function')seedMetaQuotas(nd); // metas con fecha heredan su cuota
+  localStorage.setItem(keyFor(id),JSON.stringify(nd));
   return id;
 }
 (function resolveByDate(){
@@ -1215,6 +1223,26 @@ function hasCuentas(){return bancoTotal!==''&&!isNaN(parseFloat(bancoTotal));}
 function loadFondoCats(){try{const x=JSON.parse(localStorage.getItem('midas_fondo_cats'));return Array.isArray(x)?x:[];}catch(e){return [];}}
 let fondoCats=loadFondoCats();
 function saveFondoCats(){localStorage.setItem('midas_fondo_cats',JSON.stringify(fondoCats));}
+// ===== Metas con fecha (sinking fund): Navidad, cumpleaños, viaje =====
+// La meta guarda {target, hasta:'YYYY-MM'}. La app divide lo que falta entre los meses que quedan
+// → cuota mensual, y la SIEMBRA como categoría en la caja Ahorro de cada ciclo nuevo.
+function monthsUntil(ym){ // meses que quedan INCLUYENDO el actual (jul→dic = 6), mínimo 1
+  if(!ym)return 1;const t=new Date(),p=ym.split('-');
+  return Math.max((+p[0]-t.getFullYear())*12+(+p[1]-(t.getMonth()+1))+1,1);}
+function metaCuota(c){ // cuota mensual viva: lo que falta ÷ meses que quedan
+  const target=parseFloat(c.target)||0;if(target<=0)return 0;
+  const falta=Math.max(target-(parseFloat(c.a)||0),0);
+  return Math.ceil(falta/monthsUntil(c.hasta));}
+function seedMetaQuotas(x){ // siembra la cuota de cada meta viva en la caja Ahorro de un presupuesto NUEVO
+  const hoy=isoToday().slice(0,7);
+  fondoCats.forEach(c=>{
+    if(!(parseFloat(c.target)>0)||!c.hasta||c.hasta<hoy)return; // sin fecha, vencida o sin objetivo → no
+    const cuota=metaCuota(c);if(cuota<=0)return;
+    if((x.aho||[]).some(r=>(r.l||'').trim().toLowerCase()===(c.n||'').trim().toLowerCase()))return; // ya está
+    x.aho.push({l:c.n,a:cuota});
+  });
+  return x;
+}
 function fondoH(){
   // Reserva = tus ACTIVOS, leídos como escalera de 3 pisos: Colchón (protege) → Metas (ilusiona)
   // → Inversiones (multiplica, vive en sec-invertir debajo). Todo ahorro sube tu patrimonio.
@@ -1237,8 +1265,17 @@ function fondoH(){
       '<div class="ftc-bar"><div class="ftc-fill" style="width:'+pctC+'%"></div></div>'+
       '<div class="ftc-l">'+pe(Math.max(sin,0))+(target>0?' '+tx('de','of')+' '+pe(target)+' <span style="color:var(--tx3)">'+tx('(≈3 meses de tus necesidades)','(≈3 months of your needs)')+'</span>':'')+(sin<-0.5?' — <span class="neg">'+tx('asignaste a metas más de lo que tienes','you assigned more to goals than you have')+'</span>':'')+'</div>'+
       '<div class="ft-piso"><span class="ftp-n">2</span> '+tx('Metas','Goals')+' <span class="ft-hint">'+tx('sueños con nombre — la cuota de esperanza','dreams with a name — the hope installment')+'</span></div>'+
-      fondoCats.map((c,i)=>'<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="'+tx('Ej. Emergencia, Auto, Viaje','E.g. Emergency, Car, Trip')+'"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="'+tx('Quitar','Remove')+'">&times;</button></div>').join('')+
+      fondoCats.map((c,i)=>{
+        const target=parseFloat(c.target)||0, cuota=metaCuota(c);
+        const prog=target>0?Math.min((parseFloat(c.a)||0)/target*100,100):0;
+        return '<div class="ft-cat"><input class="ftc-n" data-ftc="'+i+'" data-ff="n" value="'+esc(c.n||'')+'" placeholder="'+tx('Ej. Emergencia, Auto, Viaje','E.g. Emergency, Car, Trip')+'"><span class="ftc-a">S/ <input data-ftc="'+i+'" data-ff="a" type="number" min="0" step="1" value="'+(c.a!=null?c.a:'')+'" placeholder="0"></span><button class="ftc-rm" data-ftcrm="'+i+'" aria-label="'+tx('Quitar','Remove')+'">&times;</button></div>'+
+          // Meta con fecha: barra de avance + la cuota viva ("aparta S/X/mes hasta dic")
+          (target>0?'<div class="ftc-bar ft-goalbar"><div class="ftc-fill" style="width:'+prog+'%"></div></div>'+
+            '<div class="ft-goal">'+pe(parseFloat(c.a)||0)+' '+tx('de','of')+' '+pe(target)+
+            (cuota>0&&c.hasta?' · '+tx('aparta','set aside')+' <b>'+pe(cuota)+tx('/mes','/mo')+'</b> '+tx('hasta','until')+' '+cap((lang==='en'?MESES_EN:MESES_ES)[(+c.hasta.split('-')[1])-1].slice(0,3))+' '+c.hasta.split('-')[0]:(cuota<=0?' · ✅ '+tx('¡completa!','done!'):''))+'</div>':'');
+      }).join('')+
       '<button class="add" data-ftadd="1"><span class="p">+</span> '+tx('Agregar meta','Add goal')+'</button>'+
+      '<button class="add" data-ftdate="1"><span class="p">🎂</span> '+tx('Meta con fecha (Navidad, cumple…)','Goal with a date (Christmas, birthday…)')+'</button>'+
     '</div>';
 }
 function refreshFondo(){const e=document.getElementById('sec-fondo');if(e)e.innerHTML=fondoH();}
@@ -1256,7 +1293,43 @@ function refreshSinAsignar(){ // actualiza el Colchón (piso 1) en vivo sin re-r
   });
   sf.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.ftadd){fondoCats.push({n:'',a:''});saveFondoCats();refreshFondo();}
+    else if(b.dataset.ftdate){openMetaModal();}
     else if(b.dataset.ftcrm!==undefined){fondoCats.splice(+b.dataset.ftcrm,1);saveFondoCats();refreshFondo();}
+  });
+})();
+// Mini-modal "Meta con fecha": nombre + monto + mes objetivo → crea la meta y siembra su cuota
+// en la caja Ahorro de ESTE ciclo (los ciclos nuevos la heredan solos vía seedMetaQuotas).
+function openMetaModal(){
+  const el=document.getElementById('meta-card');if(!el)return;
+  const t=new Date();const defMes=t.getFullYear()+'-12'; // default: diciembre de este año (Navidad)
+  el.innerHTML='<div class="ci-h">🎂 '+tx('Meta con fecha','Goal with a date')+'</div>'+
+    '<div class="ci-sub">'+tx('Dime cuánto necesitas y para cuándo — yo lo divido entre los meses que quedan.','Tell me how much you need and by when — I\'ll split it across the months left.')+'</div>'+
+    '<input class="gs-name" id="mg-name" placeholder="'+tx('Navidad, cumple de mamá, viaje…','Christmas, mom\'s birthday, trip…')+'">'+
+    '<div class="gs-amt">S/ <input id="mg-amt" type="number" inputmode="decimal" min="0" step="1" placeholder="600"></div>'+
+    '<label class="wel-pl" style="display:block;margin:.6rem 0">'+tx('¿Para cuándo?','By when?')+'<input type="month" id="mg-mes" value="'+defMes+'"></label>'+
+    '<div class="ci-note" id="mg-preview"></div>'+
+    '<div class="ci-btns"><button class="ci-cancel" data-mgcancel="1">'+tx('Cancelar','Cancel')+'</button>'+
+    '<button class="ci-go" data-mggo="1">✓ '+tx('Crear meta','Create goal')+'</button></div>';
+  const ov=document.getElementById('meta-ovl');if(ov)ov.hidden=false;
+  const prev=()=>{const a=parseFloat((document.getElementById('mg-amt')||{}).value)||0;
+    const m=(document.getElementById('mg-mes')||{}).value||defMes;
+    const p=document.getElementById('mg-preview');if(!p)return;
+    p.innerHTML=a>0?tx('Te tocan','That\'s')+' <b>'+pe(Math.ceil(a/monthsUntil(m)))+tx('/mes','/mo')+'</b> '+tx('desde este ciclo.','starting this cycle.'):'';};
+  el.addEventListener('input',prev);
+  setTimeout(()=>{const i=document.getElementById('mg-name');if(i)i.focus();},60);
+}
+(function(){const ov=document.getElementById('meta-ovl');if(!ov)return;
+  ov.addEventListener('click',e=>{
+    if(e.target.closest('[data-mgcancel]')||e.target===ov){ov.hidden=true;return;}
+    if(!e.target.closest('[data-mggo]'))return;
+    const name=((document.getElementById('mg-name')||{}).value||'').trim();
+    const amt=parseFloat((document.getElementById('mg-amt')||{}).value)||0;
+    const mes=(document.getElementById('mg-mes')||{}).value||'';
+    if(!name||amt<=0||!mes){const i=document.getElementById(!name?'mg-name':'mg-amt');if(i)i.focus();return;}
+    snapshot();
+    fondoCats.push({n:name,a:'',target:amt,hasta:mes});saveFondoCats();
+    seedMetaQuotas(d);save(); // la cuota entra YA a la caja Ahorro de este ciclo
+    ov.hidden=true;refreshFondo();render();
   });
 })();
 /* ===== Ceremonia de cierre (period-end close) — liquidación POR CAJA =====
@@ -1864,13 +1937,8 @@ function render(){
     '<div class="sec" id="sec-informe"><div class="sec-h"><span class="t">📊 '+tx('Informe del ciclo','Cycle report')+'</span></div><div id="informe-body"></div></div>'+
     '<button class="reset" data-reset="1">'+tx('Reiniciar esta quincena','Reset this cycle')+'</button>'+
     templatesH()+
-    '<div class="backup"><button class="bk-btn" data-export="1">⬇ '+tx('Exportar copia','Export backup')+'</button><button class="bk-btn" data-import="1">⬆ '+tx('Importar copia','Import backup')+'</button><input type="file" id="importfile" accept="application/json,.json" hidden></div>'+
-    '<div id="focusnav" class="focusnav">'+
-      '<button id="focus-back" class="fn-btn" data-focus="-1">← Atrás</button>'+
-      '<span id="focus-label" class="fn-lbl"></span>'+
-      '<button id="focus-cont" class="fn-btn primary" data-focus="1">Continuar →</button>'+
-    '</div>'+
-    '<button id="focus-toggle" class="fn-toggle" data-focustoggle="1"></button>';
+    '<div class="backup"><button class="bk-btn" data-export="1">⬇ '+tx('Exportar copia','Export backup')+'</button><button class="bk-btn" data-import="1">⬆ '+tx('Importar copia','Import backup')+'</button><input type="file" id="importfile" accept="application/json,.json" hidden></div>';
+  // (Modo enfocado eliminado: era el wizard viejo de escenas — nadie lo usaba y ensuciaba el pie.)
   recompute();
 }
 
@@ -2034,6 +2102,12 @@ function recompute(){
       else if(d.closed){bc.innerHTML='';}
       else if(!bx){bc.innerHTML='';}
       else if(bx.extra>0.5){bc.innerHTML='<button class="hi-chip-btn ok" data-wfopen="1">✨ S/ '+pn(bx.extra)+' '+tx('sin trabajo — dale un destino →','with no job — give it one →')+'</button>';}
+      // Plan en déficit PERO tienes plata en mano que lo cubre (total o en parte): antes la app se
+      // quedaba MUDA aquí (la plata estaba "explicada" cubriendo el hueco, extra≈0, ningún chip) —
+      // justo cuando más falta la acción. Este botón formaliza tu plata como ingreso del plan.
+      else if(typeof wfDeficit==='function'&&wfDeficit()>0.5&&saldoVivo()>0.5){
+        const need=wfDeficit(), usa=Math.round(Math.min(need,Math.max(saldoVivo(),0)));
+        bc.innerHTML='<button class="hi-chip-btn ok" data-cubredef="'+usa+'">🩹 '+tx('Tu plan tiene un déficit de','Your plan is short')+' S/ '+pn(need)+' — '+tx('cúbrelo con tu plata en mano','cover it with your money on hand')+' (S/ '+pn(usa)+') →</button>';}
       else if(bx.extra<-0.5){bc.innerHTML='<div class="hi-chip-warn">⚠ '+tx('Te faltan','You\'re short')+' S/ '+pn(-bx.extra)+' '+tx('para tu plan. ¿Un gasto sin registrar, o un ingreso que aún no marcas?','for your plan. An unlogged expense, or income you haven\'t checked yet?')+'</div>';}
       else {bc.innerHTML='';}
     }}
@@ -2208,6 +2282,7 @@ app.addEventListener('click',e=>{
   else if(b.dataset.import){const fi=document.getElementById('importfile');if(fi)fi.click();}
   else if(b.dataset.cerrar){openCierre();}
   else if(b.dataset.wfopen){openWindfall();}
+  else if(b.dataset.cubredef){snapshot();injectPlata(+b.dataset.cubredef);save();render();renderDebts();} // plata en mano → ingreso del plan (nace recibida)
   else if(b.dataset.asignar){const pp=b.dataset.asignar.split('-');asignaEnCategoria(pp[0],+pp[1]);}
   else if(b.dataset.asignalisto){asignaListo();}
   else if(b.dataset.asignacancel){asignaCancelar();}
