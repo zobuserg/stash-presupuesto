@@ -49,10 +49,12 @@ body{
   font-size:15px; line-height:1.5;
 }
 .head{margin-bottom:2rem; position:relative}
-#undo{position:absolute; top:0; right:0; font:inherit; font-size:12.5px; font-weight:500;
-  color:var(--accent); background:transparent; border:1px solid var(--line); cursor:pointer;
-  padding:.42rem .85rem; border-radius:20px; transition:.15s}
+/* Deshacer: píldora flotante abajo-izquierda (espejo del "+ Gasto") — aparece solo cuando hay algo que deshacer */
+#undo{position:fixed; left:1rem; bottom:4.4rem; z-index:60; font:inherit; font-size:13px; font-weight:700;
+  color:var(--tx); background:var(--card); border:1.5px solid var(--line); cursor:pointer;
+  padding:.7rem 1rem; border-radius:999px; box-shadow:0 4px 14px rgba(0,0,0,.18); transition:.15s}
 #undo:hover{border-color:var(--accent)}
+#undo:active{transform:scale(.96)}
 #undo[hidden]{display:none}
 .head h1{font-size:28px; font-weight:600; letter-spacing:-.022em; margin-bottom:.65rem}
 .month-wrap{display:inline-flex; align-items:center; gap:.4rem; color:var(--tx2); font-size:14px}
@@ -590,9 +592,8 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .fab-gasto:active{transform:scale(.96)}
 .gs-amt{display:flex; align-items:center; gap:.4rem; margin:.6rem 0 .8rem; font-size:22px; font-weight:800; color:var(--tx)}
 .gs-amt input{flex:1; font:inherit; font-size:26px; font-weight:800; color:var(--tx); background:var(--line2); border:1.5px solid var(--line); border-radius:12px; padding:.55rem .7rem; width:100%; min-width:0}
-.gs-boxes{display:flex; gap:.5rem; margin-bottom:.7rem}
-.gs-box{flex:1; font:inherit; font-size:13px; font-weight:700; border:1.5px solid var(--line); background:transparent; color:var(--tx); border-radius:10px; padding:.6rem .5rem; cursor:pointer}
-.gs-box.on{border-color:var(--accent); background:var(--accent); color:#fff}
+.gs-date{display:flex; align-items:center; gap:.5rem; font-size:12.5px; color:var(--tx2); margin:.55rem 0 .8rem}
+.gs-date input{font:inherit; font-size:13px; color:var(--tx); background:transparent; border:none; border-bottom:1.5px dashed var(--line); padding:1px 2px}
 .gs-name{width:100%; font:inherit; font-size:13px; color:var(--tx); background:transparent; border:1.5px solid var(--line); border-radius:10px; padding:.55rem .7rem; margin-bottom:.9rem}
 /* Modo reparto ("a un lugar específico"): banner + botón +S/ en cada categoría */
 .asigna-banner{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; background:var(--accent); color:#fff; border-radius:var(--rad-sm); padding:.6rem .85rem; margin:.4rem 0 .2rem; font-size:12.5px; font-weight:600; box-shadow:var(--shadow)}
@@ -727,7 +728,8 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .ce-done:hover{filter:brightness(1.08)}
 #themebtn{position:absolute; top:0; right:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:15px; line-height:1; transition:.15s}
 #themebtn:hover{border-color:var(--accent)}
-#undo{right:42px}
+#langbtn{position:absolute; top:0; right:42px; height:34px; border-radius:999px; border:1px solid var(--line); background:transparent; cursor:pointer; font:inherit; font-size:11.5px; font-weight:800; letter-spacing:.04em; padding:0 .7rem; color:var(--tx2); transition:.15s}
+#langbtn:hover{border-color:var(--accent); color:var(--accent)}
 /* Cada caja del 50/30/20 vive en un contenedor de su color — se distingue de un vistazo qué número es de qué */
 .sec-tint{border-radius:var(--rad); border:1px solid; padding:1rem .9rem 1.05rem; margin-top:1.2rem}
 #sec-aho.sec-tint{background:rgba(52,199,89,.07); border-color:rgba(52,199,89,.32)}
@@ -1618,21 +1620,16 @@ function askAhoDestino(k,amt){
     commitItemPaid(p.k);
   });
 })();
-// ===== Gasto suelto (quick capture) — el flujo manual de DD ("Sueltos" + sub con fecha + ✓)
-// automatizado en 2 taps: monto → Anotar. Nace presupuestado Y ejecutado a la vez (con ✓) →
-// la cascada absorbe el consumo y el contador vivo baja al instante.
-let gastoBox=localStorage.getItem('midas_gasto_box')||'nec'; // recuerda la última caja usada
-function gsFecha(){const M=['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];const t=new Date();return t.getDate()+' '+M[t.getMonth()];}
+// ===== Gasto (quick capture) — monto + nota corta (+ fecha editable). Sin elegir caja: los gastos
+// rápidos son por definición Necesidades, y la categoría se llama "Gastos" (congruente con el botón
+// "+ Gasto"). Nace presupuestado Y ejecutado (✓) → cascada absorbe y el contador vivo baja al instante.
 function openGasto(){
   const el=document.getElementById('gasto-card'); if(!el)return;
-  el.innerHTML='<div class="ci-h">💸 '+tx('Gasto suelto','Quick expense')+'</div>'+
-    '<div class="ci-sub">'+tx('Anótalo y listo: queda en "Sueltos" con su ✓ y baja de tu plata.','Jot it down and done: it lands in "Loose" with its ✓ and comes off your money.')+'</div>'+
+  el.innerHTML='<div class="ci-h">💸 '+tx('Gasto','Expense')+'</div>'+
+    '<div class="ci-sub">'+tx('Monto y una nota corta — queda en "Gastos" con su ✓ y baja de tu plata.','Amount and a short note — it lands in "Expenses" with its ✓ and comes off your money.')+'</div>'+
     '<div class="gs-amt">S/ <input id="gs-amt-inp" type="number" inputmode="decimal" min="0" step="0.5" placeholder="0"></div>'+
-    '<div class="gs-boxes">'+
-      '<button class="gs-box'+(gastoBox==='nec'?' on':'')+'" data-gsbox="nec">🧺 '+tx('Necesidades','Needs')+'</button>'+
-      '<button class="gs-box'+(gastoBox==='luj'?' on':'')+'" data-gsbox="luj">🎈 '+tx('Gustos','Wants')+'</button>'+
-    '</div>'+
-    '<input class="gs-name" id="gs-name-inp" value="'+tx('Suelto','Loose')+' · '+gsFecha()+'" placeholder="'+tx('¿En qué fue?','What was it for?')+'">'+
+    '<input class="gs-name" id="gs-name-inp" maxlength="28" placeholder="'+tx('¿En qué fue? Ej. taxi refri','What for? E.g. cab fridge')+'">'+
+    '<label class="gs-date">'+tx('Fecha','Date')+' <input id="gs-date-inp" type="date" value="'+isoToday()+'"></label>'+
     '<div class="ci-btns"><button class="ci-cancel" data-gscancel="1">'+tx('Cancelar','Cancel')+'</button>'+
     '<button class="ci-go" data-gsgo="1">✓ '+tx('Anotar','Log it')+'</button></div>';
   const ov=document.getElementById('gasto-ovl'); if(ov)ov.hidden=false;
@@ -1642,23 +1639,22 @@ function openGasto(){
   const fab=document.getElementById('fab-gasto'); if(fab)fab.addEventListener('click',openGasto);
   const ov=document.getElementById('gasto-ovl'); if(!ov)return;
   ov.addEventListener('click',e=>{
-    const bx=e.target.closest('[data-gsbox]');
-    if(bx){gastoBox=bx.dataset.gsbox;localStorage.setItem('midas_gasto_box',gastoBox);
-      ov.querySelectorAll('.gs-box').forEach(b=>b.classList.toggle('on',b.dataset.gsbox===gastoBox));return;}
     if(e.target.closest('[data-gscancel]')||e.target===ov){ov.hidden=true;return;}
     if(!e.target.closest('[data-gsgo]'))return;
     const amt=parseFloat((document.getElementById('gs-amt-inp')||{}).value)||0;
     if(amt<=0){const i=document.getElementById('gs-amt-inp');if(i)i.focus();return;} // sin monto no hay gasto
-    const name=((document.getElementById('gs-name-inp')||{}).value||'').trim()||(tx('Suelto','Loose')+' · '+gsFecha());
-    const g=gastoBox;
+    const desc=((document.getElementById('gs-name-inp')||{}).value||'').trim();
+    const fecha=(document.getElementById('gs-date-inp')||{}).value||isoToday();
+    const name=(desc||tx('Gasto','Expense'))+' · '+dueLabel(fecha);
+    const g='nec';
     snapshot();
-    // busca (o crea) la categoría "Sueltos"/"Loose" de esa caja
-    let ci=(d[g]||[]).findIndex(r=>/^(sueltos?|loose)$/i.test((r.l||'').trim()));
-    if(ci<0){d[g].push({l:tx('Sueltos','Loose'),a:0,sub:[]});ci=d[g].length-1;}
+    // busca (o crea) la categoría "Gastos" (acepta la vieja "Sueltos" de datos existentes)
+    let ci=(d[g]||[]).findIndex(r=>/^(gastos?|sueltos?|loose|expenses?)$/i.test((r.l||'').trim()));
+    if(ci<0){d[g].push({l:tx('Gastos','Expenses'),a:0,sub:[]});ci=d[g].length-1;}
     const cat=d[g][ci];
     if(!cat.sub)cat.sub=[];
-    // si "Sueltos" tenía monto plano sin subs, se preserva como primera sub (a pasará a ser sum(sub))
-    if(cat.sub.length===0&&(parseFloat(cat.a)||0)>0)cat.sub.push({l:'Anterior',a:cat.a});
+    // si la categoría tenía monto plano sin subs, se preserva como primera sub (a pasará a ser sum(sub))
+    if(cat.sub.length===0&&(parseFloat(cat.a)||0)>0)cat.sub.push({l:tx('Anterior','Previous'),a:cat.a});
     cat.sub.push({l:name,a:amt});
     cat.a=sum(cat.sub);
     ov.hidden=true;
@@ -2355,15 +2351,32 @@ app.addEventListener('click',e=>{
   else if(b.classList.contains('rm')){
     snapshot();
     const g=b.dataset.grp,i=+b.dataset.idx;
+    // Borrar con ✗ un ítem YA PAGADO debe DEVOLVER su plata: al contador vivo (cashDelta mide la caída
+    // del ejecutado y ajusta bancoTotal), a la Reserva si era un ahorro que viajó (ahoMoved), y al
+    // contador si era un ingreso ya recibido (incGot). "Me equivoqué" no puede costar plata.
+    const revertAho=keys=>{keys.forEach(k=>{const amt=(d.ahoMoved&&d.ahoMoved[k])||0;
+      if(amt>0.5){fondo-=amt;saveFondo();addResLog(-amt,ahoKeyLabel(k)+tx(' · borrado',' · deleted'));}});};
     if(b.dataset.sub!==undefined){
       const j=+b.dataset.sub;
-      shiftPaidKeys(g,i,j); // corre las llaves de pago para que sigan a las subs que quedan
-      d[g][i].sub.splice(j,1);
-      if(d[g][i].sub.length===0)delete d[g][i].sub; else d[g][i].a=sum(d[g][i].sub);
+      if(g==='aho')revertAho([g+'-'+i+'-'+j]);
+      cashDelta(()=>{
+        shiftPaidKeys(g,i,j); // corre las llaves de pago para que sigan a las subs que quedan
+        d[g][i].sub.splice(j,1);
+        // Última sub borrada: el monto de la categoría era la SUMA de sus subs → queda en 0 (no un
+        // residuo fantasma) y su ✓ de padre se va con él (ya no queda nada pagado ahí).
+        if(d[g][i].sub.length===0){delete d[g][i].sub;d[g][i].a=0;if(d.itemPaid)delete d.itemPaid[g+'-'+i];}
+        else d[g][i].a=sum(d[g][i].sub);
+      });
       save();render();
     }else{
-      shiftPaidKeys(g,i,null); // corre las llaves para que el estado de pago siga a la categoría correcta
-      d[g].splice(i,1);save();render();
+      if(g==='aho'){const keys=[g+'-'+i];((d[g][i]||{}).sub||[]).forEach((s,j)=>keys.push(g+'-'+i+'-'+j));revertAho(keys);}
+      if(g==='inc'){const amt=(d.incGot&&d.incGot['inc-'+i])||0; // ingreso recibido borrado → esa plata sale del contador
+        if(amt>0.5&&hasCuentas()){bancoTotal=(parseFloat(bancoTotal)||0)-amt;saveBancoTotal();}}
+      cashDelta(()=>{
+        shiftPaidKeys(g,i,null); // corre las llaves para que el estado de pago siga a la categoría correcta
+        d[g].splice(i,1);
+      });
+      save();render();
     }
   }
 });
