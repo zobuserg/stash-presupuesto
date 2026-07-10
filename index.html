@@ -957,9 +957,12 @@ function renderCycleBar(){
     // Un solo "+" (crear ciclo) — al tocarlo despliega las 3 opciones. Tres botones crípticos
     // (+Q/+M/+P) siempre visibles eran ruido y se confundían con el ✎ (que edita el actual).
     '<div class="cyc-addrow">'+(cycAddOpen
-      ? '<button class="cyc-add" data-addcycle="q">'+tx('Quincena','Half-month')+'</button>'+
-        '<button class="cyc-add" data-addcycle="m">'+tx('Mes','Month')+'</button>'+
-        '<button class="cyc-add" data-addcycle="c">'+tx('Personalizado','Custom')+'</button>'+
+      ? (function(){ // el tipo de tu ÚLTIMO ciclo va primero — lo normal es continuar el ritmo que llevas
+          const lt=(cycles[cycles.length-1]||{}).type||'q';
+          return [['q',tx('Quincena','Half-month')],['m',tx('Mes','Month')],['c',tx('Personalizado','Custom')]]
+            .sort((a,b)=>(a[0]===lt?0:1)-(b[0]===lt?0:1))
+            .map(o=>'<button class="cyc-add" data-addcycle="'+o[0]+'">'+o[1]+(o[0]===lt?' ✓':'')+'</button>').join('');
+        })()+
         '<button class="cyc-add" data-addclose="1" title="'+tx('Cancelar','Cancel')+'">✕</button>'
       : '<button class="cyc-add" data-addopen="1" title="'+tx('Crear un ciclo nuevo','Create a new cycle')+'">'+tx('+ Nuevo ciclo','+ New cycle')+'</button>')+
     '</div>'+
@@ -1265,10 +1268,25 @@ function slotIndex(dateISO,per){const p=String(dateISO).split('-'),y=+p[0],m=+p[
   return per===2?(y*12+(m-1))*2+(dd>15?1:0):y*12+(m-1);}
 function slotsBetween(a,b,per){return Math.max(slotIndex(b,per)-slotIndex(a,per)+1,1);}
 function metaSlots(fromISO,hasta,per){ // nº de ciclos desde el ciclo que EMPIEZA en fromISO hasta la fecha meta
-  const from=String(fromISO||isoToday()), hs=String(hasta);
-  const reales=cycles.filter(c=>c.start&&c.start>=from.slice(0,10)&&c.start<=hs);
-  if(reales.length)return reales.length;
-  return slotsBetween(from,hs,per);
+  // HÍBRIDO: cuenta tus ciclos REALES donde existen, y más allá del último proyecta con SU ritmo
+  // (quincenal → medias-lunas, mensual → meses, personalizado → bloques de su misma duración en días).
+  // Así una meta a 10 meses no divide solo entre los 3 ciclos que llevas creados. Cuando los ciclos
+  // reales nazcan, las cuotas sin ✓ se recalculan solas (refresco al visitar).
+  const from=String(fromISO||isoToday()).slice(0,10), hs=String(hasta);
+  const reales=cycles.filter(c=>c.start&&c.start>=from&&c.start<=hs).sort((a,b)=>a.start<b.start?-1:1);
+  if(!reales.length)return slotsBetween(from,hs,per); // barra vacía en ese rango → proyección pura
+  let n=reales.length;
+  const last=reales[n-1], covEnd=last.end||last.start;
+  if(covEnd>=hs)return n; // tu barra llega hasta la meta → cuenta exacta, cero proyección
+  const lastPer=last.type==='m'?1:(last.type==='q'?2:0);
+  if(lastPer){
+    const dt=new Date(covEnd+'T00:00:00');dt.setDate(dt.getDate()+1);const nextStart=isoOf(dt);
+    if(nextStart<=hs)n+=slotsBetween(nextStart,hs,lastPer);
+  } else { // ciclo personalizado (ej. bisemanal): proyecta bloques de su misma duración
+    const dur=Math.max(Math.round((dateVal(last.end)-dateVal(last.start))/864e5)+1,1);
+    n+=Math.ceil(Math.max((dateVal(hs)-dateVal(covEnd))/864e5,0)/dur);
+  }
+  return Math.max(n,1);
 }
 // Siembra la cuota de cada meta viva en la caja Ahorro de un presupuesto. cyc = {type,start} del ciclo
 // destino: quincenal parte la cuota mensual en 2 y el contador cuenta medias-lunas (1/12 en vez de 1/6).
