@@ -1245,11 +1245,11 @@ function saveFondoCats(){localStorage.setItem('midas_fondo_cats',JSON.stringify(
 // La meta guarda {target, hasta:'YYYY-MM', inicio:'YYYY-MM'}. La app divide lo que falta entre los
 // CICLOS que quedan (quincenal = 2 por mes) y siembra la cuota en la caja Ahorro de cada ciclo nuevo,
 // con contador "3/6" en el nombre. El ✓ de esa cuota viaja a la Reserva Y avanza la barra de la meta.
-function monthsUntil(ym){ // meses que quedan INCLUYENDO el actual (jul→dic = 6), mínimo 1
-  if(!ym)return 1;const t=new Date(),p=ym.split('-');
+function monthsUntil(ym){ // meses que quedan INCLUYENDO el actual (jul→dic = 6), mínimo 1. Acepta 'YYYY-MM' o fecha completa.
+  if(!ym)return 1;const t=new Date(),p=String(ym).slice(0,7).split('-');
   return Math.max((+p[0]-t.getFullYear())*12+(+p[1]-(t.getMonth()+1))+1,1);}
-function monthsBetween(a,b){ // meses de a hasta b, inclusivo ('2026-07','2026-12' → 6), mínimo 1
-  if(!a||!b)return 1;const pa=a.split('-'),pb=b.split('-');
+function monthsBetween(a,b){ // meses de a hasta b, inclusivo ('2026-07','2026-12' → 6), mínimo 1. Acepta fecha completa.
+  if(!a||!b)return 1;const pa=String(a).slice(0,7).split('-'),pb=String(b).slice(0,7).split('-');
   return Math.max((+pb[0]-+pa[0])*12+(+pb[1]-+pa[1])+1,1);}
 function metaCuota(c){ // cuota MENSUAL viva: lo que falta ÷ meses que quedan (se auto-corrige sola)
   const target=parseFloat(c.target)||0;if(target<=0)return 0;
@@ -1266,7 +1266,7 @@ function seedMetaQuotas(x,cyc){
   const ym=(c0.start||isoToday()).slice(0,7);
   const dd=+((c0.start||isoToday()).split('-')[2]||1);
   fondoCats.forEach(c=>{
-    if(!(parseFloat(c.target)>0)||!c.hasta||c.hasta<ym)return; // sin fecha, vencida o sin objetivo → no
+    if(!(parseFloat(c.target)>0)||!c.hasta||String(c.hasta).slice(0,7)<ym)return; // sin fecha, vencida o sin objetivo → no
     const cuotaMes=metaCuota(c);if(cuotaMes<=0)return; // ya completa
     if((x.aho||[]).some(r=>metaBase(r.l)===(c.n||'').trim().toLowerCase()))return; // ya está en este ciclo
     const N=monthsBetween(c.inicio||ym,c.hasta)*per;
@@ -1304,7 +1304,7 @@ function fondoH(){
           // Meta con fecha: barra de avance + la cuota viva ("aparta S/X/mes hasta dic")
           (target>0?'<div class="ftc-bar ft-goalbar"><div class="ftc-fill" style="width:'+prog+'%"></div></div>'+
             '<div class="ft-goal">'+pe(parseFloat(c.a)||0)+' '+tx('de','of')+' '+pe(target)+
-            (cuota>0&&c.hasta?' · '+tx('aparta','set aside')+' <b>'+pe(cuota)+tx('/mes','/mo')+'</b> '+tx('hasta','until')+' '+cap((lang==='en'?MESES_EN:MESES_ES)[(+c.hasta.split('-')[1])-1].slice(0,3))+' '+c.hasta.split('-')[0]:(cuota<=0?' · ✅ '+tx('¡completa!','done!'):''))+'</div>':'');
+            (cuota>0&&c.hasta?' · '+tx('aparta','set aside')+' <b>'+pe(cuota)+tx('/mes','/mo')+'</b> '+tx('hasta el','until')+' '+(String(c.hasta).length>7?dueLabel(c.hasta):cap((lang==='en'?MESES_EN:MESES_ES)[(+String(c.hasta).split('-')[1])-1].slice(0,3)))+' '+String(c.hasta).split('-')[0]:(cuota<=0?' · ✅ '+tx('¡completa!','done!'):''))+'</div>':'');
       }).join('')+
       '<button class="add" data-ftadd="1"><span class="p">+</span> '+tx('Agregar meta','Add goal')+'</button>'+
       '<button class="add" data-ftdate="1"><span class="p">🎂</span> '+tx('Meta con fecha (Navidad, cumple…)','Goal with a date (Christmas, birthday…)')+'</button>'+
@@ -1333,12 +1333,12 @@ function refreshSinAsignar(){ // actualiza el Colchón (piso 1) en vivo sin re-r
 // en la caja Ahorro de ESTE ciclo (los ciclos nuevos la heredan solos vía seedMetaQuotas).
 function openMetaModal(){
   const el=document.getElementById('meta-card');if(!el)return;
-  const t=new Date();const defMes=t.getFullYear()+'-12'; // default: diciembre de este año (Navidad)
+  const t=new Date();const defMes=t.getFullYear()+'-12-24'; // default: Navidad de este año (editable, día exacto)
   el.innerHTML='<div class="ci-h">🎂 '+tx('Meta con fecha','Goal with a date')+'</div>'+
     '<div class="ci-sub">'+tx('Dime cuánto necesitas y para cuándo — yo lo divido entre los meses que quedan.','Tell me how much you need and by when — I\'ll split it across the months left.')+'</div>'+
     '<input class="gs-name" id="mg-name" placeholder="'+tx('Navidad, cumple de mamá, viaje…','Christmas, mom\'s birthday, trip…')+'">'+
     '<div class="gs-amt">S/ <input id="mg-amt" type="number" inputmode="decimal" min="0" step="1" placeholder="600"></div>'+
-    '<label class="wel-pl" style="display:block;margin:.6rem 0">'+tx('¿Para cuándo?','By when?')+'<input type="month" id="mg-mes" value="'+defMes+'"></label>'+
+    '<label class="wel-pl" style="display:block;margin:.6rem 0">'+tx('¿Para cuándo? (día exacto)','By when? (exact day)')+'<input type="date" id="mg-mes" value="'+defMes+'"></label>'+
     '<div class="ci-note" id="mg-preview"></div>'+
     '<div class="ci-btns"><button class="ci-cancel" data-mgcancel="1">'+tx('Cancelar','Cancel')+'</button>'+
     '<button class="ci-go" data-mggo="1">✓ '+tx('Crear meta','Create goal')+'</button></div>';
@@ -2347,8 +2347,12 @@ app.addEventListener('click',e=>{
   else if(b.dataset.debtformsave){
     const form=b.closest('.cardform');const get=k=>{const el=form&&form.querySelector('[data-cf="'+k+'"]');return el?el.value:'';};
     const isCard=debtForm&&debtForm.kind==='card';
-    const obj={n:get('n')||(isCard?'Tarjeta':'Préstamo'),total:get('total'),mes:get('mes'),min:get('min'),vence:get('vence'),kind:isCard?'card':'loan'};
+    const obj={n:get('n')||(isCard?tx('Tarjeta','Card'):tx('Préstamo','Loan')),total:get('total'),mes:get('mes'),min:get('min'),vence:get('vence'),kind:isCard?'card':'loan'};
     if(isCard){obj.limite=get('limite');obj.disp=get('disp');obj.tcea=get('tcea');}
+    else{obj.cuotas=get('cuotas');
+      // cuota vacía + total y cuotas puestos → la calculo yo (total ÷ cuotas)
+      if(!parseFloat(obj.min)&&parseFloat(obj.total)>0&&parseFloat(obj.cuotas)>0)
+        obj.min=String(Math.round(parseFloat(obj.total)/parseFloat(obj.cuotas)*100)/100);}
     if(debtForm&&debtForm.idx==='new')debts.push(obj);else if(debtForm&&debts[debtForm.idx])Object.assign(debts[debtForm.idx],obj);
     debtForm=null;saveDebts();render();renderDebts();
   }
@@ -2548,7 +2552,7 @@ function debtRowH(x,i){const card=isCardDebt(x);
       (card
         ? f(tx('Línea de crédito','Credit limit'),'limite','0',1)+f(tx('Disponible (libre)','Available (free)'),'disp','0',1)+
           f(tx('Pago mínimo','Minimum payment'),'min','0',0.01)+f(tx('Pago del mes','This month\'s payment'),'mes','0',0.01)+f(tx('TCEA % anual','APR % yearly'),'tcea','',0.01)
-        : f(tx('Saldo (lo que debes)','Balance (what you owe)'),'total','0',0.01)+f(tx('Cuota mensual','Monthly installment'),'min','0',0.01))+
+        : f(tx('Saldo (lo que debes)','Balance (what you owe)'),'total','0',0.01)+f(tx('¿En cuántas cuotas?','How many installments?'),'cuotas','2',1)+f(tx('Cuota mensual','Monthly installment'),'min','0',0.01))+
       '<label class="df-l">'+tx('Fecha de pago','Due date')+'<input data-di="'+i+'" data-df="vence" type="date" value="'+(x.vence||'')+'"></label>'+
     '</div>'+
     (card?'<div class="dr-debe">'+tx('Debes aprox','You owe approx.')+' <b>'+pe(debe)+'</b> <span>· '+tx('línea − disponible (calculado, no lo tipeas)','limit − available (calculated, not typed)')+'</span></div>':'')+
@@ -2631,11 +2635,19 @@ function debtFormH(){
   const f=(lbl,key,ph)=>'<label class="cf-l">'+lbl+'<input class="cf-i" data-cf="'+key+'" type="number" min="0" step="1" value="'+v(key)+'" placeholder="'+ph+'"></label>';
   let h='<div class="cardform"><div class="cf-h">'+(isNew?(isCard?tx('Nueva tarjeta','New card'):tx('Nuevo préstamo','New loan')):tx('Editar','Edit'))+'</div>'+
     '<label class="cf-l">'+tx('Nombre','Name')+'<input class="cf-i" data-cf="n" type="text" value="'+v('n')+'" placeholder="'+(isCard?tx('Ej. Visa BCP','E.g. Visa card'):tx('Ej. Préstamo auto','E.g. Car loan'))+'"></label>';
-  if(isCard) h+=f(tx('Línea de crédito','Credit limit'),'limite','3000')+f(tx('Monto usado (lo que debes)','Amount used (what you owe)'),'total','1200')+f(tx('Monto disponible (lo que el banco te deja usar)','Available (what the bank still lets you use)'),'disp','1800')+f(tx('Tasa de interés anual % — TCEA (opcional)','Yearly interest % — APR (optional)'),'tcea','75');
-  else h+=f(tx('Monto total de la deuda','Total debt amount'),'total','5000');
-  h+=f(tx('Pago mensual','Monthly payment'),'mes','300')+f(tx('Pago mínimo','Minimum payment'),'min','150')+
-    '<label class="cf-l">'+tx('Fecha de pago','Due date')+'<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>'+
-    '<div class="cf-btns"><button class="cf-cancel" data-debtformcancel="1">'+tx('Cancelar','Cancel')+'</button><button class="cf-save" data-debtformsave="1">'+tx('Guardar en el banco','Save to bank')+'</button></div></div>';
+  if(isCard){
+    h+=f(tx('Línea de crédito','Credit limit'),'limite','3000')+f(tx('Monto usado (lo que debes)','Amount used (what you owe)'),'total','1200')+f(tx('Monto disponible (lo que el banco te deja usar)','Available (what the bank still lets you use)'),'disp','1800')+f(tx('Tasa de interés anual % — TCEA (opcional)','Yearly interest % — APR (optional)'),'tcea','75')+
+      f(tx('Pago mensual','Monthly payment'),'mes','300')+f(tx('Pago mínimo','Minimum payment'),'min','150')+
+      '<label class="cf-l">'+tx('Fecha de pago','Due date')+'<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>';
+  } else {
+    // Préstamo = simple como una meta: cuánto es, en cuántas cuotas, y la cuota se calcula sola.
+    h+=f(tx('¿Cuánto es? (monto total)','How much? (total amount)'),'total','760')+
+      f(tx('¿En cuántas cuotas? (1, 2, 12…)','How many installments? (1, 2, 12…)'),'cuotas','2')+
+      f(tx('Cuota mensual (si la dejas vacía, la calculo: total ÷ cuotas)','Monthly installment (leave blank and I\'ll do total ÷ installments)'),'min','')+
+      '<label class="cf-l">'+tx('Fecha del primer pago','First payment date')+'<input class="cf-i" data-cf="vence" type="date" value="'+v('vence')+'"></label>'+
+      '<div class="ci-note" style="margin:.2rem 0 .5rem">'+tx('El plan pone cada cuota en la quincena donde cae su fecha de pago.','The plan drops each installment into the cycle its due date falls in.')+'</div>';
+  }
+  h+='<div class="cf-btns"><button class="cf-cancel" data-debtformcancel="1">'+tx('Cancelar','Cancel')+'</button><button class="cf-save" data-debtformsave="1">'+tx('Guardar en el banco','Save to bank')+'</button></div></div>';
   return h;
 }
 // "otro": monto libre que el usuario tipea para ESTE ciclo (ej. pagó más de lo presupuestado porque
@@ -2731,7 +2743,9 @@ function modeToggleH(x){
 function debtPickerH(kind){
   if(pickerOpen!==kind) return '';
   const isCard=kind==='card';
-  const list=debts.filter(x=>!x.auto && (isCard?isCardDebt(x):isLoanDebt(x)) && !(d.debtPay&&d.debtPay[x.n]));
+  // Solo deudas VIVAS: un préstamo ya terminado (saldo 0) no es candidato a pagar — queda
+  // sepultado en su ciclo, no estorbando cada vez que vienes a agregar uno nuevo.
+  const list=debts.filter(x=>!x.auto && (isCard?isCardDebt(x):isLoanDebt(x)) && !(d.debtPay&&d.debtPay[x.n]) && (parseFloat(x.total)||0)>0.5);
   let rows=list.map(x=>{
     const i=debts.indexOf(x);
     const mb=(m,lbl)=>'<button class="pk-m" data-pickdebt="'+esc(x.n)+'" data-m="'+m+'">'+lbl+' '+debtAmtLabel(x,m)+'</button>';
@@ -2744,10 +2758,12 @@ function debtPickerH(kind){
         ? mb('min',tx('Mín','Min'))+mb('mes',tx('Mes','Month'))+mb('total','Total')+mb('otro',tx('Otro','Other'))
         : '<button class="pk-m" data-pickloan="'+esc(x.n)+'">'+tx('Elegir monto','Choose amount')+'</button>')+'</div></div>';
   }).join('');
-  if(!list.length) rows='<div class="pk-empty">'+(isCard?tx('No te queda ninguna tarjeta por elegir. Agrega una al banco abajo.','No cards left to choose. Add one to the bank below.'):tx('No te queda ningún préstamo por elegir. Agrega uno al banco abajo.','No loans left to choose. Add one to the bank below.'))+'</div>';
-  return '<div class="debtpicker"><div class="pk-h">'+tx('¿Cuál pagas esta quincena?','Which one are you paying this cycle?')+(isCard?tx(' Toca el monto (Mín / Mes / Total / Otro).',' Tap the amount (Min / Month / Total / Other).'):tx(' Pon el monto a pagar.',' Set the amount to pay.'))+'</div>'+rows+
-    '<button class="pk-new" data-newdebt="'+kind+'"><span class="p">+</span> '+(isCard?tx('Agregar tarjeta al banco','Add card to bank'):tx('Agregar préstamo al banco','Add loan to bank'))+'</button>'+
+  if(!list.length) rows='<div class="pk-empty">'+(isCard?tx('No tienes tarjetas con saldo por pagar.','No cards with a balance to pay.'):tx('No tienes préstamos activos por pagar.','No active loans to pay.'))+'</div>';
+  // "+ Agregar" va PRIMERO: quien abre esto suele venir a registrar una deuda nueva, no a escarbar la lista.
+  return '<div class="debtpicker">'+
+    '<button class="pk-new" data-newdebt="'+kind+'"><span class="p">+</span> '+(isCard?tx('Agregar tarjeta nueva','Add a new card'):tx('Agregar préstamo nuevo','Add a new loan'))+'</button>'+
     debtFormH()+
+    '<div class="pk-h">'+tx('¿Cuál pagas esta quincena?','Which one are you paying this cycle?')+(isCard?tx(' Toca el monto (Mín / Mes / Total / Otro).',' Tap the amount (Min / Month / Total / Other).'):tx(' Pon el monto a pagar.',' Set the amount to pay.'))+'</div>'+rows+
     '<button class="pk-done" data-pickerclose="1">'+tx('Listo','Done')+'</button></div>';
 }
 function selectedDebtRowH(x,kind){
@@ -2988,6 +3004,7 @@ function refreshInvertir(){const e=document.getElementById('sec-invertir');if(e)
 // y un punto rojo/ámbar/verde. Tocar ✎ abre el editor (simple si es préstamo, completo si es tarjeta).
 let debtEditIdx=null;   // índice de la deuda con el editor abierto (null = todo cerrado)
 let tjToolsOpen=false;  // herramientas de tarjeta (cuotas futuras / pasar a efectivo / simulador) colapsadas
+let debtDoneOpen=false; // deudas terminadas (saldo 0) sepultadas por defecto
 function debtStatusRowH(x,i){
   const card=isCardDebt(x), hoy=isoToday();
   const debe=parseFloat(x.total)||0;
@@ -2995,7 +3012,8 @@ function debtStatusRowH(x,i){
   const lim=parseFloat(x.limite)||0;
   const over=card&&lim>0&&debe>lim;
   let st,cls;
-  if(paid){st=tx('pagada este ciclo','paid this cycle');cls='ok';}
+  if(!card&&debe<=0.5){st=tx('✅ pagada por completo','✅ fully paid off');cls='mut';}
+  else if(paid){st=tx('pagada este ciclo','paid this cycle');cls='ok';}
   else if(over){st=tx('¡sobre el tope de la línea!','over the credit limit!');cls='bad';}
   else if(x.vence&&x.vence<hoy){st=tx('venció el ','was due ')+dueLabel(x.vence);cls='bad';}
   else if(x.vence){const dias=(dateVal(x.vence)-dateVal(hoy))/864e5;
@@ -3013,15 +3031,26 @@ function renderDebts(){
   const el=document.getElementById('debts');if(!el)return;
   if(typeof ensureDebtSnaps==='function')ensureDebtSnaps();
   const manual=debts.map((x,i)=>({x,i})).filter(r=>!r.x.auto);
+  // Vivas al frente; las TERMINADAS (préstamos con saldo 0) quedan sepultadas en una línea plegada —
+  // historial disponible, pero sin estorbar cada vez que vienes a registrar algo nuevo.
+  // Viva = debe algo, o es una tarjeta real (tiene línea/disponible — su cupo sigue siendo relevante).
+  // Un registro con saldo 0 y sin línea es una deuda TERMINADA aunque el kind legacy la confunda.
+  const esViva=x=>(parseFloat(x.total)||0)>0.5||(parseFloat(x.limite)||0)>0||(parseFloat(x.disp)||0)>0;
+  const vivas=manual.filter(r=>esViva(r.x));
+  const done=manual.filter(r=>!esViva(r.x));
   const hayTarjetas=debts.some(isCardDebt);
   const hayCuotas=debts.some(x=>x.auto);
   el.innerHTML=
     '<div id="debts-mgmt">'+
       '<h2>'+tx('Deudas','Debts')+'</h2>'+
       '<div class="dnote">'+tx('Lo que debes, cuándo vence y cómo vas — rojo, ámbar o verde. Tus datos nunca salen de tu compu.','What you owe, when it\'s due and how you\'re doing — red, amber or green. Your data never leaves your device.')+'</div>'+
-      (manual.length
-        ? manual.map(r=>debtStatusRowH(r.x,r.i)).join('')
-        : '<div class="dnote" style="margin:.8rem 0">'+tx('No tienes deudas registradas. Si tienes un préstamo o una tarjeta, agrégalos y Stash los mete a tu plan del ciclo.','No debts yet. If you have a loan or a credit card, add them and Stash works them into your cycle plan.')+'</div>')+
+      (vivas.length
+        ? vivas.map(r=>debtStatusRowH(r.x,r.i)).join('')
+        : '<div class="dnote" style="margin:.8rem 0">'+tx('No tienes deudas activas. Si tienes un préstamo o una tarjeta, agrégalos y Stash los mete a tu plan del ciclo.','No active debts. If you have a loan or a credit card, add them and Stash works them into your cycle plan.')+'</div>')+
+      (done.length
+        ? '<button class="cuotas-toggle" data-donetoggle="1">✅ '+done.length+' '+tx(done.length>1?'deudas terminadas':'deuda terminada',done.length>1?'debts paid off':'debt paid off')+' '+(debtDoneOpen?'▾':'▸')+'</button>'+
+          (debtDoneOpen?done.map(r=>debtStatusRowH(r.x,r.i)).join(''):'')
+        : '')+
       '<div class="dadd-row">'+
         '<button class="add" data-daddkind="loan"><span class="p">+</span> 📄 '+tx('Préstamo','Loan')+'</button>'+
         '<button class="add" data-daddkind="card"><span class="p">+</span> 💳 '+tx('Tarjeta','Card')+'</button>'+
@@ -3058,6 +3087,7 @@ debtsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)re
     const inp=debtsEl.querySelector('.drow2 .dr-n');if(inp)inp.focus();}
   else if(b.dataset.dedit!==undefined){const i=+b.dataset.dedit;debtEditIdx=(debtEditIdx===i?null:i);renderDebts();}
   else if(b.dataset.tjtools){tjToolsOpen=!tjToolsOpen;renderDebts();}
+  else if(b.dataset.donetoggle){debtDoneOpen=!debtDoneOpen;renderDebts();}
   else if(b.dataset.allcash){allToCash();}
   else if(b.dataset.applyadvisor){applyAdvisor();}
   else if(b.dataset.paid!==undefined){toggleDebtPaid(b.dataset.paid);}
