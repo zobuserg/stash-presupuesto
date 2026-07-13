@@ -226,6 +226,7 @@ body.focuson .reset{display:none}
 .hi-mano{margin-top:.7rem; font-size:14px; font-weight:600; color:var(--tx2); display:inline-flex; align-items:center; gap:.15rem; flex-wrap:wrap; justify-content:center}
 .hi-mano input{width:88px; font:inherit; font-size:18px; font-weight:800; color:var(--tx); text-align:right; background:transparent; border:none; border-bottom:1.5px dashed var(--line); padding:0 2px}
 .hi-mano input:focus{outline:none; border-bottom-color:var(--accent)}
+.hi-manoval{font-size:18px; font-weight:800; color:var(--tx); font-variant-numeric:tabular-nums} /* futuro: lo destinado a ESE ciclo, solo lectura */
 .hi-camino{color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums}
 .hi-chip{margin-top:.55rem}
 .hi-chip-btn{font:inherit; font-size:12.5px; font-weight:700; border:none; border-radius:999px; padding:.4rem .9rem; cursor:pointer; color:#fff}
@@ -866,7 +867,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-13.3'; // línea "Tengo ahora · en camino ▾" en TODOS los ciclos (futuros incluidos: el sueldo llega antes de que el ciclo arranque); meter-plata sigue solo en el presente // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-13.4'; // ciclo futuro: "Para este ciclo S/ 0" (solo lectura, sube al marcar llegadas) en vez del Tengo ahora global; lo llegado para futuros queda fuera del tope de meter del presente // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1884,6 +1885,17 @@ function wfDeficit(){const ti=sum(d.inc);let gas=0;buckets.forEach(b=>{const g=b
 // LLEGÓ de una fuente con ✓ (d.incGot registra cuánto entró a tu mano). Destinarla de nuevo al ciclo
 // la contaría DOBLE: el sueldo que llegó ya es parte del presupuesto — no puede volver a entrar.
 function plataYaDentro(){return (d.inc||[]).reduce((t,r,i)=>t+(r.fromPlata?(parseFloat(r.a)||0):((d.incGot&&d.incGot['inc-'+i])||0)),0);}
+// Plata que YA llegó destinada a ciclos FUTUROS (marcaste su ✓ antes de que arranquen): vive en tu
+// banco pero tiene dueño — el ciclo presente NO puede ofrecerla para "meter" (principio de DD 13 jul:
+// "lo que tengo ya tiene destino"; la misma plata jamás reclamada por dos planes).
+function plataDeFuturos(){
+  let t=0; const hoy=isoToday();
+  (cycles||[]).forEach(c=>{ if(c.id===activeQ||!(c.start&&c.start>hoy))return;
+    const x=load(c.id); if(!x)return;
+    (x.inc||[]).forEach((r,i)=>{ t+=r.fromPlata?(parseFloat(r.a)||0):((x.incGot&&x.incGot['inc-'+i])||0); });
+  });
+  return t;
+}
 function injectPlata(monto){monto=Math.round(monto);if(monto<=0)return;
   let idx=(d.inc||[]).findIndex(r=>r.fromPlata);
   if(idx>=0){d.inc[idx].a=(parseFloat(d.inc[idx].a)||0)+monto;} else {d.inc.push({l:tx('De tu plata','From your money'),a:monto,fromPlata:true});idx=d.inc.length-1;}
@@ -2110,8 +2122,12 @@ function render(){
   // ("yaDentro" incluye también lo LLEGADO de fuentes con ✓ — sin eso, el botón ofrecía re-meter
   // el sueldo recién llegado y el ciclo se inflaba por encima de su ingreso real.)
   const yaDentro=plataYaDentro();
-  const metible=hasCuentas()?Math.max(Math.round((parseFloat(bancoTotal)||0)-yaDentro),0):0;
+  // Tope de "meter": tu plata real MENOS lo ya dentro de ESTE ciclo MENOS lo que llegó con destino a
+  // ciclos FUTUROS (ese dinero ya tiene dueño — sin esto, marcar el sueldo de la quincena siguiente
+  // hacía que el ciclo actual lo ofreciera para meter: doble reclamo).
+  const metible=hasCuentas()?Math.max(Math.round((parseFloat(bancoTotal)||0)-yaDentro-plataDeFuturos()),0):0;
   const yaMetido=yaDentro>0.5;
+  const manoFut=isFutureActive(); // en un futuro la línea muestra lo destinado A ESE ciclo (no tu plata global)
   // Fuentes PENDIENTES (sin ✓ = aún no llegan): la lista del acordeón "en camino". Una por compañía;
   // su "✓ ya me pagó" mete esa plata a "Tengo ahora" y en camino queda solo el resto.
   const caminoRows=(d.inc||[]).map((r2,i2)=>({r:r2,i:i2}))
@@ -2139,16 +2155,23 @@ function render(){
         // (pedido de DD 13 jul: "en camino 4200 y en cuanto vaya recibiendo marcar tanto — que todos
         // los ciclos se comporten igual"; su sueldo de un ciclo llega ANTES de que el ciclo arranque).
         // Único candado en futuros: METER plata en mano — eso sí reclamaría la misma plata en dos planes.
-        ('<div class="hi-mano" title="'+tx('Tu plata real en este momento — efectivo + cuentas. Marca lo que va llegando y «en camino» baja solo.','Your actual money right now — cash + accounts. Check what arrives and "incoming" goes down by itself.')+'">'+
+        ('<div class="hi-mano" title="'+(manoFut
+            ?tx('Lo que ya llegó o destinaste PARA este ciclo. Tu plata real vive en el ciclo en curso; al cerrar, su sobrante pasa aquí o a tu Reserva.','What already arrived or was set for THIS cycle. Your actual money lives in the current cycle; when you close it, the surplus flows here or to your Reserve.')
+            :tx('Tu plata real en este momento — efectivo + cuentas. Marca lo que va llegando y «en camino» baja solo.','Your actual money right now — cash + accounts. Check what arrives and "incoming" goes down by itself.'))+'">'+
           // "Tengo ahora" ES el botón (pedido de DD): con plata sin destino, tocarlo la destina a este
           // ciclo; ya destinada, tocarlo ABRE el desglose para VER que está dentro (pedido de DD 13 jul:
           // "no hay forma de abrirlo y ver que ya está asignada"). Solo es texto plano sin cuentas.
-          ((hasCuentas()&&metible>0.5&&!d.closed&&!isFutureActive())
+          // En ciclo FUTURO la etiqueta es "Para este ciclo" y el valor es lo destinado a ÉL, desde 0
+          // (decisión de DD 13 jul: "lo que tengo ya tiene destino y es el ciclo actual, no el próximo").
+          ((hasCuentas()&&metible>0.5&&!d.closed&&!manoFut)
             ?'<button class="hi-manolbl" data-metermano="1" title="'+tx('Toca para destinar esta plata a ESTE ciclo','Tap to send this money into THIS cycle')+'">💰 '+tx('Tengo ahora','On hand')+'</button>'
             :(hasCuentas()&&yaMetido
-              ?'<button class="hi-manolbl" data-manoinfo="1" title="'+tx('Tu plata ya está destinada a este ciclo — toca para ver el desglose','Your money is already inside this cycle — tap to see the breakdown')+'">💰 '+tx('Tengo ahora','On hand')+'</button>'
-              :'💰 '+tx('Tengo ahora','On hand')))+
-          ' S/ <input id="banco-total-inp" type="number" min="0" step="1" value="'+(bancoTotal===''?'':Math.round(saldoVivo()))+'" placeholder="0"><span class="hi-camino" id="hi-camino"></span></div>'+
+              ?'<button class="hi-manolbl" data-manoinfo="1" title="'+tx('Tu plata ya está destinada a este ciclo — toca para ver el desglose','Your money is already inside this cycle — tap to see the breakdown')+'">💰 '+(manoFut?tx('Para este ciclo','For this cycle'):tx('Tengo ahora','On hand'))+'</button>'
+              :'💰 '+(manoFut?tx('Para este ciclo','For this cycle'):tx('Tengo ahora','On hand'))))+
+          (manoFut
+            ?' S/ <b class="hi-manoval">'+pn(yaDentro)+'</b>'
+            :' S/ <input id="banco-total-inp" type="number" min="0" step="1" value="'+(bancoTotal===''?'':Math.round(saldoVivo()))+'" placeholder="0">')+
+          '<span class="hi-camino" id="hi-camino"></span></div>'+
         // Acordeón "en camino": SOLO lo pendiente, una fila por fuente/compañía con su "✓ ya me pagó".
         // Marcar = esa plata pasa a "Tengo ahora" y en camino queda el resto.
         (caminoOpen
@@ -2543,8 +2566,8 @@ app.addEventListener('click',e=>{
     incEdit=true;render();
     const el=document.getElementById('inc-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
   else if(b.dataset.metadate){openMetaModal();} // 🎂 desde la caja Ahorro — mismo modal que en Reserva
-  else if(b.dataset.metermano){ // tope = plata real − lo YA dentro del ciclo (metido o llegado de fuentes)
-    const max=Math.max(Math.round((parseFloat(bancoTotal)||0)-plataYaDentro()),0);
+  else if(b.dataset.metermano){ // tope = plata real − lo YA dentro del ciclo − lo llegado para ciclos futuros
+    const max=Math.max(Math.round((parseFloat(bancoTotal)||0)-plataYaDentro()-plataDeFuturos()),0);
     if(max<=0)return;
     const v=prompt(tx('¿Cuánto de tu plata en mano destinas a ESTE ciclo? Disponible sin destino: S/ ','How much of your money on hand goes to THIS cycle? Unassigned: S/ ')+max,max);
     if(v===null)return;
