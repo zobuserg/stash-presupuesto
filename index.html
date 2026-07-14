@@ -882,7 +882,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-13.7'; // etiqueta de quincena "Julio Q1" / "Julio Q2" (formato corto pedido por DD) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-13.8'; // cuadro "¿en qué tarjeta cargas?" se refresca EN VIVO al editar el monto (antes quedaba pegado en rojo con el monto viejo hasta cerrar y reabrir) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -2077,9 +2077,22 @@ function tjPickerH(g,i,j,r){
   const cuotaBox = r.tj
     ? '<div class="tjcuotas">Cargo <b>'+pe(monto)+'</b> en <input type="number" min="1" step="1" data-tjcuotas="1" data-grp="'+g+'" data-idx="'+i+'"'+sj+' value="'+cuotas+'"> cuotas → <b id="tjcuota">'+pe(monto/cuotas)+'</b>/mes</div>'
     : '';
-  return '<div class="tjpicker"><div class="tjpicker-h">¿En qué tarjeta cargas <b>'+esc(r.l||'esto')+'</b>? La <b>recomendada</b> es la de más línea libre que aguanta el monto ('+pe(monto)+').</div>'+opts+
+  return '<div class="tjpicker" id="tjpick-'+g+'-'+i+(j!=null?'-'+j:'')+'"><div class="tjpicker-h">¿En qué tarjeta cargas <b>'+esc(r.l||'esto')+'</b>? La <b>recomendada</b> es la de más línea libre que aguanta el monto ('+pe(monto)+').</div>'+opts+
     (r.tj?'<button class="tjpick none" data-tjpick="" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>↺ Quitar de tarjeta (volver a efectivo)</button>':'')+
     cuotaBox+'</div>';
+}
+// Refresca EN VIVO el cuadro de "¿en qué tarjeta cargas?" mientras el usuario edita el monto de la
+// categoría (input listener usa recompute(), no render(), para no robarle el cursor al tipear —
+// pero el cuadro quedaba pegado con el monto VIEJO, mostrando "no alcanza" en rojo con datos falsos:
+// bug cazado por DD 13 jul, tipeó 400 sobre un 450 rojo y el cuadro no se enteró). Reemplaza SOLO ese
+// bloque, sin tocar el resto del DOM ni el foco del input.
+function refreshTjPicker(g,i,j){
+  const key=g+'-'+i+(j!=null?'-'+j:'');
+  if(tjOpen!==key)return;
+  const row=(j!=null)?(d[g][i]&&d[g][i].sub&&d[g][i].sub[j]):d[g][i];
+  if(!row)return;
+  const el=document.getElementById('tjpick-'+key);
+  if(el)el.outerHTML=tjPickerH(g,i,j,row);
 }
 function rowH(g,i,r){
   const sub=hasSubs(r);
@@ -2514,8 +2527,10 @@ app.addEventListener('input',e=>{const t=e.target;
     const pInput=app.querySelector('input.a[data-grp="'+g+'"][data-idx="'+i+'"]:not([data-sub])');
     if(pInput)pInput.value=d[g][i].a;
     recompute();save();
+    if(f==='a')refreshTjPicker(g,i,j);
   }else{
     cashDelta(()=>{d[g][i][f]=t.value;});recompute();save();
+    if(f==='a')refreshTjPicker(g,i,null);
   }
 });
 app.addEventListener('click',e=>{
