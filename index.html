@@ -882,7 +882,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-16.3'; // 🎂 en cada fila de Necesidades/Gustos (junto a la tarjetita): ahorrar para eso en cuotas — total + fecha y la cuota aparece sola en cada ciclo // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-16.4'; // 🎂 de fila también en Ahorro (las 3 cajas); el botón del pie de Ahorro queda para metas sin fila propia — mismo motor // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -2148,7 +2148,9 @@ function rowH(g,i,r){
     // 🎂 en la fila (pedido DD 16 jul): "quiero ahorrar para esto (un viaje) desde YA y que la cuota
     // me aparezca sola en los siguientes ciclos". Abre el motor de metas con el nombre precargado —
     // simetría con la tarjetita: 💳 = lo adelanta el banco en cuotas; 🎂 = lo junto YO en cuotas.
-    (canTj?'<button class="tjt metarow" data-metarow="'+i+'" data-grp="'+g+'" title="'+tx('Ahorrar para esto en cuotas: total + fecha → la cuota aparece sola en cada ciclo','Save for this in installments: total + date → the quota shows up each cycle by itself')+'">🎂</button>':'')+
+    // Vive en las TRES cajas (Ahorro incluido — DD 16 jul: era arbitrario atarlo a las de tarjeta);
+    // el botón del pie de Ahorro sigue siendo el MISMO motor, para metas sin fila propia ("Navidad").
+    (g!=='inc'?'<button class="tjt metarow" data-metarow="'+i+'" data-grp="'+g+'" title="'+tx('Ahorrar para esto en cuotas: total + fecha → la cuota aparece sola en cada ciclo','Save for this in installments: total + date → the quota shows up each cycle by itself')+'">🎂</button>':'')+
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button>'+
     // ½ solo en fuentes EN CAMINO (sin ✓): "me llegó otro monto" — menos divide la fuente, más la ajusta
     (g==='inc'?((!paid&&(parseFloat(r.a)||0)>0.5)
