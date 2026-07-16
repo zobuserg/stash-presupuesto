@@ -882,7 +882,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-16.2'; // ✓ de deuda BAJA el saldo real (destildar restaura) + cierre con toggle 📋 "el siguiente arranca con esta estructura" + Tengo ahora nace en 0 (en camino visible desde el día 1) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-16.3'; // 🎂 en cada fila de Necesidades/Gustos (junto a la tarjetita): ahorrar para eso en cuotas — total + fecha y la cuota aparece sola en cada ciclo // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1518,7 +1518,7 @@ function refreshSinAsignar(){ // actualiza el Colchón (piso 1) en vivo sin re-r
 })();
 // Mini-modal "Meta con fecha": nombre + monto + mes objetivo → crea la meta y siembra su cuota
 // en la caja Ahorro de ESTE ciclo (los ciclos nuevos la heredan solos vía seedMetaQuotas).
-function openMetaModal(){
+function openMetaModal(prefillName){ // prefillName: viene del 🎂 de una fila ("Viajes") — nombre ya puesto, foco al monto
   const el=document.getElementById('meta-card');if(!el)return;
   const t=new Date();const defMes=t.getFullYear()+'-12-24'; // default: Navidad de este año (editable, día exacto)
   el.innerHTML='<div class="ci-h">🎂 '+tx('Meta con fecha','Goal with a date')+'</div>'+
@@ -1537,7 +1537,8 @@ function openMetaModal(){
     const rest=metaSlots(cyc.start||isoToday(),m.length>7?m:m+'-31',per); // ciclos REALES que quedan
     p.innerHTML=a>0?tx('Te tocan','That\'s')+' <b>'+pe(Math.ceil(a/rest))+'</b> '+tx('por ciclo','per cycle')+' <b>(1/'+rest+')</b> '+tx('desde este ciclo.','starting this cycle.'):'';};
   el.addEventListener('input',prev);
-  setTimeout(()=>{const i=document.getElementById('mg-name');if(i)i.focus();},60);
+  if(prefillName){const n=document.getElementById('mg-name');if(n)n.value=prefillName;}
+  setTimeout(()=>{const i=document.getElementById(prefillName?'mg-amt':'mg-name');if(i)i.focus();},60);
 }
 (function(){const ov=document.getElementById('meta-ovl');if(!ov)return;
   ov.addEventListener('click',e=>{
@@ -2144,6 +2145,10 @@ function rowH(g,i,r){
     // Modo reparto: botón "+ asignar" (sube el presupuesto, NO es pago — no lleva check azul)
     (asigna&&g!=='inc'?'<button class="asigna-btn" data-asignar="'+g+'-'+i+'" title="Mandar plata aquí">+ S/</button>':'')+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
+    // 🎂 en la fila (pedido DD 16 jul): "quiero ahorrar para esto (un viaje) desde YA y que la cuota
+    // me aparezca sola en los siguientes ciclos". Abre el motor de metas con el nombre precargado —
+    // simetría con la tarjetita: 💳 = lo adelanta el banco en cuotas; 🎂 = lo junto YO en cuotas.
+    (canTj?'<button class="tjt metarow" data-metarow="'+i+'" data-grp="'+g+'" title="'+tx('Ahorrar para esto en cuotas: total + fecha → la cuota aparece sola en cada ciclo','Save for this in installments: total + date → the quota shows up each cycle by itself')+'">🎂</button>':'')+
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button>'+
     // ½ solo en fuentes EN CAMINO (sin ✓): "me llegó otro monto" — menos divide la fuente, más la ajusta
     (g==='inc'?((!paid&&(parseFloat(r.a)||0)>0.5)
@@ -2663,6 +2668,9 @@ app.addEventListener('click',e=>{
     incEdit=true;render();
     const el=document.getElementById('inc-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
   else if(b.dataset.metadate){openMetaModal();} // 🎂 desde la caja Ahorro — mismo modal que en Reserva
+  else if(b.dataset.metarow!==undefined){ // 🎂 desde una FILA (nec/luj): mismo modal, nombre precargado
+    const g=b.dataset.grp,i=+b.dataset.metarow,row=d[g]&&d[g][i];
+    openMetaModal((row&&(row.l||'').trim())||'');}
   else if(b.dataset.metermano){ // tope = plata real − lo YA dentro del ciclo − lo llegado para ciclos futuros
     const max=Math.max(Math.round((parseFloat(bancoTotal)||0)-plataYaDentro()-plataDeFuturos()),0);
     if(max<=0)return;
