@@ -882,7 +882,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-13.8'; // cuadro "¿en qué tarjeta cargas?" se refresca EN VIVO al editar el monto (antes quedaba pegado en rojo con el monto viejo hasta cerrar y reabrir) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-13.9'; // ciclo CERRADO ya no muestra "Tengo ahora / en camino" (es historial; el banner del cierre cuenta el resultado) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -2215,10 +2215,13 @@ function render(){
         // El número grande ES el botón: tocarlo despliega el desglose de fuentes ahí mismo (sin pantallita aparte)
         '<div class="hi-num" id="hi-num" data-incedit="1" role="button" title="'+tx('Toca para ver y editar tus fuentes','Tap to view and edit your sources')+'"><span id="hi-num-v">—</span><span class="hi-chev">'+(incEdit?'▲':'▾')+'</span></div>'+
         '<div class="hi-sub"><b id="hi-cycle"></b></div>'+
-        // La REALIDAD: tu plata real (editable) + en camino + Reserva. En TODOS los ciclos igual
+        // La REALIDAD: tu plata real (editable) + en camino + Reserva. En todos los ciclos VIVOS igual
         // (pedido de DD 13 jul: "en camino 4200 y en cuanto vaya recibiendo marcar tanto — que todos
         // los ciclos se comporten igual"; su sueldo de un ciclo llega ANTES de que el ciclo arranque).
         // Único candado en futuros: METER plata en mano — eso sí reclamaría la misma plata en dos planes.
+        // En un ciclo CERRADO la línea entera desaparece (DD 13 jul: es historial — el banner del
+        // cierre ya cuenta el resultado; "tengo ahora / en camino" ahí solo confunden).
+        (d.closed?'':
         ('<div class="hi-mano" title="'+(manoFut
             ?tx('Lo que ya llegó o destinaste PARA este ciclo. Tu plata real vive en el ciclo en curso; al cerrar, su sobrante pasa aquí o a tu Reserva.','What already arrived or was set for THIS cycle. Your actual money lives in the current cycle; when you close it, the surplus flows here or to your Reserve.')
             :tx('Tu plata real en este momento — efectivo + cuentas. Marca lo que va llegando y «en camino» baja solo.','Your actual money right now — cash + accounts. Check what arrives and "incoming" goes down by itself.'))+'">'+
@@ -2245,7 +2248,7 @@ function render(){
               // (te pagaron más o menos), el presupuesto del ciclo se ajusta a lo que DE VERDAD llegó.
               +'<button class="hcl-all" data-caminoall="1">✓ '+tx('Llegó todo — ajustar al monto real','All arrived — adjust to actual')+'</button>'
             :'<div class="hcl-empty">'+tx('Nada en camino — todo lo esperado ya llegó.','Nothing incoming — everything expected already arrived.')+'</div>')+'</div>'
-          :''))+
+          :'')))+
         '<div id="banco-cta" class="hi-chip"></div>'+
       '</div>'+
       // Desglose de FUENTES: se abre tocando el número grande. ("Me pagan el" vive en el ✎ del ciclo.)
