@@ -882,7 +882,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-13.9'; // ciclo CERRADO ya no muestra "Tengo ahora / en camino" (es historial; el banner del cierre cuenta el resultado) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-16.1'; // fixes del testeo usuario-nuevo: onboarding preselecciona la quincena de HOY (antes nacía un ciclo vencido) + "+ Préstamo/Tarjeta" ya no crea deudas fantasma invisibles // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -2815,7 +2815,11 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLower
 /* ===== Módulo Deudas — motor de plan de pago priorizado ===== */
 const DEBT_KEY='midas_debts';
 const debtDef=()=>[];
-function loadDebts(){try{const x=JSON.parse(localStorage.getItem(DEBT_KEY));if(Array.isArray(x))return x.filter(r=>!r.auto);}catch(e){}return debtDef();}
+function loadDebts(){try{const x=JSON.parse(localStorage.getItem(DEBT_KEY));if(Array.isArray(x))
+  // Fantasmas fuera: una deuda TOTALMENTE vacía (sin nombre ni montos) es basura de un "+ Préstamo"
+  // abandonado a medias — se limpia al cargar, jamás debe acumularse en "terminadas".
+  return x.filter(r=>!r.auto&&((r.n||'').trim()||(parseFloat(r.total)||0)>0.5||(parseFloat(r.limite)||0)>0||(parseFloat(r.disp)||0)>0||(parseFloat(r.min)||0)>0));
+}catch(e){}return debtDef();}
 let debts=loadDebts();
 function saveDebts(){localStorage.setItem(DEBT_KEY,JSON.stringify(debts));}
 // Suma meses a una fecha ISO (para escalonar las cuotas de tarjeteo por ciclo).
@@ -3446,8 +3450,11 @@ function renderDebts(){
   // Viva = debe algo, o es una tarjeta real (tiene línea/disponible — su cupo sigue siendo relevante).
   // Un registro con saldo 0 y sin línea es una deuda TERMINADA aunque el kind legacy la confunda.
   const esViva=x=>(parseFloat(x.total)||0)>0.5||(parseFloat(x.limite)||0)>0||(parseFloat(x.disp)||0)>0;
-  const vivas=manual.filter(r=>esViva(r.x));
-  const done=manual.filter(r=>!esViva(r.x));
+  // La deuda EN EDICIÓN cuenta como viva aunque esté en 0: una recién creada con "+ Préstamo/Tarjeta"
+  // nace vacía y sin esto caía DIRECTO a "terminadas" (plegada) — el editor quedaba invisible y cada
+  // toque fabricaba una deuda fantasma (bug de testeo usuario-nuevo, 13 jul; regresión del 9 jul).
+  const vivas=manual.filter(r=>esViva(r.x)||r.i===debtEditIdx);
+  const done=manual.filter(r=>!esViva(r.x)&&r.i!==debtEditIdx);
   const hayTarjetas=debts.some(isCardDebt);
   const hayCuotas=debts.some(x=>x.auto);
   el.innerHTML=
@@ -3519,7 +3526,10 @@ function isFirstRun(){
   return true;
 }
 function showWelcome(show){const w=document.getElementById('welcome');if(w)w.hidden=!show;document.body.classList.toggle('welcoming',show);}
-let welMode='m', welHalf=1, welMonth='', welMonto=0;
+// welHalf arranca en la quincena que contiene HOY: un usuario que entra el 16 con "1ra · 1–15"
+// preseleccionado creaba su primer ciclo YA VENCIDO → al siguiente reload la app lo catapultaba a un
+// ciclo nuevo vacío y su presupuesto quedaba huérfano (bug cazado en el testeo usuario-nuevo, 16 jul).
+let welMode='m', welHalf=(new Date().getDate()<=15?1:2), welMonth='', welMonto=0;
 function welPeriodH(){
   const mo='<label class="wel-pl">'+tx('Mes','Month')+'<input type="month" id="wel-month" value="'+welMonth+'"></label>';
   if(welMode==='m')return mo;
