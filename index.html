@@ -757,6 +757,8 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
    (flechas simétricas + label), fila 2 = +Q/+M/+P debajo, sin competir por el centro de la fila 1. */
 #cyclebar{flex-direction:column; align-items:center; gap:.4rem}
 .cyc-main{display:flex; align-items:center; justify-content:center; gap:.5rem}
+.cyc-hoy{font:inherit; font-size:11px; font-weight:700; color:var(--accent); background:transparent; border:1px solid var(--accent); border-radius:999px; padding:.22rem .55rem; cursor:pointer; white-space:nowrap}
+.cyc-hoy:active{transform:scale(.95)}
 .cyc-addrow{display:flex; gap:.4rem; justify-content:center}
 .cyc-edit{font:inherit; font-size:12px; line-height:1; width:24px; height:24px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--tx3); cursor:pointer; transition:.15s; margin-left:.15rem}
 .cyc-edit:hover,.cyc-edit.on{border-color:var(--accent); color:var(--accent)}
@@ -888,7 +890,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.2'; // "+ Apartar" ahora es burbuja azul (igual que + Gasto) con la explicación al costado — el 🔒 confundía // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.3'; // chip "⌂ hoy" en la barra de ciclos: aparece solo cuando estás fuera del ciclo presente — un toque y vuelves // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1079,14 +1081,26 @@ function isoOf(dt){return dt.getFullYear()+'-'+pad2(dt.getMonth()+1)+'-'+pad2(dt
 function cyclePayday(id){const x=(id===activeQ&&typeof d!=='undefined')?d:load(id);return x&&x.payday||'';}
 let cycEdit=false; // true = editor de fechas del ciclo abierto bajo la barra
 let cycAddOpen=false; // true = el "+" desplegó las 3 opciones de ciclo nuevo (quincena/mes/personalizado)
+// El ciclo del PRESENTE: el que contiene hoy; si ya está cerrado, el siguiente sin cerrar
+// (misma regla que resolveByDate al abrir la app). Lo usa el chip "⌂ hoy" de la barra.
+function idCicloPresente(){
+  let id=cycleForToday();
+  const isClosed=cid=>{try{const x=JSON.parse(localStorage.getItem(keyFor(cid)));return !!(x&&x.closed);}catch(e){return false;}};
+  while(id&&isClosed(id)){const k=cycles.findIndex(c=>c.id===id);id=(k>=0&&k<cycles.length-1)?cycles[k+1].id:null;}
+  return id;
+}
 function renderCycleBar(){
   const bar=document.getElementById('cyclebar');if(!bar)return;
   const idx=cycles.findIndex(c=>c.id===activeQ), cyc=cycleOf(activeQ);
+  // Chip "⌂ hoy" (pedido DD 20 jul: "me fui hasta octubre y volver era deslizar muchas veces"):
+  // SOLO aparece cuando estás fuera del ciclo presente — un toque y vuelves. En casa, no existe.
+  const hoyId=idCicloPresente(), fuera=!!(hoyId&&hoyId!==activeQ);
   // Fila 1 (navegación) centrada de VERDAD: flechas simétricas a ambos lados del label, sin nada
   // más compitiendo por espacio. Fila 2 (+Q/+M/+P) va debajo, también centrada — son acciones
   // secundarias (crear ciclo), no deben empujar el label del centro.
   bar.innerHTML=
     '<div class="cyc-main">'+
+      (fuera?'<button class="cyc-hoy" data-gohoy="1" title="'+tx('Volver al ciclo de hoy','Back to today\'s cycle')+'">⌂ '+tx('hoy','today')+'</button>':'')+
       '<button class="cyc-nav" data-cycnav="-1"'+(idx<=0?' disabled':'')+'>‹</button>'+
       '<span class="cyc-cur"><span class="cyc-badge" title="'+cycleStatusOf(activeQ)+'">'+(CYC_BADGE[cycleStatusOf(activeQ)]||'')+'</span> '+esc(cycleLabel(cyc))+'</span>'+
       '<button class="cyc-nav" data-cycnav="1"'+(idx>=cycles.length-1?' disabled':'')+'>›</button>'+
@@ -2544,6 +2558,7 @@ document.getElementById('cyclebar').addEventListener('click',e=>{const b=e.targe
   else if(b.dataset.addclose){cycAddOpen=false;renderCycleBar();}
   else if(b.dataset.cyc){switchCycle(b.dataset.cyc);}
   else if(b.dataset.cycnav!==undefined){const i=cycles.findIndex(c=>c.id===activeQ)+(+b.dataset.cycnav);if(i>=0&&i<cycles.length)switchCycle(cycles[i].id);}
+  else if(b.dataset.gohoy){const id=idCicloPresente();if(id&&id!==activeQ)switchCycle(id);}
   else if(b.dataset.cycedit){cycEdit=!cycEdit;renderCycleBar();}
   else if(b.dataset.cyctype){const c=cycleOf(activeQ);c.type=b.dataset.cyctype;saveCycles();renderCycleBar();recompute();}
   else if(b.dataset.cyceditdone){cycEdit=false;renderCycleBar();recompute();}
