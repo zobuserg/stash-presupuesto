@@ -882,7 +882,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-16.4'; // 🎂 de fila también en Ahorro (las 3 cajas); el botón del pie de Ahorro queda para metas sin fila propia — mismo motor // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.1'; // "🔒 Apartar" = verbo global bajo las 3 cajas (monto + para qué + cuotas o fecha); murieron los 🎂 de fila, el botón del pie de Ahorro y el alta de Reserva — una sola puerta // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1187,7 +1187,7 @@ function applyFocus(){
 function applyView(){
   const setD=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?'':'none';};
   const inicio=view==='inicio';
-  const budgetSecs=['sec-inc','sec-aho','sec-luj','sec-nec','sec-balance'];
+  const budgetSecs=['sec-inc','sec-aho','sec-luj','sec-nec','sec-balance','sec-apartar'];
   if(inicio){ applyFocus(); }
   else { budgetSecs.forEach(id=>setD(id,false)); setD('focusnav',false); }
   setD('heart', inicio);
@@ -1494,7 +1494,6 @@ function fondoH(){
             (cuota>0&&c.hasta?' · '+tx('aparta','set aside')+' <b>'+pe(cuota)+' '+tx('por ciclo','per cycle')+'</b> '+tx('hasta el','until')+' '+dueLabel(metaHasta(c))+' '+String(c.hasta).split('-')[0]:(cuota<=0&&target>0?' · ✅ '+tx('¡completa!','done!'):''))+'</div>':'');
       }).join('')+
       '<button class="add" data-ftadd="1"><span class="p">+</span> '+tx('Agregar meta','Add goal')+'</button>'+
-      '<button class="add" data-ftdate="1"><span class="p">🎂</span> '+tx('Meta con fecha (Navidad, cumple…)','Goal with a date (Christmas, birthday…)')+'</button>'+
     '</div>';
 }
 function refreshFondo(){const e=document.getElementById('sec-fondo');if(e)e.innerHTML=fondoH();}
@@ -1512,29 +1511,47 @@ function refreshSinAsignar(){ // actualiza el Colchón (piso 1) en vivo sin re-r
   });
   sf.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.ftadd){fondoCats.push({n:'',a:''});saveFondoCats();refreshFondo();}
-    else if(b.dataset.ftdate){openMetaModal();}
+    // (data-ftdate murió el 20 jul: el alta de metas vive SOLO en el botón "🔒 Apartar" del Inicio)
     else if(b.dataset.ftcrm!==undefined){fondoCats.splice(+b.dataset.ftcrm,1);saveFondoCats();refreshFondo();}
   });
 })();
 // Mini-modal "Meta con fecha": nombre + monto + mes objetivo → crea la meta y siembra su cuota
 // en la caja Ahorro de ESTE ciclo (los ciclos nuevos la heredan solos vía seedMetaQuotas).
-function openMetaModal(prefillName){ // prefillName: viene del 🎂 de una fila ("Viajes") — nombre ya puesto, foco al monto
+// Fin del n-ésimo ciclo contando el ACTUAL como 1 (para "en N cuotas"): usa tus ciclos reales de la
+// barra; si aún no existen tan lejos, proyecta con el ritmo del ciclo actual (quincena≈15d, mes≈30d).
+function fechaTrasNCiclos(n){
+  const cur=cycleOf(activeQ)||{};
+  const arr=cycles.filter(c=>c.start&&c.end&&cur.start&&c.start>=cur.start).sort((a,b)=>a.start<b.start?-1:1);
+  if(arr.length>=n&&arr[n-1].end)return arr[n-1].end;
+  const dias=(cur.type==='m')?30:15;
+  const base=(arr.length?arr[arr.length-1].end:(cur.end||isoToday()));
+  const dt=new Date(base+'T00:00:00'); dt.setDate(dt.getDate()+(n-Math.max(arr.length,1))*dias);
+  return isoOf(dt);
+}
+// 🔒 APARTAR — la ÚNICA puerta al motor de metas (unificación DD 20 jul: murieron los 🎂 de fila,
+// el botón del pie de Ahorro y el alta de la pestaña Reserva — tres puertas eran ninguna). Monto +
+// para qué + EN CUÁNTAS CUOTAS o HASTA CUÁNDO; el sistema siembra la cuota en cada ciclo solo.
+function openMetaModal(prefillName){
   const el=document.getElementById('meta-card');if(!el)return;
   const t=new Date();const defMes=t.getFullYear()+'-12-24'; // default: Navidad de este año (editable, día exacto)
-  el.innerHTML='<div class="ci-h">🎂 '+tx('Meta con fecha','Goal with a date')+'</div>'+
-    '<div class="ci-sub">'+tx('Dime cuánto necesitas y para cuándo — yo lo divido entre los meses que quedan.','Tell me how much you need and by when — I\'ll split it across the months left.')+'</div>'+
-    '<input class="gs-name" id="mg-name" placeholder="'+tx('Navidad, cumple de mamá, viaje…','Christmas, mom\'s birthday, trip…')+'">'+
+  el.innerHTML='<div class="ci-h">🔒 '+tx('Apartar','Set aside')+'</div>'+
+    '<div class="ci-sub">'+tx('Dime cuánto, para qué, y en cuántas cuotas (o hasta cuándo) — yo pongo la cuota en cada ciclo por ti.','Tell me how much, what for, and in how many installments (or by when) — I\'ll place the quota in each cycle for you.')+'</div>'+
+    '<input class="gs-name" id="mg-name" placeholder="'+tx('Viaje, Navidad, cumple de mamá…','Trip, Christmas, mom\'s birthday…')+'">'+
     '<div class="gs-amt">S/ <input id="mg-amt" type="number" inputmode="decimal" min="0" step="1" placeholder="600"></div>'+
-    '<label class="wel-pl" style="display:block;margin:.6rem 0">'+tx('¿Para cuándo? (día exacto)','By when? (exact day)')+'<input type="date" id="mg-mes" value="'+defMes+'"></label>'+
+    '<label class="wel-pl" style="display:block;margin:.6rem 0">'+tx('¿En cuántas cuotas (ciclos)?','In how many installments (cycles)?')+' <input id="mg-cuotas" type="number" inputmode="numeric" min="1" step="1" placeholder="—" style="width:64px"></label>'+
+    '<label class="wel-pl" style="display:block;margin:.6rem 0">'+tx('… o ¿para cuándo? (día exacto)','… or by when? (exact day)')+'<input type="date" id="mg-mes" value="'+defMes+'"></label>'+
     '<div class="ci-note" id="mg-preview"></div>'+
     '<div class="ci-btns"><button class="ci-cancel" data-mgcancel="1">'+tx('Cancelar','Cancel')+'</button>'+
-    '<button class="ci-go" data-mggo="1">✓ '+tx('Crear meta','Create goal')+'</button></div>';
+    '<button class="ci-go" data-mggo="1">✓ '+tx('Apartar','Set aside')+'</button></div>';
   const ov=document.getElementById('meta-ovl');if(ov)ov.hidden=false;
   const prev=()=>{const a=parseFloat((document.getElementById('mg-amt')||{}).value)||0;
-    const m=(document.getElementById('mg-mes')||{}).value||defMes;
     const p=document.getElementById('mg-preview');if(!p)return;
-    const cyc=cycleOf(activeQ)||{}, per=(cyc.type==='q')?2:1;
-    const rest=metaSlots(cyc.start||isoToday(),m.length>7?m:m+'-31',per); // ciclos REALES que quedan
+    const nc=parseInt((document.getElementById('mg-cuotas')||{}).value)||0;
+    let rest;
+    if(nc>=1){rest=nc;} // cuotas mandan: N ciclos contando este
+    else{const m=(document.getElementById('mg-mes')||{}).value||defMes;
+      const cyc=cycleOf(activeQ)||{}, per=(cyc.type==='q')?2:1;
+      rest=metaSlots(cyc.start||isoToday(),m.length>7?m:m+'-31',per);} // ciclos REALES que quedan
     p.innerHTML=a>0?tx('Te tocan','That\'s')+' <b>'+pe(Math.ceil(a/rest))+'</b> '+tx('por ciclo','per cycle')+' <b>(1/'+rest+')</b> '+tx('desde este ciclo.','starting this cycle.'):'';};
   el.addEventListener('input',prev);
   if(prefillName){const n=document.getElementById('mg-name');if(n)n.value=prefillName;}
@@ -1546,7 +1563,9 @@ function openMetaModal(prefillName){ // prefillName: viene del 🎂 de una fila 
     if(!e.target.closest('[data-mggo]'))return;
     const name=((document.getElementById('mg-name')||{}).value||'').trim();
     const amt=parseFloat((document.getElementById('mg-amt')||{}).value)||0;
-    const mes=(document.getElementById('mg-mes')||{}).value||'';
+    const nc=parseInt((document.getElementById('mg-cuotas')||{}).value)||0;
+    // Las CUOTAS mandan: "en 4 cuotas" = hasta el fin del 4º ciclo contando este. Sin cuotas, la fecha.
+    const mes=nc>=1?fechaTrasNCiclos(nc):((document.getElementById('mg-mes')||{}).value||'');
     if(!name||amt<=0||!mes){const i=document.getElementById(!name?'mg-name':'mg-amt');if(i)i.focus();return;}
     snapshot();
     // inicio = el ARRANQUE del ciclo donde nace la meta (ancla el contador k/N a tus ciclos reales)
@@ -2145,12 +2164,8 @@ function rowH(g,i,r){
     // Modo reparto: botón "+ asignar" (sube el presupuesto, NO es pago — no lleva check azul)
     (asigna&&g!=='inc'?'<button class="asigna-btn" data-asignar="'+g+'-'+i+'" title="Mandar plata aquí">+ S/</button>':'')+
     (canTj?'<button class="tjt'+(r.tj?' on':'')+'" data-tjt="1" data-grp="'+g+'" data-idx="'+i+'" title="'+(r.tj?'En tarjeta: '+esc(r.tjCard||''):'Pagar con tarjeta')+'">'+TJ_SVG+'</button>':'')+
-    // 🎂 en la fila (pedido DD 16 jul): "quiero ahorrar para esto (un viaje) desde YA y que la cuota
-    // me aparezca sola en los siguientes ciclos". Abre el motor de metas con el nombre precargado —
-    // simetría con la tarjetita: 💳 = lo adelanta el banco en cuotas; 🎂 = lo junto YO en cuotas.
-    // Vive en las TRES cajas (Ahorro incluido — DD 16 jul: era arbitrario atarlo a las de tarjeta);
-    // el botón del pie de Ahorro sigue siendo el MISMO motor, para metas sin fila propia ("Navidad").
-    (g!=='inc'?'<button class="tjt metarow" data-metarow="'+i+'" data-grp="'+g+'" title="'+tx('Ahorrar para esto en cuotas: total + fecha → la cuota aparece sola en cada ciclo','Save for this in installments: total + date → the quota shows up each cycle by itself')+'">🎂</button>':'')+
+    // (El 🎂 por fila murió el 20 jul — decisión DD: apartar es por-sueño (2 o 3), no por-gasto (16
+    // filas); un ícono en cada fila ensuciaba. "Apartar" es ahora un verbo global bajo las 3 cajas.)
     '<button class="rm" data-grp="'+g+'" data-idx="'+i+'" aria-label="Eliminar">&times;</button>'+
     // ½ solo en fuentes EN CAMINO (sin ✓): "me llegó otro monto" — menos divide la fuente, más la ajusta
     (g==='inc'?((!paid&&(parseFloat(r.a)||0)>0.5)
@@ -2193,7 +2208,6 @@ function bucketH(g,name,pct,num){
       (g==='aho'?ahoDebtBlockH():'')+ // Deuda arriba → las categorías nuevas caen ABAJO (al final)
       rows+
       '<button class="add" data-add="'+g+'"><span class="p">+</span> '+tx('Agregar categoría','Add category')+'</button>'+ // también en Ahorro
-      (g==='aho'?'<button class="add" data-metadate="1"><span class="p">🎂</span> '+tx('Apartar para una fecha (Navidad, viaje…)','Set aside for a date (Christmas, trip…)')+'</button>':'')+
     '</div>'+
     wizBtn+'</div>';
 }
@@ -2313,6 +2327,10 @@ function render(){
       '<div class="paybar-l" id="paybar-l" style="display:none"><span class="pbl-paid" id="pbl-paid"></span><span class="pbl-rest" id="pbl-rest"></span></div>'+
     '</div>'+
     buckets.map((b,i)=>bucketH(b[0],b[1],b[2],i+1)).join('')+
+    // 🔒 APARTAR — verbo global hermano de "+ Gasto" (decisión DD 20 jul): guardar plata con destino
+    // es OCASIONAL (no merece burbuja flotante como el gasto diario) → botón tranquilo bajo las 3
+    // cajas, ÚNICA puerta al motor de metas. La pestaña Reserva queda solo para VER el progreso.
+    '<div class="sec" id="sec-apartar" style="padding:.6rem 1.1rem"><button class="add" data-apartar="1" style="margin:0"><span class="p">🔒</span> '+tx('Apartar — guarda plata con destino, en cuotas o hasta una fecha','Set aside — save money with a destination, in installments or by a date')+'</button></div>'+
     // (Sección Balance eliminada: "en mano" vive en el hero, el asesor es un chip contextual ahí mismo,
     //  y "Cerrar ciclo" se mudó al editor del ciclo — el lápiz ✎ de la barra.)
     '<div class="sec" id="sec-informe"><div class="sec-h"><span class="t">📊 '+tx('Informe del ciclo','Cycle report')+'</span></div><div id="informe-body"></div></div>';
@@ -2669,10 +2687,7 @@ app.addEventListener('click',e=>{
   else if(b.dataset.manoinfo){ // "Tengo ahora" con todo ya destinado: abre el desglose y muestra el estado
     incEdit=true;render();
     const el=document.getElementById('inc-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
-  else if(b.dataset.metadate){openMetaModal();} // 🎂 desde la caja Ahorro — mismo modal que en Reserva
-  else if(b.dataset.metarow!==undefined){ // 🎂 desde una FILA (nec/luj): mismo modal, nombre precargado
-    const g=b.dataset.grp,i=+b.dataset.metarow,row=d[g]&&d[g][i];
-    openMetaModal((row&&(row.l||'').trim())||'');}
+  else if(b.dataset.apartar){openMetaModal();} // 🔒 Apartar — la única puerta al motor de metas (20 jul)
   else if(b.dataset.metermano){ // tope = plata real − lo YA dentro del ciclo − lo llegado para ciclos futuros
     const max=Math.max(Math.round((parseFloat(bancoTotal)||0)-plataYaDentro()-plataDeFuturos()),0);
     if(max<=0)return;
