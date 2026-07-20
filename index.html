@@ -277,7 +277,10 @@ body.focuson .ov-bar{display:none}
 .tjpicker-h{font-size:11.5px; color:var(--tx2); margin-bottom:.25rem; line-height:1.4}
 .tjpick{font:inherit; font-size:13px; text-align:left; border:none; background:var(--card); color:var(--tx); border-radius:9px; padding:.5rem .65rem; cursor:pointer; transition:.15s; display:flex; justify-content:space-between; align-items:center; gap:.5rem}
 .tjpick:hover{background:var(--accent); color:#fff}
-.tjpick.sel{outline:2px solid var(--accent)}
+.tjpick.sel{outline:2px solid var(--accent); background:var(--accent); color:#fff}
+.tjpick.sel .tjav{color:#fff}
+.tjdone-btn{font:inherit; font-size:12.5px; font-weight:800; color:#fff; background:var(--accent); border:none; border-radius:9px; padding:.5rem; cursor:pointer; margin-top:.15rem}
+.tjdone-btn:active{transform:scale(.97)}
 .tjpick .rec{font-size:10.5px; color:var(--ok); font-weight:700; margin-left:.4rem}
 .tjpick:hover .rec{color:#fff}
 .tjpick.none{color:var(--tx2); font-size:12px; background:transparent; border:1px dashed var(--line); justify-content:center}
@@ -890,7 +893,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.4'; // integridad tarjeta↔cargos: borrar deuda SIEMPRE confirma; tarjeta con cargos vinculados avisa (y vuelven a efectivo si aceptas); cargo con tarjeta borrada lo dice y se repara desde el picker // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.5'; // cargar a una tarjeta AHORA baja su disponible real (400→50 al cargar 350, reversible); picker selecciona al primer toque + botón "Hecho" para cerrar // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -2136,7 +2139,9 @@ function tjPickerH(g,i,j,r){
     const info= hasInfo(c)
       ? '<span class="tjav'+(av<monto?' bad':'')+'">disponible '+pe(av)+(av<monto?' · no alcanza':'')+'</span>'
       : '<span class="tjav warn" data-addline="'+debts.indexOf(c)+'">añade su línea ✎</span>';
-    return '<button class="tjpick'+(r.tjCard===c.n?' sel':'')+(blocked?' tjp-block':'')+'"'+(blocked?' disabled':' data-tjpick="'+esc(c.n)+'"')+' data-grp="'+g+'" data-idx="'+i+'"'+sj+'>'+
+    // SIEMPRE seleccionable (antes 'disabled' se comía el primer toque — DD tuvo que tocar dos veces).
+    // Sobre-cargar una tarjeta es real: se marca en rojo pero se puede elegir (queda sobre el tope).
+    return '<button class="tjpick'+(r.tjCard===c.n?' sel':'')+(blocked?' tjp-block':'')+'" data-tjpick="'+esc(c.n)+'" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>'+
       '<span class="tjnm">'+esc(c.n)+(!blocked&&c.n===rec?' <span class="rec">recomendada</span>':'')+'</span>'+
       '<span class="tjright">'+info+'</span></button>';
   }).join('');
@@ -2147,8 +2152,11 @@ function tjPickerH(g,i,j,r){
   return '<div class="tjpicker" id="tjpick-'+g+'-'+i+(j!=null?'-'+j:'')+'">'+
     (rota?'<div class="tjpicker-h" style="color:var(--bad)">⚠ '+tx('Este cargo estaba en «'+esc(r.tjCard)+'», pero esa tarjeta ya no existe en tus Deudas. Elige otra tarjeta, o tócalo para volver a efectivo.','This charge was on "'+esc(r.tjCard)+'", but that card no longer exists in your Debts. Pick another card, or set it back to cash.')+'</div>':'')+
     '<div class="tjpicker-h">¿En qué tarjeta cargas <b>'+esc(r.l||'esto')+'</b>? La <b>recomendada</b> es la de más línea libre que aguanta el monto ('+pe(monto)+').</div>'+opts+
-    (r.tj?'<button class="tjpick none" data-tjpick="" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>↺ Quitar de tarjeta (volver a efectivo)</button>':'')+
-    cuotaBox+'</div>';
+    (r.tj?'<button class="tjpick none" data-tjpick="" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>↺ '+tx('Quitar de tarjeta (volver a efectivo)','Remove from card (back to cash)')+'</button>':'')+
+    cuotaBox+
+    // "Hecho" cierra el picker (antes la ÚNICA forma de cerrarlo era volver a tocar la tarjetita —
+    // contraintuitivo, DD 20 jul). Solo aparece cuando ya hay una tarjeta elegida.
+    (r.tj&&r.tjCard?'<button class="tjdone-btn" data-tjdone="1" data-grp="'+g+'" data-idx="'+i+'"'+sj+'>✓ '+tx('Hecho','Done')+'</button>':'')+'</div>';
 }
 // Refresca EN VIVO el cuadro de "¿en qué tarjeta cargas?" mientras el usuario edita el monto de la
 // categoría (input listener usa recompute(), no render(), para no robarle el cursor al tipear —
@@ -2694,6 +2702,7 @@ app.addEventListener('click',e=>{
     if(card){tgt.tj=true;tgt.tjCard=card;if(!tgt.tjCuotas)tgt.tjCuotas=1;/* selector queda abierto para fijar cuotas */}
     else{tgt.tj=false;delete tgt.tjCard;delete tgt.tjCuotas;tjOpen=null;}
     save();render();}
+  else if(b.dataset.tjdone){tjOpen=null;render();} // "Hecho": cierra el picker sin re-tocar la tarjetita
   else if(b.dataset.gostep!==undefined){wizGo(+b.dataset.gostep);}
   else if(b.dataset.focus!==undefined){focusGo(+b.dataset.focus);}
   else if(b.dataset.focustoggle){focusMode=!focusMode;focusStep=0;applyFocus();window.scrollTo({top:0,behavior:'smooth'});}
@@ -2931,6 +2940,27 @@ function reconcileTjDebts(){
       }
     });});
   });
+  // DÉBITO REAL a la tarjeta (regla DD 20 jul: "todo interrelacionado"). Cargar X a una tarjeta baja
+  // su disponible X y sube su saldo — como en la vida real, al instante. Se aplica como DELTA
+  // idempotente vía x.tjHold (cuánto tiene retenido HOY por cargos): correrlo mil veces no acumula;
+  // quitar el cargo o bajar el monto devuelve el disponible EXACTO. Editar el disponible a mano
+  // resetea el hold (el nuevo número es tu "punto de partida" y los cargos se re-aplican encima).
+  const desired={}; // nombre de tarjeta -> total cargado en ciclos VIVOS (los cerrados ya se saldaron al cerrar)
+  cycles.forEach(c=>{const x=(c.id===activeQ)?d:load(c.id); if(x&&x.closed)return;
+    ['nec','luj'].forEach(g=>{(x[g]||[]).forEach(r=>{
+      const hasS=r.sub&&r.sub.length;
+      if(r.tj&&r.tjCard){const m=hasS?r.sub.reduce((t,s)=>t+(parseFloat(s.a)||0),0):(parseFloat(r.a)||0);if(m>0)desired[r.tjCard]=(desired[r.tjCard]||0)+m;}
+      else if(hasS){r.sub.forEach(s=>{if(s.tj&&s.tjCard){const m=parseFloat(s.a)||0;if(m>0)desired[s.tjCard]=(desired[s.tjCard]||0)+m;}});}
+    });});});
+  manual.forEach(x=>{ if(!isCardDebt(x))return;
+    const want=Math.round((desired[x.n]||0)*100)/100, have=Math.round((parseFloat(x.tjHold)||0)*100)/100;
+    if(Math.abs(want-have)>0.005){
+      x.disp=Math.round(((parseFloat(x.disp)||0)-(want-have))*100)/100; // sube o baja el disponible por el cambio neto
+      const lim=parseFloat(x.limite)||0;
+      x.total=Math.round(Math.max(lim-(parseFloat(x.disp)||0),0)*100)/100; // saldo derivado (sobre el tope si disp<0)
+      x.tjHold=want;
+    }
+  });
   debts=manual.concat(auto);saveDebts();
 }
 function autoDebtsH(){
@@ -3159,8 +3189,10 @@ function debtPaySum(){if(!d.debtPay)return 0;return debts.filter(x=>!x.auto).red
 function revertPaidDelta(name){
   const pd=d.paidDelta&&d.paidDelta[name]; if(!pd)return;
   const x=debts.find(z=>z.n===name);
-  if(x){ if(pd.f==='disp'){ x.disp=pd.from; const lim=parseFloat(x.limite)||0; x.total=Math.max(lim-(parseFloat(x.disp)||0),0); }
-    else { x.total=pd.from; }
+  // Delta-based (no absoluto): deshace SOLO el movimiento que el pago causó (to−from), así compone
+  // con los cargos de tarjeta que pudieron mover el disponible entre marcar y desmarcar.
+  if(x){ if(pd.f==='disp'){ x.disp=Math.round(((parseFloat(x.disp)||0)-((pd.to||0)-(pd.from||0)))*100)/100; const lim=parseFloat(x.limite)||0; x.total=Math.round(Math.max(lim-(parseFloat(x.disp)||0),0)*100)/100; }
+    else { x.total=Math.round(((parseFloat(x.total)||0)-((pd.to||0)-(pd.from||0)))*100)/100; }
     saveDebts(); }
   delete d.paidDelta[name];
 }
@@ -3651,6 +3683,10 @@ debtsEl.addEventListener('input',e=>{const t=e.target;if(!t.dataset)return;
   if(t.dataset.di===undefined)return;
   const i=+t.dataset.di; debts[i][t.dataset.df]=t.value;
   if(isCardDebt(debts[i])&&(t.dataset.df==='limite'||t.dataset.df==='disp')){ // tarjeta: el saldo se deriva de línea − disponible
+    // Tipear el disponible a mano = nuevo PUNTO DE PARTIDA: resetea el hold para que los cargos de
+    // tarjeta se re-apliquen encima de este número (sin esto, editar disp mostraba un cupo mentiroso
+    // que ya no descontaba lo cargado). El reconcile re-debita en el próximo recompute.
+    debts[i].tjHold=0;
     debts[i].total=Math.max((parseFloat(debts[i].limite)||0)-(parseFloat(debts[i].disp)||0),0);
     const dn=t.closest('.drow2'),de=dn&&dn.querySelector('.dr-debe b'); if(de)de.textContent=pe(debts[i].total);
   }
