@@ -901,7 +901,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.8'; // sección "⚡ Registrar" bajo las cajas: Gasto y Apartar como familia con header (el + Gasto flotante sigue siendo el atajo diario) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.9'; // apartar respeta el ciclo donde estás parado: las cuotas arrancan AHÍ, nunca en ciclos anteriores; cuotas huérfanas sin ✓ se retiran solas al visitar // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1462,7 +1462,20 @@ function seedMetaQuotas(x,cyc){
   fondoCats.forEach(c=>{
     if(!(parseFloat(c.target)>0)||!c.hasta)return;
     const hs=metaHasta(c);
-    if(hs<start.slice(0,10))return; // este ciclo arranca DESPUÉS de la fecha meta → ya no toca
+    // FUERA DE RANGO: este ciclo arranca ANTES de que nazca la meta (apartaste "desde agosto"
+    // parado en agosto → julio no lleva cuota; bug cazado por DD 20 jul) o DESPUÉS de la fecha
+    // meta. No se siembra — y si una versión anterior dejó una cuota huérfana aquí, se retira
+    // sola siempre que no tenga ✓ (lo marcado es historia y jamás se toca).
+    const ini=c.inicio?String(c.inicio).slice(0,10):'';
+    if((ini&&start.slice(0,10)<ini)||hs<start.slice(0,10)){
+      const base0=metaBase(c.n);
+      const sx=(x.aho||[]).findIndex(rr=>metaBase(rr.l)===base0);
+      if(sx>=0&&!(x.itemPaid&&x.itemPaid['aho-'+sx])){
+        if(typeof d!=='undefined'&&x===d&&typeof shiftPaidKeys==='function')shiftPaidKeys('aho',sx);
+        x.aho.splice(sx,1);changed=true;
+      }
+      return;
+    }
     let falta=Math.max((parseFloat(c.target)||0)-(parseFloat(c.a)||0),0);
     if(falta<=0.5)return; // completa
     // Descuenta lo ya COMPROMETIDO en ciclos anteriores (cuotas sembradas, aún sin ✓): si agosto-1
