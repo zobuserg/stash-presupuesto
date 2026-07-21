@@ -13,6 +13,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stash">
 <link rel="apple-touch-icon" href="icon-192.png">
+<!-- Tarjeta de previsualización al compartir el link (WhatsApp, Telegram, Facebook, X…). Sin esto
+     el link llega pelado y la gente no lo abre — es la PRIMERA impresión. URLs ABSOLUTAS: los
+     scrapers no resuelven rutas relativas. -->
+<meta name="description" content="Reparte tu quincena en ahorro, necesidades y gustos. Sin cuenta, sin instalar, gratis — y tus datos nunca salen de tu teléfono.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stash">
+<meta property="og:locale" content="es_PE">
+<meta property="og:url" content="https://dantedanielgm.github.io/stash-presupuesto/">
+<meta property="og:title" content="Stash — el control total de tu plata">
+<meta property="og:description" content="Reparte tu quincena en ahorro, necesidades y gustos. Sin cuenta, sin instalar, gratis — y tus datos nunca salen de tu teléfono.">
+<meta property="og:image" content="https://dantedanielgm.github.io/stash-presupuesto/og-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Stash — organiza tu quincena en ahorro, necesidades y gustos">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stash — el control total de tu plata">
+<meta name="twitter:description" content="Reparte tu quincena en ahorro, necesidades y gustos. Sin cuenta, sin instalar, gratis — y tus datos nunca salen de tu teléfono.">
+<meta name="twitter:image" content="https://dantedanielgm.github.io/stash-presupuesto/og-preview.png">
 <style>
 :root{
   --bg:#fbfbfd; --card:#ffffff; --tx:#1d1d1f; --tx2:#86868b; --tx3:#aeaeb2;
@@ -901,7 +919,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.9'; // apartar respeta el ciclo donde estás parado: las cuotas arrancan AHÍ, nunca en ciclos anteriores; cuotas huérfanas sin ✓ se retiran solas al visitar // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.10'; // tarjeta de previsualización al compartir el link (Open Graph + og-preview.png 1200x630) — antes el link llegaba pelado a WhatsApp // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
