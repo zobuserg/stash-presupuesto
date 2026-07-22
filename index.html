@@ -74,7 +74,11 @@ body{
 #undo:hover{border-color:var(--accent)}
 #undo:active{transform:scale(.96)}
 #undo[hidden]{display:none}
-.head h1{font-size:28px; font-weight:600; letter-spacing:-.022em; margin-bottom:.65rem}
+.head h1{font-size:28px; font-weight:600; letter-spacing:-.022em; margin-bottom:0}
+/* La firma del método bajo el nombre — cada número con el color de su caja (Stash 20/50/30) */
+.brand-sub{font-size:12px; font-weight:800; letter-spacing:.12em; margin:-2px 0 .65rem}
+.brand-sub i{font-style:normal; color:var(--tx3); font-weight:400; margin:0 1px}
+.brand-sub .bs-aho{color:var(--ok)} .brand-sub .bs-nec{color:var(--accent)} .brand-sub .bs-luj{color:#c68a0c}
 .month-wrap{display:inline-flex; align-items:center; gap:.4rem; color:var(--tx2); font-size:14px}
 #month{
   font:inherit; font-size:14px; font-weight:500; color:var(--accent);
@@ -891,6 +895,9 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 <div class="head">
   <span class="today" id="today"></span>
   <h1>Stash</h1>
+  <!-- La firma del método bajo el nombre (decisión DD 20 jul: la app se llama "Stash 20/50/30") —
+       cada número con el color de su caja: verde ahorro · azul necesidades · ámbar gustos -->
+  <div class="brand-sub"><span class="bs-aho">20</span><i>/</i><span class="bs-nec">50</span><i>/</i><span class="bs-luj">30</span></div>
   <span class="month-wrap" style="display:none">Mes: <input id="month" placeholder="Julio 2026"></span>
   <div class="q-tabs" id="cyclebar"></div>
   <button id="undo" hidden>&#8624; Deshacer</button>
@@ -922,7 +929,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.12'; // abrir = aterrizar en el ciclo actual + barra dice "● ciclo actual" o "N ciclos antes/después" + picker solo tarjetas reales y colapsa tras elegir (adiós selección accidental al deslizar) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.13'; // nombre oficial "Stash 20/50/30": firma tricolor bajo el logo + ícono nuevo (3 velitas verde/azul/ámbar a escala 20-50-30 con sus números) + manifest corregido // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}

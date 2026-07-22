@@ -1,7 +1,7 @@
 {
-  "name": "Stash — Presupuesto 50/30/20",
+  "name": "Stash 20/50/30",
   "short_name": "Stash",
-  "description": "Reparte tu ingreso con la regla 50/30/20, ordena tus deudas y mira cuánto te queda.",
+  "description": "Reparte tu quincena con la regla 20/50/30 — el ahorro primero. Ordena tus deudas y mira cuánto te queda.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
