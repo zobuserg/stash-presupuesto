@@ -775,7 +775,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .wel-half{display:flex; gap:.4rem}
 .wel-half button{flex:1; font:inherit; font-size:12px; padding:.45rem; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx2); cursor:pointer}
 .wel-half button.on{border-color:var(--accent); color:var(--accent); font-weight:600}
-.today{font-size:11px; color:var(--tx3); font-weight:500}
+.today{display:block; text-align:center; font-size:11px; color:var(--tx3); font-weight:500}
 /* Barra de ciclos compacta: ‹ activo (fechas) › +Q +M */
 #cyclebar{display:flex; align-items:center; gap:.3rem; flex-wrap:wrap}
 .cyc-nav{font:inherit; font-size:16px; line-height:1; width:26px; height:26px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--tx2); cursor:pointer}
@@ -825,7 +825,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 .ce-done:hover{filter:brightness(1.08)}
 #themebtn{position:absolute; top:0; right:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:15px; line-height:1; transition:.15s}
 #themebtn:hover{border-color:var(--accent)}
-#settingsbtn{position:absolute; top:0; right:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:16px; line-height:1; color:var(--tx2); transition:.15s}
+#settingsbtn{position:absolute; top:21px; right:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent; cursor:pointer; font-size:16px; line-height:1; color:var(--tx2); transition:.15s}
 #settingsbtn:hover{border-color:var(--accent); color:var(--accent); transform:rotate(30deg)}
 .set-h{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--tx3); margin:1rem 0 .45rem}
 /* Vista macro del año — cuadrícula de calendario (tocar la fecha de arriba) */
@@ -948,7 +948,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-23.2'; // rediseño "💰 Mi plata": Tengo-ahora + en-camino + Reserva agrupados bajo un chevron, colapsado por defecto; lo indefinido se resuelve con 3 botones humanos (Ya la tengo/Aún no llega/Una parte); acordeón permite deshacer llegadas ya marcadas; borrar la única fuente re-siembra un default // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-23.3'; // header: fecha centrada + tuerca ⚙ alineada con "Stash" (bajada a la línea del logo) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
