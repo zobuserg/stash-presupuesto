@@ -322,7 +322,8 @@ body.focuson .ov-bar{display:none}
 .subtoggle:hover{color:var(--accent)}
 /* "Deuda" como fila cohesionada con las categorías: mismas columnas que una .row */
 .dg-fold{user-select:none}
-.dg-fold .dd-name{flex:1; min-width:0; font-size:15px; font-weight:600; color:var(--tx); cursor:pointer; padding:.55rem .2rem}
+.dg-fold .dd-name{flex:none; font-size:15px; font-weight:600; color:var(--tx); cursor:pointer; padding:.55rem .2rem}
+.dg-fold .dg-spacer{flex:1; min-width:0}
 .dg-fold .dg-total{width:78px; flex:none; text-align:right; font-size:15px; font-weight:700; color:var(--tx); font-variant-numeric:tabular-nums; padding:.55rem .2rem}
 .dg-fold .pchk-sp{width:22px; flex:none}
 /* Botón (i): explicación bajo demanda, chiquito y discreto — no compite con el contenido real */
@@ -331,6 +332,7 @@ body.focuson .ov-bar{display:none}
   align-items:center; justify-content:center; opacity:.75}
 .info-i:hover,.info-i:active{opacity:1; border-color:var(--accent); color:var(--accent)}
 .sec-h .info-i{margin-left:.4rem}
+.dg-fold .info-i{margin-left:.35rem}
 /* Encabezado de grupo Préstamo / Tarjeta: nombre + subtotal + check-todos, alineado con las filas */
 .kind-row .kh-name{flex:1; min-width:0; margin:0}
 .kind-row .kh-total{width:78px; flex:none; text-align:right; font-size:13px; font-weight:700; color:var(--tx2); font-variant-numeric:tabular-nums; padding:.35rem .2rem}
@@ -939,7 +941,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.14'; // firma tricolor también en el onboarding + botones (i) en "Deuda" y "Reserva" (explicación bajo demanda) + Deuda reordenada AL FINAL del sobre de Ahorro // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-20.15'; // el (i) de "Reserva" queda pegado a su palabra, al mismo nivel que el (i) de "Deuda" (antes uno flotaba al borde derecho y el otro lejos del texto) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1562,7 +1564,7 @@ function fondoH(){
   // Estado de cuenta del CICLO: qué le pasó a la Reserva en este ciclo (aportes en vivo, cierre).
   let movs=[];try{movs=(JSON.parse(localStorage.getItem('midas_reslog'))||[]).filter(m=>m.q===activeQ);}catch(e){}
   const movSum=movs.reduce((t,m)=>t+(m.a||0),0);
-  return '<div class="sec-h"><span class="t">🔒 '+tx('Reserva','Reserve')+'</span><button class="info-i" data-info="reserva" title="'+tx('¿Qué es tu Reserva?','What is your Reserve?')+'">i</button></div>'+
+  return '<div class="sec-h"><span class="t">🔒 '+tx('Reserva','Reserve')+' <button class="info-i" data-info="reserva" title="'+tx('¿Qué es tu Reserva?','What is your Reserve?')+'">i</button></span></div>'+
     '<div class="fondo-tab">'+
       '<div class="ft-total"><span class="ft-l">'+tx('Tu Reserva','Your Reserve')+'<span class="ft-hint">'+tx('un apartado de tu dinero — parte de tus cuentas que no gastas este ciclo','money set aside — the part of your accounts you don\'t spend this cycle')+'</span></span><span class="ft-v">S/ <input id="fondo-inp" type="number" min="0" step="1" value="'+fondo+'"></span></div>'+
       (hasCuentas()?'<div class="ft-of">'+tx('de tus','of your')+' <b>'+pe(totalCuentas())+'</b> '+tx('en cuentas','in accounts')+(fondo>totalCuentas()+0.5?' — <span class="neg">'+tx('reservaste más de lo que tienes','you set aside more than you have')+'</span>':'')+'</div>':'')+
@@ -3448,6 +3450,7 @@ function ahoDebtBlockH(){
       '<button class="subtoggle" data-deudafold="1">'+(folded?'▸':'▾')+'</button>'+
       '<span class="l dd-name" data-deudafold="1">'+tx('Deuda','Debt')+'</span>'+
       '<button class="info-i" data-info="deuda" title="'+tx('¿Por qué la Deuda vive en Ahorro?','Why does Debt live in Savings?')+'">i</button>'+
+      '<span class="dg-spacer" data-deudafold="1"></span>'+ // empuja el resto a la derecha (el (i) queda pegado a "Deuda")
       '<span class="a dg-total">'+pe(planned)+'</span>'+
       '<button class="rm" data-deudaclear="1" aria-label="'+tx('Quitar deudas del ciclo','Remove debts from cycle')+'" title="'+tx('Quitar del ciclo las deudas elegidas','Remove the chosen debts from this cycle')+'">&times;</button>'+
       '<button class="pcheck pchk-paid'+(allDebtsPaid?' on':'')+'" data-deudaallpaid="1" title="'+tx('Marcar/desmarcar todas las deudas del ciclo','Check/uncheck every debt this cycle')+'">'+(allDebtsPaid?'✓':'')+'</button>'+
