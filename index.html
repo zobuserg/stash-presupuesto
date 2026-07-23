@@ -941,7 +941,7 @@ body.welcoming .tabbar,body.welcoming .head{display:none}
 // ===== Idioma (i18n ligera) =====
 // tx('español','english'): el español vive inline como fuente de verdad; el inglés viaja al lado.
 // Sin diccionarios separados que se desincronicen. lang se elige en el onboarding y con el botón 🌐.
-const APP_BUILD='2026-07-20.15'; // el (i) de "Reserva" queda pegado a su palabra, al mismo nivel que el (i) de "Deuda" (antes uno flotaba al borde derecho y el otro lejos del texto) // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
+const APP_BUILD='2026-07-23.1'; // "por definir" hasta que TÚ digas si la plata ya está en mano o viene en camino (la app no presume) + botones (i) en "Tengo ahora" y en el tag 📥 + guía dentro del acordeón // sello visible en ⚙ Ajustes — para saber SIN adivinar si el celular tiene la versión nueva o caché
 const LANG_KEY='midas_lang';
 let lang=localStorage.getItem(LANG_KEY)||'es';
 function tx(es,en){return lang==='en'&&en!=null?en:es;}
@@ -1674,6 +1674,10 @@ function openMetaModal(prefillName){
 const INFO_TXT={
   deuda:{h:'💳 '+tx('¿Por qué la Deuda vive en Ahorro?','Why does Debt live in Savings?'),
     b:tx('Pagar una deuda TAMBIÉN es ahorro: cada pago reduce lo que debes — es plata que dejas de perder en intereses. Por eso sale del mismo sobre que tu Reserva e Inversión: los tres construyen tu patrimonio, cada uno a su manera.','Paying off debt IS a form of savings: every payment lowers what you owe — money you stop losing to interest. That\'s why it comes out of the same envelope as your Reserve and Investing: all three build your net worth, each in its own way.')},
+  tengoahora:{h:'💰 '+tx('¿Qué es «Tengo ahora»?','What is "On hand"?'),
+    b:tx('Tu plata REAL en este momento — efectivo + cuentas, tipeada por ti. Es el número contra el que todo se compara. Se mueve solo: <b>baja</b> con cada gasto que marcas ✓ y <b>sube</b> cuando marcas que un ingreso te llegó. Si algún día no cuadra con tu banco, re-tipéalo: tu número real siempre manda.','Your ACTUAL money right now — cash + accounts, typed by you. It\'s the number everything compares against. It moves by itself: it <b>drops</b> with every expense you check ✓ and <b>rises</b> when you mark that income arrived. If it ever drifts from your bank, just re-type it: your real number always wins.')},
+  camino:{h:'📥 '+tx('¿Qué es esta plata?','What is this money?'),
+    b:tx('Son tus fuentes de ingreso de este ciclo que AÚN no marcaste como recibidas. Stash no sabe si esa plata ya está en tu mano o está por llegarte — <b>tú lo defines</b>: toca el chevron ▾ y, si ya la tienes, marca «✓ ya me pagó» (pasa a Tengo ahora); si aún no llega, déjala — quedará «en camino» y la marcas el día que caiga. Si llegó un monto distinto, usa ½ o «Llegó todo — ajustar al real».','These are this cycle\'s income sources you haven\'t marked as received yet. Stash doesn\'t know whether that money is already in your hand or on its way — <b>you define it</b>: tap the chevron ▾ and, if you already have it, hit "✓ got paid" (it moves into On hand); if it hasn\'t arrived, leave it — it stays "incoming" until the day it lands. If a different amount arrived, use ½ or "All arrived — adjust to actual".')},
   reserva:{h:'🔒 '+tx('¿Qué es tu Reserva?','What is your Reserve?'),
     b:tx('Es tu plata YA apartada — la parte de tus cuentas que decidiste no gastar. Vive en 3 pisos: <b>1) Colchón</b> tu red de emergencia (~3 meses de tus necesidades). <b>2) Metas</b> sueños con nombre y fecha. <b>3) Inversión</b> lo que ya empezaste a hacer crecer. Cada ✓ que marcas en Ahorro manda su plata aquí solo, sin que hagas nada más.','This is money you\'ve ALREADY set aside — the part of your accounts you decided not to spend. It lives on 3 floors: <b>1) Cushion</b> your emergency net (~3 months of your needs). <b>2) Goals</b> dreams with a name and date. <b>3) Investing</b> what you\'ve already started growing. Every ✓ you check in Savings sends its money here automatically — no extra step.')}
 };
@@ -2430,6 +2434,8 @@ function render(){
             :(hasCuentas()&&yaMetido
               ?'<button class="hi-manolbl" data-manoinfo="1" title="'+tx('Tu plata ya está destinada a este ciclo — toca para ver el desglose','Your money is already inside this cycle — tap to see the breakdown')+'">💰 '+(manoFut?tx('Para este ciclo','For this cycle'):tx('Tengo ahora','On hand'))+'</button>'
               :'💰 '+(manoFut?tx('Para este ciclo','For this cycle'):tx('Tengo ahora','On hand'))))+
+          // (i) de "Tengo ahora": pedido DD 23 jul — "es clave que se entienda qué hacen las cosas"
+          (manoFut?'':'<button class="info-i" data-info="tengoahora">i</button>')+
           (manoFut
             ?' S/ <b class="hi-manoval">'+pn(yaDentro)+'</b>'
             :' S/ <input id="banco-total-inp" type="number" min="0" step="1" value="'+(bancoTotal===''?'':Math.round(saldoVivo()))+'" placeholder="0">')+
@@ -2438,7 +2444,10 @@ function render(){
         // Marcar = esa plata pasa a "Tengo ahora" y en camino queda el resto.
         (caminoOpen
           ?'<div class="hi-caminolist">'+(caminoRows.length
-            ?caminoRows.map(x=>'<div class="hcl-row"><span class="hcl-n">'+esc(x.r.l||tx('Fuente','Source'))+'</span><span class="hcl-a">S/ '+pn(parseFloat(x.r.a)||0)+'</span><button class="hcl-part" data-incpart="'+x.i+'" title="'+tx('Me llegó otro monto (menos o más)','A different amount arrived (less or more)')+'">½</button><button class="hcl-go" data-itempaid="inc-'+x.i+'">✓ '+tx('ya me pagó','got paid')+'</button></div>').join('')
+            // Guía SOLO mientras nada está definido (DD 23 jul): el usuario decide si esa plata ya
+            // está en su mano (✓) o viene en camino (dejarla) — la app no presume.
+            ?((d.caminoDef||(d.incGot&&Object.keys(d.incGot).length))?'':'<div class="hcl-empty" style="padding-bottom:.35rem">'+tx('¿Esta plata YA está en tu mano? Márcala ✓. ¿Aún no llega? Déjala — queda «en camino» y la marcas cuando caiga.','Already have this money? Check it ✓. Not here yet? Leave it — it stays "incoming" until it lands.')+'</div>')
+            +caminoRows.map(x=>'<div class="hcl-row"><span class="hcl-n">'+esc(x.r.l||tx('Fuente','Source'))+'</span><span class="hcl-a">S/ '+pn(parseFloat(x.r.a)||0)+'</span><button class="hcl-part" data-incpart="'+x.i+'" title="'+tx('Me llegó otro monto (menos o más)','A different amount arrived (less or more)')+'">½</button><button class="hcl-go" data-itempaid="inc-'+x.i+'">✓ '+tx('ya me pagó','got paid')+'</button></div>').join('')
               // "Llegó todo": un solo toque marca TODAS las pendientes; si el total real fue otro
               // (te pagaron más o menos), el presupuesto del ciclo se ajusta a lo que DE VERDAD llegó.
               +'<button class="hcl-all" data-caminoall="1">✓ '+tx('Llegó todo — ajustar al monto real','All arrived — adjust to actual')+'</button>'
@@ -2648,7 +2657,15 @@ function recompute(){
     // El desglose de tu realidad en una línea — cada pieza es TOCABLE y explica de dónde nace:
     // "en camino" = tus fuentes aún sin ✓. Chevron ▾/▲ = acordeón: toca y las fuentes se abren
     // ahí abajo, con su monto y su check (pedido literal de DD).
-    if(cam)cam.innerHTML=((bx&&bx.porLlegar>0.5)?' · <button class="hi-tag" data-openfuentes="1" title="'+tx('Plata que esperas y aún no llega. Toca el chevron: verás cada fuente pendiente con su «✓ ya me pagó».','Money you expect that hasn\'t arrived. Tap the chevron: each pending source with its "✓ got paid".')+'">📥 '+tx('en camino','incoming')+' S/ '+pn(bx.porLlegar)+' '+(caminoOpen?'▲':'▾')+'</button>':'')+
+    // "POR DEFINIR" hasta que el usuario diga algo (cazado por DD 23 jul en incógnito): la app NO
+    // sabe si esa plata ya está en la mano o viene en camino — afirmarlo era presumir. Se vuelve
+    // "en camino" recién cuando el usuario define algo (marca un ✓/½/llegó-todo → d.caminoDef).
+    const caminoDefinido=!!(d.caminoDef||(d.incGot&&Object.keys(d.incGot).length)||Object.keys(d.itemPaid||{}).some(k=>k.indexOf('inc-')===0));
+    if(cam)cam.innerHTML=((bx&&bx.porLlegar>0.5)?' · <button class="hi-tag" data-openfuentes="1" title="'+(caminoDefinido
+        ?tx('Plata que esperas y aún no llega. Toca el chevron: verás cada fuente pendiente con su «✓ ya me pagó».','Money you expect that hasn\'t arrived. Tap the chevron: each pending source with its "✓ got paid".')
+        :tx('Stash aún no sabe si esta plata ya está en tu mano o está por llegarte. Toca el chevron y defínelo.','Stash doesn\'t know yet whether this money is already in your hand or on its way. Tap the chevron and define it.'))+'">📥 '
+      +(caminoDefinido?tx('en camino','incoming')+' S/ '+pn(bx.porLlegar):'S/ '+pn(bx.porLlegar)+' '+tx('por definir','to define'))
+      +' '+(caminoOpen?'▲':'▾')+'</button><button class="info-i" data-info="camino">i</button>':'')+
       ((typeof fondo==='number'&&fondo>0.5)?' · <button class="hi-tag" data-goview="fondo" title="'+tx('Tu plata apartada. Toca para ir a la Reserva.','Your money set aside. Tap to open the Reserve.')+'">🔒 '+tx('Reserva','Reserve')+' '+pn(fondo)+'</button>':'');
     if(bc){
       // ☠️ Los chips ✨/⚠ (juicio plan-vs-realidad de bancoExtra) MURIERON (13 jul, orden directa de DD,
@@ -2903,6 +2920,7 @@ app.addEventListener('click',e=>{
     if(v===null)return;
     const real=Math.round(parseFloat(v)||0); if(real<=0)return;
     snapshot(); if(!d.itemPaid)d.itemPaid={}; if(!d.incGot)d.incGot={};
+    d.caminoDef=true; // el usuario DEFINIÓ el estado de sus llegadas → el tag deja de decir "por definir"
     let diff=real-esp;
     if(diff<0){ // llegó menos: el faltante se descuenta de las últimas fuentes hacia atrás
       for(let j=rows.length-1;j>=0&&diff<0;j--){const a=parseFloat(rows[j].r.a)||0;const cut=Math.min(a,-diff);rows[j].r.a=a-cut;diff+=cut;}
@@ -2927,6 +2945,7 @@ app.addEventListener('click',e=>{
     if(v===null)return;
     const got=Math.round(parseFloat(v)||0); if(got<=0)return;
     snapshot(); if(!d.itemPaid)d.itemPaid={};
+    d.caminoDef=true; // definió llegadas (½) → adiós "por definir"
     let k='inc-'+i;
     if(got<tot-0.5){ // parcial: la fila original conserva el resto en camino; lo llegado es fila nueva
       row.a=tot-got;
@@ -2946,6 +2965,7 @@ app.addEventListener('click',e=>{
       if(!d.itemPaid[k]){ // marcando: ya entró
         const amt=parseFloat(row.a)||0;
         d.itemPaid[k]=true;
+        d.caminoDef=true; // definió llegadas (✓) → adiós "por definir"
         if(hasCuentas()&&amt>0.5){if(!d.incGot)d.incGot={};d.incGot[k]=amt;
           bancoTotal=(parseFloat(bancoTotal)||0)+amt;saveBancoTotal();}
       } else { // destildando: aún no llegaba
